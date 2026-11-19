@@ -20,10 +20,16 @@ std::vector<std::string> summarizeMameLog(const std::string& log,std::size_t max
   std::string low=line;for(auto& c:low)c=static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
   if(low.find("not found")!=std::string::npos||low.find("incorrect")!=std::string::npos||
      low.find("required files are missing")!=std::string::npos||low.find("fatal")!=std::string::npos||
-     low.find("error")!=std::string::npos||low.find("unknown system")!=std::string::npos)
+     low.find("error")!=std::string::npos||low.find("unknown system")!=std::string::npos||
+     low.find("cannot")!=std::string::npos||low.find("has stopped")!=std::string::npos)
    out.push_back(line);
  }
  return out;
+}
+bool logShowsFailedStart(const std::string& log){
+ std::string low=log;for(auto& c:low)c=static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
+ return low.find("has stopped")!=std::string::npos||low.find("cannot be run")!=std::string::npos||
+        low.find("required files are missing")!=std::string::npos;
 }
 fs::path readMameExecutable(const fs::path& configFile){
  std::ifstream f(configFile,std::ios::binary);
@@ -70,6 +76,25 @@ bool createExLaunchSpec(const fs::path& emulator,const RomSearchPath& roms,
  if(game!="sfexp"&&game!="sfex2p"){output={};reason="Not a supported CHEAT EX arcade title";return false;}
  return buildSpec(emulator,roms,game,output,reason,"Selected EX ROM ZIP missing","EX hardware BIOS ZIP missing");
 }
+bool createFlycastLaunchSpec(const fs::path& flycast,const RomSearchPath& roms,
+ const std::string& game,MameLaunchSpec& output,std::string& reason){
+ output={};std::error_code ec;
+ const auto* set=findMameSet(game);
+ if(!set||set->emulator!=Emulator::Flycast){reason="Not a Flycast game";return false;}
+ if(flycast.empty()||!fs::is_regular_file(flycast,ec)){reason="Flycast not found (set its path in flycast_executable.txt)";return false;}
+ fs::path zip;
+ for(auto it=roms.dirs.rbegin();it!=roms.dirs.rend();++it){
+  const auto p=*it/(std::string(set->set)+".zip");
+  if(fs::is_regular_file(p,ec)){zip=p;break;}
+ }
+ if(zip.empty()){reason=std::string("ROM set missing: ")+set->set+".zip";return false;}
+ if(*set->bios&&!fs::is_regular_file(zip.parent_path()/(std::string(set->bios)+".zip"),ec)){
+  reason=std::string("Flycast needs ")+set->bios+".zip in the same folder as "+set->set+".zip";return false;
+ }
+ output.executable=fs::absolute(flycast);output.roms=roms;output.game=game;output.mameSet=set->set;
+ output.arguments={L"-config",L"window:fullscreen=yes",L"-config",L"log:LogToFile=yes",fs::absolute(zip).wstring()};
+ reason.clear();return true;
+}
 bool createLaunchSpec(const fs::path& emulator,const RomSearchPath& roms,
  const std::string& game,MameLaunchSpec& output,std::string& reason){
  if(game=="mvsc2")return createNaomiLaunchSpec(emulator,roms,output,reason);
@@ -81,7 +106,10 @@ struct MameBackend::Private {
  fs::path executable;
  HANDLE process=nullptr;
  DWORD pid=0;
- fs::path log;
+ fs::path log;          // MAME console capture
+ fs::path flycast;      // Flycast executable
+ fs::path activeLog;    // log of the current/last launch (MAME capture or flycast.log)
+ std::string lastError;
  ULONGLONG startedAt=0;
  explicit Private(fs::path e):executable(std::move(e)){}
  ~Private(){if(process)CloseHandle(process);}
@@ -100,7 +128,8 @@ MameBackend::MameBackend(fs::path e):p_(new Private(std::move(e))){}
 MameBackend::~MameBackend(){delete p_;}
 bool MameBackend::available(const std::string& game)const{
  std::error_code ec;
- return findMameSet(game)&&fs::is_regular_file(p_->executable,ec)&&!running();
+ if(!findMameSet(game)||running())return false;
+ return fs::is_regular_file(usesFlycast(game)?p_->flycast:p_->executable,ec);
 }
 bool MameBackend::running()const{
  return p_->process&&WaitForSingleObject(p_->process,0)==WAIT_TIMEOUT;
@@ -109,7 +138,16 @@ bool MameBackend::start(const std::string& id,const RomSearchPath& roms){
  if(running())return false;
  if(p_->process){CloseHandle(p_->process);p_->process=nullptr;p_->pid=0;}
  MameLaunchSpec spec;std::string reason;
- if(!createLaunchSpec(p_->executable,roms,id,spec,reason))return false;
+ const bool flycast=usesFlycast(id);
+ const bool built=flycast?createFlycastLaunchSpec(p_->flycast,roms,id,spec,reason)
+                         :createLaunchSpec(p_->executable,roms,id,spec,reason);
+ p_->lastError=reason;
+ if(!built)return false;
+ if(flycast){
+  // Flycast writes its own flycast.log next to the exe; clear the previous one first.
+  p_->activeLog=spec.executable.parent_path()/"flycast.log";
+  std::error_code rm;fs::remove(p_->activeLog,rm);
+ }else p_->activeLog=p_->log;
  std::wstring cmd=quote(spec.executable.wstring());
  for(const auto& arg:spec.arguments){cmd+=L" ";cmd+=quote(arg);}
  std::vector<wchar_t> mutableCommand(cmd.begin(),cmd.end());mutableCommand.push_back(L'\0');
@@ -118,7 +156,7 @@ bool MameBackend::start(const std::string& id,const RomSearchPath& roms){
  std::wstring workingDir=spec.executable.parent_path().wstring();
  // Capture MAME's console output so a failed start can be explained to the player.
  HANDLE logHandle=INVALID_HANDLE_VALUE;
- if(!p_->log.empty()){
+ if(!flycast&&!p_->log.empty()){
   std::error_code ec;fs::create_directories(p_->log.parent_path(),ec);
   SECURITY_ATTRIBUTES sa{sizeof sa,nullptr,TRUE};
   logHandle=CreateFileW(p_->log.c_str(),GENERIC_WRITE,FILE_SHARE_READ|FILE_SHARE_WRITE,&sa,CREATE_ALWAYS,FILE_ATTRIBUTE_NORMAL,nullptr);
@@ -132,13 +170,15 @@ bool MameBackend::start(const std::string& id,const RomSearchPath& roms){
  const BOOL ok=CreateProcessW(spec.executable.c_str(),mutableCommand.data(),nullptr,nullptr,
         logHandle!=INVALID_HANDLE_VALUE,CREATE_NO_WINDOW,nullptr,workingDir.c_str(),&startup,&proc);
  if(logHandle!=INVALID_HANDLE_VALUE)CloseHandle(logHandle);
- if(!ok)return false;
+ if(!ok){p_->lastError=flycast?"Windows could not start Flycast":"Windows could not start MAME";return false;}
  p_->process=proc.hProcess;p_->pid=proc.dwProcessId;CloseHandle(proc.hThread);
  p_->startedAt=GetTickCount64();
  return true;
 }
 void MameBackend::setLogFile(fs::path file){p_->log=std::move(file);}
-fs::path MameBackend::logFile() const {return p_->log;}
+fs::path MameBackend::logFile() const {return p_->activeLog.empty()?p_->log:p_->activeLog;}
+void MameBackend::setFlycastExecutable(fs::path file){p_->flycast=std::move(file);}
+std::string MameBackend::lastStartError() const {return p_->lastError;}
 bool MameBackend::lastExit(unsigned long& code,double& seconds) const{
  if(!p_->process||WaitForSingleObject(p_->process,0)!=WAIT_OBJECT_0)return false;
  DWORD c=0;if(!GetExitCodeProcess(p_->process,&c))return false;

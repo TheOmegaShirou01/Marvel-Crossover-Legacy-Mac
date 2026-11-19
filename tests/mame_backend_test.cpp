@@ -1,4 +1,5 @@
 #include "../src/mame_backend.hpp"
+#include "../src/mame_sets.hpp"
 #include <cassert>
 #include <filesystem>
 #include <fstream>
@@ -52,6 +53,35 @@ int main(){
   assert(lines[2].find("Required files are missing")==0);
   assert(mcl::summarizeMameLog(log,1).size()==1);
   assert(mcl::summarizeMameLog("Average speed: 99.8%\n").empty());
+ }
+ // Flycast: MvC2 only; last folder holding mvsc2.zip wins; BIOS must sit beside it.
+ {
+  const auto orig=root/"orig",extra=root/"extra",fly=root/"flycast.exe";
+  fs::create_directories(orig);fs::create_directories(extra);
+  {std::ofstream f(fly);f<<"x";}
+  mcl::RomSearchPath search;search.dirs={orig,extra};
+  assert(mcl::usesFlycast("mvsc2")&&!mcl::usesFlycast("xmcota"));
+  assert(!mcl::createFlycastLaunchSpec(fly,search,"mvsc2",spec,reason)&&reason.find("mvsc2.zip")!=std::string::npos);
+  {std::ofstream f(orig/"mvsc2.zip");f<<"x";}
+  assert(!mcl::createFlycastLaunchSpec(fly,search,"mvsc2",spec,reason)&&reason.find("naomi.zip")!=std::string::npos);
+  {std::ofstream f(orig/"naomi.zip");f<<"x";}
+  assert(mcl::createFlycastLaunchSpec(fly,search,"mvsc2",spec,reason));
+  assert(spec.arguments.size()==5&&spec.arguments[1]==L"window:fullscreen=yes");
+  assert(spec.arguments[4].find(L"orig")!=std::wstring::npos);
+  // A repaired copy in the later folder overrides, but only with its BIOS beside it.
+  {std::ofstream f(extra/"mvsc2.zip");f<<"x";}
+  assert(!mcl::createFlycastLaunchSpec(fly,search,"mvsc2",spec,reason));
+  {std::ofstream f(extra/"naomi.zip");f<<"x";}
+  assert(mcl::createFlycastLaunchSpec(fly,search,"mvsc2",spec,reason)&&spec.arguments[4].find(L"extra")!=std::wstring::npos);
+  assert(!mcl::createFlycastLaunchSpec(fly,search,"xmcota",spec,reason));
+  assert(!mcl::createFlycastLaunchSpec(root/"nope.exe",search,"mvsc2",spec,reason));
+  // Flycast exits 0 on failure; the log decides.
+  const std::string flog="00:01:118 ui/gui.cpp:1318 E[BOOT]: Cannot find mpr-23084.ic32s\n"
+                         "00:01:118 ui/gui.cpp:484 E[COMMON]: Flycast has stopped: Cannot find mpr-23084.ic32s\n";
+  assert(mcl::logShowsFailedStart(flog));
+  assert(mcl::summarizeMameLog(flog).size()==2);
+  assert(!mcl::logShowsFailedStart("N[BOOT]: Game ID is [MARVEL VS CAPCOM2  JAPAN]\n"));
+  assert(mcl::logShowsFailedStart("Fatal error: Required files are missing, the machine cannot be run.\n"));
  }
  {std::ofstream f(root/"mame_executable.txt");f<<"mame test.exe\n";}
  assert(mcl::readMameExecutable(root/"mame_executable.txt")==exe);

@@ -14,6 +14,7 @@
 #include "external_roms.hpp"
 #include "emulator_bridge.hpp"
 #include "mame_backend.hpp"
+#include "mame_sets.hpp"
 #include "rom_audit.hpp"
 #include "pause_menu_win.hpp"
 #pragma comment(lib,"strmiids.lib")
@@ -102,7 +103,7 @@ class Selection {
   if(session_&&session_->state()==mcl::RuntimeState::Running){
    SetWindowTextW(launch_,L"EXIT RUNNING GAME");EnableWindow(launch_,TRUE);return;
   }
-  SetWindowTextW(launch_,supported?(exMode_?L"LAUNCH EX ARCADE GAME":(selected_==5?L"LAUNCH NAOMI GAME":L"LAUNCH CPS-2 GAME")):L"EMULATION NOT CONNECTED");
+  SetWindowTextW(launch_,supported?(exMode_?L"LAUNCH EX ARCADE GAME":(selected_==5?L"LAUNCH NAOMI GAME (FLYCAST)":L"LAUNCH CPS-2 GAME")):L"EMULATION NOT CONNECTED");
   bool canLaunch=false;
   if(supported&&emulator_){const std::wstring id=items()[selected_].id;canLaunch=emulator_->available(std::string(id.begin(),id.end()));}
   EnableWindow(launch_,canLaunch);
@@ -123,7 +124,13 @@ class Selection {
    MessageBoxW(wnd_,text.c_str(),L"Cannot prepare arcade game",MB_ICONWARNING);return;
   }
   auto started=session_->start();
-  if(!started.ok){session_->stop();MessageBoxW(wnd_,L"MAME did not launch. Check executable, game ROM and hardware BIOS.",L"Launch failed",MB_ICONWARNING);return;}
+  if(!started.ok){
+   session_->stop();
+   const std::string why=emulator_->lastStartError();
+   std::wstring text=L"The game did not launch.\n\n";
+   text+=why.empty()?L"Check the emulator path, game ROM and hardware BIOS.":std::wstring(why.begin(),why.end());
+   MessageBoxW(wnd_,text.c_str(),L"Launch failed",MB_ICONWARNING);return;
+  }
   SetWindowTextW(info_,L"MAME session started. Original operator controls apply; custom cheats, achievements and pause are not connected yet.");
   updateLaunch();
  }
@@ -212,6 +219,7 @@ class Selection {
     auto emulatorFile=mcl::readMameExecutable(assets_/"mame_executable.txt");
     emulator_=std::make_unique<mcl::MameBackend>(emulatorFile);
     emulator_->setLogFile(assets_/"Logs"/"mame_last_launch.log");
+    emulator_->setFlycastExecutable(mcl::readMameExecutable(assets_/"flycast_executable.txt"));
     session_=std::make_unique<mcl::EmulatorBridge>(model_,*emulator_,mcl::resolveRuntimeRomSearchPath(assets_));
    }
    rebuild();RECT r{};GetClientRect(wnd_,&r);globe_.open(wnd_,assets_/"earth_background.mp4",r,true);SetTimer(wnd_,TIMER_ID+1,150,nullptr);return 0;}
@@ -250,6 +258,10 @@ class Selection {
     }
     std::wstring wid=items()[selected_].id;
     std::string gid(wid.begin(),wid.end());
+    if(mcl::usesFlycast(gid)){
+     MessageBoxW(wnd_,L"This game runs in Flycast, so MAME's ROM audit does not apply.\n\nIts files are checked when the repaired set is built with tools\\build_flycast_set.py.",L"ROM check",MB_ICONINFORMATION);
+     return 0;
+    }
     mcl::MameLaunchSpec spec;std::string reason;
     auto executable=mcl::readMameExecutable(assets_/"mame_executable.txt");
     if(!mcl::createMameAuditSpec(executable,mcl::resolveRuntimeRomSearchPath(assets_),gid,spec,reason)){
@@ -290,7 +302,9 @@ class Selection {
      const bool known=emulator_->lastExit(code,secs);
      const std::string game=session_->game();
      session_->stop();updateLaunch();
-     if(known&&code!=0)reportFailedStart(game,code);
+     std::string log;
+     {std::ifstream in(emulator_->logFile(),std::ios::binary);log.assign(std::istreambuf_iterator<char>(in),std::istreambuf_iterator<char>());}
+     if(known&&(code!=0||mcl::logShowsFailedStart(log)))reportFailedStart(game,code,log);
      else SetWindowTextW(info_,L"Arcade emulator exited. Returned to game selection.");
     }
     return 0;
@@ -304,16 +318,16 @@ class Selection {
   case WM_DESTROY:KillTimer(wnd_,TIMER_ID);KillTimer(wnd_,TIMER_ID+1);preview_.close();globe_.close();if(heading_)DeleteObject(heading_);if(font_)DeleteObject(font_);if(dark_)DeleteObject(dark_);for(HBITMAP bitmap:cardImages_)if(bitmap)DeleteObject(bitmap);return 0;
   }return DefWindowProcW(wnd_,msg,w,l);}
  // MAME quit with an error (usually missing/mismatched ROM files): explain it instead of failing silently.
- void reportFailedStart(const std::string& game,unsigned long code){
-  std::string log;
-  {std::ifstream in(emulator_->logFile(),std::ios::binary);log.assign(std::istreambuf_iterator<char>(in),std::istreambuf_iterator<char>());}
+ void reportFailedStart(const std::string& game,unsigned long code,const std::string& log){
   const auto lines=mcl::summarizeMameLog(log,12);
-  std::wstring msg=L"MAME could not run this game";
-  if(code==2)msg+=L" because ROM files are missing or don't match your MAME version";
-  msg+=L".\n\nGame: "+std::wstring(game.begin(),game.end())+L"   (MAME exit code "+std::to_wstring(code)+L")\n\n";
-  if(lines.empty())msg+=L"MAME did not report details.\n";
+  const bool fly=mcl::usesFlycast(game);
+  const wchar_t* emu=fly?L"Flycast":L"MAME";
+  std::wstring msg=std::wstring(emu)+L" could not run this game";
+  if(!fly&&code==2)msg+=L" because ROM files are missing or don't match your MAME version";
+  msg+=L".\n\nGame: "+std::wstring(game.begin(),game.end())+L"   ("+emu+L" exit code "+std::to_wstring(code)+L")\n\n";
+  if(lines.empty())msg+=std::wstring(emu)+L" did not report details.\n";
   for(const auto& s:lines){msg+=std::wstring(s.begin(),s.end());msg+=L"\n";}
-  msg+=L"\nFull MAME output: "+emulator_->logFile().wstring();
+  msg+=std::wstring(L"\nFull ")+emu+L" output: "+emulator_->logFile().wstring();
   SetWindowTextW(info_,L"Game failed to start - see message for missing files.");
   MessageBoxW(wnd_,msg.c_str(),L"Game could not start",MB_ICONWARNING|MB_OK);
  }
