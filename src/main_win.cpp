@@ -8,7 +8,7 @@
 #include <algorithm>
 #include "core.hpp"
 #include "arcade_select.hpp"
-#include "cheat_ex_code.hpp"
+#include "title_screen.hpp"
 #pragma comment(lib,"comctl32.lib")
 #pragma comment(lib,"shell32.lib")
 namespace {
@@ -17,7 +17,7 @@ std::unique_ptr<Collection> model;
 HWND win{},games{},items{},details{},caption{},openBtn{},prevBtn{};
 std::vector<Media> selectedMedia;
 int page=0;
-mcl::CheatExCode cheatExCode;
+bool cheatExUnlocked=false; // set by the title screen's main menu (CHEAT EX code)
 constexpr int ID_GAME=101,ID_ITEMS=102,ID_OPEN=103,ID_BACK=104,ID_PREVIEW=105,ID_ARCADE=106,ID_NAV=200;
 const wchar_t* tabs[]={L"ARCADE THEATER",L"SOUND TEST",L"CHARACTERS",L"ACHIEVEMENTS",L"SAVE STATES",L"STATISTICS",L"ARCADE MUSEUM"};
 std::wstring wide(const std::string& s){if(s.empty())return {};int n=MultiByteToWideChar(CP_UTF8,0,s.data(),(int)s.size(),nullptr,0);std::wstring w(n,L'\0');MultiByteToWideChar(CP_UTF8,0,s.data(),(int)s.size(),w.data(),n);return w;}
@@ -74,7 +74,7 @@ HWND create(const wchar_t* type,const wchar_t* label,DWORD style,int x,int y,int
 LRESULT CALLBACK wndProc(HWND h,UINT msg,WPARAM wp,LPARAM lp){
  switch(msg){
  case WM_CREATE:{win=h;font=makeFont(10,false);heading=makeFont(17,true);
- auto title=create(L"STATIC",L"MARVEL: CROSSOVER LEGACY   |   FEATURE FOUNDATION v0.1",SS_LEFT,18,12,860,38);SendMessageW(title,WM_SETFONT,(WPARAM)heading,TRUE);
+ auto title=create(L"STATIC",L"MARVEL: CROSSOVER LEGACY   |   OPTIONS (DEVELOPER FEATURES)",SS_LEFT,18,12,860,38);SendMessageW(title,WM_SETFONT,(WPARAM)heading,TRUE);
  create(L"STATIC",L"SELECT GAME",SS_LEFT,18,56,245,22);games=create(L"LISTBOX",L"",LBS_NOTIFY|WS_BORDER|WS_VSCROLL,18,80,300,190,ID_GAME);
  for(auto const& g:model->games())if(g.id!="sfexp"&&g.id!="sfex2p")SendMessageW(games,LB_ADDSTRING,0,(LPARAM)wide(g.title).c_str());SendMessageW(games,LB_SETCURSEL,0,0);
  for(int i=0;i<7;i++){auto b=create(L"BUTTON",tabs[i],BS_PUSHBUTTON,18+(i%2)*152,285+(i/2)*42,148,35,ID_NAV+i);(void)b;}
@@ -92,24 +92,38 @@ LRESULT CALLBACK wndProc(HWND h,UINT msg,WPARAM wp,LPARAM lp){
  if(id==ID_ITEMS&&HIWORD(wp)==LBN_DBLCLK){openMedia();return 0;}
  if(id==ID_OPEN){openMedia();return 0;}
  if(id==ID_PREVIEW){openPreview();return 0;}
- if(id==ID_ARCADE){mcl_select::show(win,model->root().parent_path(),cheatExCode.unlocked(),*model);return 0;}break;}
- case WM_DESTROY:DeleteObject(font);DeleteObject(heading);PostQuitMessage(0);return 0;
+ if(id==ID_ARCADE){mcl_select::show(win,model->root().parent_path(),cheatExUnlocked,*model);return 0;}break;}
+ case WM_DESTROY:DeleteObject(font);DeleteObject(heading);win=nullptr;return 0;
  }return DefWindowProcW(h,msg,wp,lp);
 }
-}
-int WINAPI wWinMain(HINSTANCE inst,HINSTANCE,LPWSTR,int show){
- wchar_t exe[MAX_PATH];GetModuleFileNameW(nullptr,exe,MAX_PATH);std::filesystem::path root=std::filesystem::path(exe).parent_path()/"MCL_UserData";
- model=std::make_unique<mcl::Collection>(root);
- INITCOMMONCONTROLSEX ic{sizeof(ic),ICC_STANDARD_CLASSES};InitCommonControlsEx(&ic);
- WNDCLASSEXW wc{};wc.cbSize=sizeof(wc);wc.lpfnWndProc=wndProc;wc.hInstance=inst;wc.hCursor=LoadCursor(nullptr,IDC_ARROW);wc.hbrBackground=(HBRUSH)(COLOR_WINDOW+1);wc.lpszClassName=L"MCLFeaturesFoundation";RegisterClassExW(&wc);
- HWND w=CreateWindowExW(0,wc.lpszClassName,L"Marvel: Crossover Legacy - Feature Foundation",WS_OVERLAPPEDWINDOW&~WS_MAXIMIZEBOX,CW_USEDEFAULT,CW_USEDEFAULT,944,650,nullptr,nullptr,inst,nullptr);
- if(!w)return 2;ShowWindow(w,show);UpdateWindow(w);MSG msg;while(GetMessageW(&msg,nullptr,0,0)>0){
- if(msg.message==WM_KEYDOWN && (msg.hwnd==w||IsChild(w,msg.hwnd))){
-  if(cheatExCode.feed((int)msg.wParam)){
-   MessageBoxW(w,L"CHEAT EX UNLOCKED! Open Arcade Select to access the hidden games.",L"CHEAT EX",MB_OK|MB_ICONINFORMATION);
-   continue;
-  }
+// OPTIONS: the original feature browser, shown as a modal window over the title screen.
+void showFeatureWindow(HWND owner,bool exUnlocked){
+ cheatExUnlocked=exUnlocked;
+ static bool registered=false;
+ HINSTANCE inst=GetModuleHandleW(nullptr);
+ if(!registered){
+  WNDCLASSEXW wc{};wc.cbSize=sizeof(wc);wc.lpfnWndProc=wndProc;wc.hInstance=inst;wc.hCursor=LoadCursor(nullptr,IDC_ARROW);wc.hbrBackground=(HBRUSH)(COLOR_WINDOW+1);wc.lpszClassName=L"MCLFeaturesFoundation";
+  registered=RegisterClassExW(&wc)!=0;
  }
- TranslateMessage(&msg);DispatchMessageW(&msg);
-}return (int)msg.wParam;
+ HWND w=CreateWindowExW(0,L"MCLFeaturesFoundation",L"Marvel: Crossover Legacy - Options",WS_OVERLAPPEDWINDOW&~WS_MAXIMIZEBOX,CW_USEDEFAULT,CW_USEDEFAULT,944,650,owner,nullptr,inst,nullptr);
+ if(!w)return;
+ EnableWindow(owner,FALSE);ShowWindow(w,SW_SHOW);UpdateWindow(w);
+ MSG msg;
+ while(IsWindow(w)){
+  const BOOL r=GetMessageW(&msg,nullptr,0,0);
+  if(r<=0){if(r==0)PostQuitMessage(static_cast<int>(msg.wParam));break;}
+  TranslateMessage(&msg);DispatchMessageW(&msg);
+ }
+ EnableWindow(owner,TRUE);SetForegroundWindow(owner);
+}
+}
+int WINAPI wWinMain(HINSTANCE inst,HINSTANCE,LPWSTR,int){
+ wchar_t exe[MAX_PATH];GetModuleFileNameW(nullptr,exe,MAX_PATH);
+ const std::filesystem::path appDir=std::filesystem::path(exe).parent_path();
+ model=std::make_unique<mcl::Collection>(appDir/"MCL_UserData");
+ INITCOMMONCONTROLSEX ic{sizeof(ic),ICC_STANDARD_CLASSES};InitCommonControlsEx(&ic);
+ mcl_title::Callbacks cb;
+ cb.arcade=[&](HWND owner,bool exUnlocked,bool startInEx){cheatExUnlocked=exUnlocked;mcl_select::show(owner,appDir,exUnlocked,*model,startInEx);};
+ cb.options=[](HWND owner,bool exUnlocked){showFeatureWindow(owner,exUnlocked);};
+ return mcl_title::run(inst,appDir,cb);
 }

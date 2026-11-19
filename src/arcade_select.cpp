@@ -297,7 +297,7 @@ class Selection {
   case WM_DESTROY:KillTimer(wnd_,TIMER_ID);KillTimer(wnd_,TIMER_ID+1);preview_.close();globe_.close();if(heading_)DeleteObject(heading_);if(font_)DeleteObject(font_);if(dark_)DeleteObject(dark_);for(HBITMAP bitmap:cardImages_)if(bitmap)DeleteObject(bitmap);return 0;
   }return DefWindowProcW(wnd_,msg,w,l);}
 public:
- explicit Selection(fs::path root,bool exUnlocked,mcl::Collection& model):exUnlocked_(exUnlocked),assets_(std::move(root)),model_(model){}
+ explicit Selection(fs::path root,bool exUnlocked,mcl::Collection& model,bool startInEx):exMode_(startInEx&&exUnlocked),exUnlocked_(exUnlocked),assets_(std::move(root)),model_(model){}
  int run(HWND owner){
   HRESULT hr=CoInitializeEx(nullptr,COINIT_APARTMENTTHREADED);bool com=SUCCEEDED(hr);
   HINSTANCE inst=GetModuleHandleW(nullptr);WNDCLASSEXW wc{};wc.cbSize=sizeof(wc);wc.hInstance=inst;wc.lpszClassName=L"MCLArcadeSelection_v033";wc.lpfnWndProc=proc;wc.hCursor=LoadCursor(nullptr,IDC_ARROW);wc.hbrBackground=(HBRUSH)(COLOR_WINDOW+1);RegisterClassExW(&wc);
@@ -309,5 +309,5 @@ public:
   if(com)CoUninitialize();return 0;
  }
 };
-int show(HWND owner,const fs::path& root,bool cheatExUnlocked,mcl::Collection& model){Selection view(root,cheatExUnlocked,model);return view.run(owner);}
+int show(HWND owner,const fs::path& root,bool cheatExUnlocked,mcl::Collection& model,bool startInEx){Selection view(root,cheatExUnlocked,model,startInEx);return view.run(owner);}
 }
