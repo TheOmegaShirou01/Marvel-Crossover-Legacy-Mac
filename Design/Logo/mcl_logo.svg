@@ -1,0 +1,83 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 760" width="1600" height="760">
+  <!-- Marvel: Crossover Legacy title logo.
+       Original design drawn entirely with SVG shapes, gradients and system fonts (Impact / Arial Black).
+       No generated imagery and no third-party artwork. -->
+  <defs>
+    <!-- Chrome fire gradient for CROSSOVER: white-hot top, gold, orange, deep red base -->
+    <linearGradient id="fire" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ffffff"/>
+      <stop offset="0.18" stop-color="#fff6a8"/>
+      <stop offset="0.42" stop-color="#ffc21a"/>
+      <stop offset="0.52" stop-color="#ff7a00"/>
+      <stop offset="0.53" stop-color="#7a1200"/>
+      <stop offset="0.62" stop-color="#d42400"/>
+      <stop offset="0.85" stop-color="#ff5a1f"/>
+      <stop offset="1" stop-color="#ffb347"/>
+    </linearGradient>
+    <!-- Blue steel gradient for LEGACY -->
+    <linearGradient id="steel" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ffffff"/>
+      <stop offset="0.35" stop-color="#bfe6ff"/>
+      <stop offset="0.5" stop-color="#3fa9ff"/>
+      <stop offset="0.51" stop-color="#0b2a6b"/>
+      <stop offset="0.75" stop-color="#1f6fe0"/>
+      <stop offset="1" stop-color="#9fd8ff"/>
+    </linearGradient>
+    <!-- Red enamel for MARVEL -->
+    <linearGradient id="red" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ff6b6b"/>
+      <stop offset="0.5" stop-color="#e3000f"/>
+      <stop offset="1" stop-color="#8a0008"/>
+    </linearGradient>
+    <linearGradient id="ribbon" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#1a1a2e"/>
+      <stop offset="1" stop-color="#05050c"/>
+    </linearGradient>
+    <radialGradient id="burst" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#7fe3ff" stop-opacity="0.95"/>
+      <stop offset="0.45" stop-color="#2b7bff" stop-opacity="0.55"/>
+      <stop offset="1" stop-color="#2b7bff" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="core" cx="0.5" cy="0.55" r="0.55">
+      <stop offset="0" stop-color="#2b7bff"/>
+      <stop offset="0.6" stop-color="#123a9a"/>
+      <stop offset="1" stop-color="#081436"/>
+    </radialGradient>
+    <filter id="glow" x="-20%" y="-40%" width="140%" height="180%">
+      <feGaussianBlur stdDeviation="9" result="b"/>
+      <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <filter id="shadow" x="-10%" y="-20%" width="120%" height="150%">
+      <feDropShadow dx="10" dy="14" stdDeviation="2" flood-color="#000" flood-opacity="0.85"/>
+    </filter>
+  </defs>
+
+  <!-- Jagged starburst behind the lettering -->
+  <ellipse cx="800" cy="395" rx="760" ry="300" fill="url(#burst)"/>
+  <polygon points="865,91 926,227 1083,147 1073,259 1323,193 1180,310 1516,290 1228,374 1498,422 1211,440 1338,523 1132,498 1211,622 1002,540 965,643 841,559 735,689 674,553 517,633 527,521 277,587 420,470 84,490 372,406 102,358 389,340 262,257 468,282 389,158 598,240 635,137 759,221" fill="#0b1a4a" stroke="#57d2ff" stroke-width="7" stroke-linejoin="miter" filter="url(#glow)"/>
+  <polygon points="900,129 943,250 1141,149 1075,281 1303,231 1165,329 1455,324 1200,386 1330,431 1173,444 1226,510 1090,493 1181,631 963,527 939,663 811,540 700,651 657,530 459,631 525,499 297,549 435,451 145,456 400,394 270,349 427,336 374,270 510,287 419,149 637,253 661,117 789,240" fill="url(#core)" stroke="#000" stroke-width="5" stroke-linejoin="miter"/>
+
+  <g transform="translate(800 0) skewX(-12) translate(-800 0)" font-family="Impact, 'Arial Black', sans-serif" text-anchor="middle">
+    <!-- MARVEL: -->
+    <g filter="url(#shadow)">
+      <text x="800" y="200" font-size="150" letter-spacing="14" fill="none" stroke="#000" stroke-width="30" stroke-linejoin="round">MARVEL:</text>
+      <text x="800" y="200" font-size="150" letter-spacing="14" fill="none" stroke="#fff" stroke-width="12" stroke-linejoin="round">MARVEL:</text>
+      <text x="800" y="200" font-size="150" letter-spacing="14" fill="url(#red)" stroke="#000" stroke-width="3">MARVEL:</text>
+    </g>
+    <!-- CROSSOVER -->
+    <g filter="url(#shadow)">
+      <text x="800" y="450" font-size="270" letter-spacing="6" fill="none" stroke="#000" stroke-width="46" stroke-linejoin="round">CROSSOVER</text>
+      <text x="800" y="450" font-size="270" letter-spacing="6" fill="none" stroke="#ffd34d" stroke-width="22" stroke-linejoin="round">CROSSOVER</text>
+      <text x="800" y="450" font-size="270" letter-spacing="6" fill="none" stroke="#000" stroke-width="10" stroke-linejoin="round">CROSSOVER</text>
+      <text x="800" y="450" font-size="270" letter-spacing="6" fill="url(#fire)">CROSSOVER</text>
+    </g>
+    <!-- LEGACY on a slanted ribbon -->
+    <polygon points="430,500 1190,500 1150,640 390,640" fill="url(#ribbon)" stroke="#57d2ff" stroke-width="8"/>
+    <polygon points="430,500 1190,500 1185,516 425,516" fill="#57d2ff" opacity="0.6"/>
+    <g filter="url(#shadow)">
+      <text x="790" y="625" font-size="135" letter-spacing="34" fill="none" stroke="#000" stroke-width="24" stroke-linejoin="round">LEGACY</text>
+      <text x="790" y="625" font-size="135" letter-spacing="34" fill="none" stroke="#fff" stroke-width="8" stroke-linejoin="round">LEGACY</text>
+      <text x="790" y="625" font-size="135" letter-spacing="34" fill="url(#steel)">LEGACY</text>
+    </g>
+  </g>
+</svg>
