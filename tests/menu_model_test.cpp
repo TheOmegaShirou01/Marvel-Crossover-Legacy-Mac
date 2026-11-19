@@ -39,6 +39,23 @@ int main(){
   const auto v=c.items();
   assert(v.size()==6&&v[2]==MenuItem::Cheats&&v[3]==MenuItem::CheatEx&&v[5]==MenuItem::Exit);
  }
+ // Title screen: arrows do nothing, X/Enter start the menu, codes still work and
+ // their X/C/Enter presses do not start the menu mid-code.
+ {MainMenuModel t;
+  assert(t.pressOnTitle(Pad::Down).kind==K::None);
+  assert(t.pressOnTitle(Pad::Right).kind==K::None);
+  assert(t.pressOnTitle(Pad::Down).kind==K::None);
+  assert(t.pressOnTitle(Pad::Left).kind==K::None);
+  assert(t.pressOnTitle(Pad::Cross).kind==K::None);
+  assert(t.pressOnTitle(Pad::Circle).kind==K::None);
+  assert(t.pressOnTitle(Pad::Start).kind==K::CheatExUnlocked);
+  assert(t.cheatExUnlocked()&&t.items().size()==5);
+  assert(t.pressOnTitle(Pad::Start).kind==K::Activate);
+  assert(t.pressOnTitle(Pad::Cross).kind==K::Activate);
+  MainMenuModel u;
+  for(Pad p:{Pad::Up,Pad::Down,Pad::Left,Pad::Right,Pad::Cross,Pad::Circle,Pad::Cross,Pad::Circle,Pad::Select})assert(u.pressOnTitle(p).kind==K::None);
+  assert(u.pressOnTitle(Pad::Start).kind==K::CheatsUnlocked);
+ }
  // A wrong button breaks the code and acts normally.
  {MainMenuModel w;
   w.press(Pad::Down);w.press(Pad::Right);

@@ -57,18 +57,36 @@ public:
  bool cheatsUnlocked() const {return cheats_;}
  bool cheatExUnlocked() const {return cheatEx_;}
  void resetCodes(){master_.reset();ex_.reset();}
- Result press(Pad p){
+ // Feeds one input to both codes. `unlocked` is set when a code completes for the
+ // first time; `swallowed` when the input belongs to a code already under way and
+ // must not also trigger a screen action.
+ struct CodeFeed { Kind unlocked=Kind::None; bool swallowed=false; };
+ CodeFeed feedCodes(Pad p){
   const MenuItem current=selected();
   const auto mBefore=master_.progress(),eBefore=ex_.progress();
   const bool mDone=master_.feed(p),eDone=ex_.feed(p);
   const auto keep=[&](MenuItem it){const auto v=items();for(std::size_t i=0;i<v.size();++i)if(v[i]==it)cursor_=static_cast<int>(i);};
-  if(eDone&&!cheatEx_){cheatEx_=true;keep(current);return {Kind::CheatExUnlocked,MenuItem::CheatEx};}
-  if(mDone&&!cheats_){cheats_=true;keep(current);return {Kind::CheatsUnlocked,MenuItem::Cheats};}
+  if(eDone&&!cheatEx_){cheatEx_=true;keep(current);return {Kind::CheatExUnlocked,true};}
+  if(mDone&&!cheats_){cheats_=true;keep(current);return {Kind::CheatsUnlocked,true};}
   if(!directional(p)){
    const bool mAdv=mDone||master_.progress()>mBefore,eAdv=eDone||ex_.progress()>eBefore;
-   const bool underway=(mAdv&&(mDone||master_.progress()>=2))||(eAdv&&(eDone||ex_.progress()>=2));
-   if(underway)return {};
+   if((mAdv&&(mDone||master_.progress()>=2))||(eAdv&&(eDone||ex_.progress()>=2)))return {Kind::None,true};
   }
+  return {};
+ }
+ // Title screen ("PRESS START"): codes work here too. Returns Activate when the
+ // player pressed Start/Cross to enter the menu, an unlock kind, or None.
+ Result pressOnTitle(Pad p){
+  const auto c=feedCodes(p);
+  if(c.unlocked!=Kind::None)return {c.unlocked,c.unlocked==Kind::CheatExUnlocked?MenuItem::CheatEx:MenuItem::Cheats};
+  if(c.swallowed)return {};
+  if(p==Pad::Start||p==Pad::Cross)return {Kind::Activate,selected()};
+  return {};
+ }
+ Result press(Pad p){
+  const auto c=feedCodes(p);
+  if(c.unlocked!=Kind::None)return {c.unlocked,c.unlocked==Kind::CheatExUnlocked?MenuItem::CheatEx:MenuItem::Cheats};
+  if(c.swallowed)return {};
   const int n=static_cast<int>(items().size());
   switch(p){
    case Pad::Up: cursor_=(cursor_+n-1)%n;return {Kind::Moved,selected()};

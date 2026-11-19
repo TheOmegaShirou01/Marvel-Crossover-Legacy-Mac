@@ -234,12 +234,16 @@ void activate(MenuItem item){
 void onPad(Pad p){
  const double now=g->now();
  switch(g->screen){
-  case Screen::Title:
-   if(p==Pad::Start||p==Pad::Cross){
+  case Screen::Title:{
+   // Cheat codes work on the title screen too (classic arcade style).
+   const auto r=g->menu.pressOnTitle(p);
+   if(r.kind==MK::CheatExUnlocked)showBanner(L"CHEAT EX UNLOCKED!");
+   else if(r.kind==MK::CheatsUnlocked)showBanner(L"CHEATS UNLOCKED!");
+   else if(r.kind==MK::Activate){
     playVoice();g->bannerFlash=1.f;g->menu.resetCodes();
     setScreen(Screen::Menu);goLayout(1,now);g->itemBolts.clear();
    }
-   break;
+   break;}
   case Screen::Menu:{
    const auto r=g->menu.press(p);
    switch(r.kind){
