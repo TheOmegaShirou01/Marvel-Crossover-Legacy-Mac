@@ -238,6 +238,9 @@ void activate(MenuItem item){
  }
 }
 void onPad(Pad p){
+ // Ignore input while another window (Arcade Select, Options, a game) is in front:
+ // their modal loops still dispatch messages to this window.
+ if(!IsWindowEnabled(g->hwnd))return;
  const double now=g->now();
  switch(g->screen){
   case Screen::Title:{
