@@ -36,7 +36,8 @@ static bool buildSpec(const fs::path& emulator,const RomSearchPath& roms,const s
  output.roms=roms;
  output.game=game;
  output.mameSet=set->set;
- output.arguments={widen(set->set),L"-rompath",roms.mameRompath()};
+ // -skip_gameinfo: no MAME system-information screen before the game starts.
+ output.arguments={widen(set->set),L"-rompath",roms.mameRompath(),L"-skip_gameinfo"};
  reason.clear();return true;
 }
 bool createCps2LaunchSpec(const fs::path& emulator,const RomSearchPath& roms,

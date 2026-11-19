@@ -15,7 +15,7 @@ int main(){
  assert(why=="EX hardware BIOS ZIP missing");
  {std::ofstream f(rom/"coh1000c.zip");f<<"test dummy";}
  assert(mcl::createExLaunchSpec(exe,rom,"sfexp",spec,why));
- assert(spec.game=="sfexp"&&spec.arguments[0]==L"sfexp"&&spec.arguments[1]==L"-rompath"&&spec.arguments.size()==3);
+ assert(spec.game=="sfexp"&&spec.arguments[0]==L"sfexp"&&spec.arguments[1]==L"-rompath"&&spec.arguments.size()==4&&spec.arguments[3]==L"-skip_gameinfo");
  assert(spec.arguments[2].find(L"ROM space")!=std::wstring::npos);
  assert(!mcl::createExLaunchSpec(exe,rom,"sfex2p",spec,why));
  {std::ofstream f(rom/"sfex2p.zip");f<<"test dummy";}

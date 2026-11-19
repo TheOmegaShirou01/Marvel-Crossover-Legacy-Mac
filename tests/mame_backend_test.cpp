@@ -16,7 +16,7 @@ int main(){
  {std::ofstream f(root/"ROM Files"/"xmcotau.zip");f<<"not real ROM";}
  assert(mcl::createCps2LaunchSpec(exe,root/"ROM Files","xmcota",spec,reason));
  assert(spec.game=="xmcota" && spec.mameSet=="xmcotau");
- assert(spec.arguments.size()==3);
+ assert(spec.arguments.size()==4&&spec.arguments[3]==L"-skip_gameinfo");
  assert(spec.arguments[0]==L"xmcotau");
  assert(spec.arguments[1]==L"-rompath");
  assert(spec.arguments[2].find(L"ROM Files")!=std::wstring::npos);
