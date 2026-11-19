@@ -66,6 +66,9 @@ public:
  void setLogFile(std::filesystem::path file);
  // Flycast executable for games mapped to Emulator::Flycast (MvC2).
  void setFlycastExecutable(std::filesystem::path file);
+ // Lua cheat script passed to MAME as -autoboot_script on the next start (empty = none).
+ // Ignored for Flycast games.
+ void setCheatScript(std::filesystem::path file);
  // Why the last start() returned false (missing files, emulator not found...).
  std::string lastStartError() const;
  std::filesystem::path logFile() const;

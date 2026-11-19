@@ -123,7 +123,7 @@ int WINAPI wWinMain(HINSTANCE inst,HINSTANCE,LPWSTR,int){
  model=std::make_unique<mcl::Collection>(appDir/"MCL_UserData");
  INITCOMMONCONTROLSEX ic{sizeof(ic),ICC_STANDARD_CLASSES};InitCommonControlsEx(&ic);
  mcl_title::Callbacks cb;
- cb.arcade=[&](HWND owner,bool exUnlocked,bool startInEx){cheatExUnlocked=exUnlocked;mcl_select::show(owner,appDir,exUnlocked,*model,startInEx);};
+ cb.arcade=[&](HWND owner,bool exUnlocked,bool startInEx,bool cheatsOn){cheatExUnlocked=exUnlocked;mcl_select::show(owner,appDir,exUnlocked,*model,startInEx,cheatsOn);};
  cb.options=[](HWND owner,bool exUnlocked){showFeatureWindow(owner,exUnlocked);};
  return mcl_title::run(inst,appDir,cb);
 }

@@ -3,6 +3,8 @@
 #include "earth_video.hpp"
 #include "lightning.hpp"
 #include "menu_model.hpp"
+#include "cheats.hpp"
+#include <memory>
 #include <d2d1_1.h>
 #include <dwrite.h>
 #include <wincodec.h>
@@ -28,7 +30,7 @@ using mcl::MenuItem;
 using MK=mcl::MainMenuModel::Kind;
 
 constexpr float kLogoW=1600.f,kLogoH=760.f;
-enum class Screen { Title, Menu, Credits, Info };
+enum class Screen { Title, Menu, Credits, Cheats };
 
 const wchar_t* const kCredits[]={
  L"#MARVEL: CROSSOVER LEGACY",
@@ -69,6 +71,8 @@ struct App {
  mcl::LightningField logoBolts{20261119u};
  mcl::LightningField itemBolts{77u,{0,0,100,30},[]{mcl::LightningConfig c;c.strikes=false;c.frontBolts=false;c.minArcs=1;c.maxArcs=3;c.arcChance=0.22f;return c;}()};
  mcl::MainMenuModel menu;
+ std::unique_ptr<mcl::CheatSettings> cheats; // MCL_UserData\marvel_cheats.txt
+ int cheatGame=0,cheatRow=0;
  Screen screen=Screen::Title;double screenSince=0;
  double layoutFrom=0,layoutTo=0,layoutStart=-1e9; // 0 = title layout, 1 = menu layout
  std::wstring banner;double bannerUntil=0;float bannerFlash=0;
@@ -219,14 +223,16 @@ void activate(MenuItem item){
  if(item==MenuItem::Arcade||item==MenuItem::Options||item==MenuItem::CheatEx){
   VideoPause pause;
   if(item==MenuItem::Options){if(g->cb.options)g->cb.options(g->hwnd,g->menu.cheatExUnlocked());}
-  else if(g->cb.arcade)g->cb.arcade(g->hwnd,item==MenuItem::CheatEx||g->menu.cheatExUnlocked(),item==MenuItem::CheatEx);
+  else if(g->cb.arcade)g->cb.arcade(g->hwnd,item==MenuItem::CheatEx||g->menu.cheatExUnlocked(),item==MenuItem::CheatEx,g->menu.cheatsUnlocked());
   return;
  }
  switch(item){
-  case MenuItem::Arcade: if(g->cb.arcade)g->cb.arcade(g->hwnd,g->menu.cheatExUnlocked(),false);break;
-  case MenuItem::Options: if(g->cb.options)g->cb.options(g->hwnd,g->menu.cheatExUnlocked());break;
-  case MenuItem::Cheats: setScreen(Screen::Info);break;
-  case MenuItem::CheatEx: if(g->cb.arcade)g->cb.arcade(g->hwnd,true,true);break;
+  case MenuItem::Arcade: break; // handled above
+  case MenuItem::Options: break; // handled above
+  case MenuItem::Cheats:
+   if(!g->cheats)g->cheats=std::make_unique<mcl::CheatSettings>(g->dir/"MCL_UserData"/"marvel_cheats.txt");
+   g->cheats->load();g->cheatRow=0;setScreen(Screen::Cheats);break;
+  case MenuItem::CheatEx: break; // handled above
   case MenuItem::Credits: setScreen(Screen::Credits);break;
   case MenuItem::Exit: DestroyWindow(g->hwnd);break;
  }
@@ -255,9 +261,31 @@ void onPad(Pad p){
     default: break;
    }
    break;}
-  case Screen::Credits: case Screen::Info:
+  case Screen::Credits:
    if(p==Pad::Circle||p==Pad::Cross||p==Pad::Start)setScreen(Screen::Menu);
    break;
+  case Screen::Cheats:{
+   const auto& games=mcl::marvelCheatGames();
+   const int ng=static_cast<int>(games.size());
+   const auto& list=mcl::cheatsFor(games[static_cast<size_t>(g->cheatGame)]);
+   const int nr=static_cast<int>(list.size());
+   switch(p){
+    case Pad::Left: g->cheatGame=(g->cheatGame+ng-1)%ng;g->cheatRow=0;break;
+    case Pad::Right: g->cheatGame=(g->cheatGame+1)%ng;g->cheatRow=0;break;
+    case Pad::Up: if(nr)g->cheatRow=(g->cheatRow+nr-1)%nr;break;
+    case Pad::Down: if(nr)g->cheatRow=(g->cheatRow+1)%nr;break;
+    case Pad::Cross: case Pad::Start:
+     if(nr&&g->cheats){
+      const auto& game=games[static_cast<size_t>(g->cheatGame)];
+      const auto& c=list[static_cast<size_t>(g->cheatRow)];
+      g->cheats->set(game,c.id,!g->cheats->enabled(game,c.id));
+      g->cheats->save();
+     }
+     break;
+    case Pad::Circle: setScreen(Screen::Menu);break;
+    default: break;
+   }
+   break;}
  }
 }
 
@@ -338,13 +366,43 @@ void drawCredits(double now){
  }
  text(L"ESC / ○ BACK",g->fSmall.Get(),D2D1::RectF(0,H*0.94f,W,H*0.98f),rgba(0.6f,0.66f,0.8f),2);
 }
-void drawInfo(){
+const wchar_t* cheatGameTitle(const std::string& id){
+ if(id=="xmcota")return L"X-MEN: CHILDREN OF THE ATOM";
+ if(id=="msh")return L"MARVEL SUPER HEROES";
+ if(id=="xmvsf")return L"X-MEN VS. STREET FIGHTER";
+ if(id=="mshvsf")return L"MARVEL SUPER HEROES VS. STREET FIGHTER";
+ if(id=="mvsc")return L"MARVEL VS. CAPCOM";
+ return L"";
+}
+void drawCheats(double now){
  const float W=g->W(),H=g->H();
- g->brush->SetColor(rgba(0,0,0.02f));g->brush->SetOpacity(0.65f);g->rt->FillRectangle(D2D1::RectF(0,H*0.42f,W,H*0.86f),g->brush.Get());g->brush->SetOpacity(1);
- text(L"MARVEL CHEATS",g->fHead.Get(),D2D1::RectF(0,H*0.46f,W,H*0.54f),rgba(1.f,0.45f,0.25f),H*0.004f);
- text(L"Infinity Gems, hidden characters and more are planned.",g->fBody.Get(),D2D1::RectF(0,H*0.58f,W,H*0.64f),rgba(0.92f,0.95f,1.f),2);
- text(L"They are not connected to the emulator yet.",g->fBody.Get(),D2D1::RectF(0,H*0.64f,W,H*0.70f),rgba(0.92f,0.95f,1.f),2);
- text(L"ESC / ○ BACK",g->fSmall.Get(),D2D1::RectF(0,H*0.94f,W,H*0.98f),rgba(0.6f,0.66f,0.8f),2);
+ g->brush->SetColor(rgba(0,0,0.02f));g->brush->SetOpacity(0.72f);
+ g->rt->FillRectangle(D2D1::RectF(W*0.12f,H*0.38f,W*0.88f,H*0.93f),g->brush.Get());g->brush->SetOpacity(1);
+ text(L"MARVEL CHEATS",g->fHead.Get(),D2D1::RectF(0,H*0.39f,W,H*0.45f),rgba(1.f,0.45f,0.25f),H*0.004f);
+ const auto& games=mcl::marvelCheatGames();
+ const std::string& game=games[static_cast<size_t>(g->cheatGame)];
+ const bool blink=std::fmod(now,1000.0)<650.0;
+ text(std::wstring(blink?L"◀   ":L"    ")+cheatGameTitle(game)+(blink?L"   ▶":L"    "),g->fBody.Get(),
+      D2D1::RectF(0,H*0.455f,W,H*0.505f),rgba(1.f,0.84f,0.25f),2);
+ const auto& list=mcl::cheatsFor(game);
+ const float top=H*0.525f,step=H*0.036f;
+ for(size_t i=0;i<list.size();++i){
+  const bool sel=static_cast<int>(i)==g->cheatRow;
+  const bool on=g->cheats&&g->cheats->enabled(game,list[i].id);
+  const float y=top+step*static_cast<float>(i);
+  std::wstring label;for(const char* c=list[i].label;*c;++c)label+=static_cast<wchar_t>(*c);
+  const D2D1_RECT_F left=D2D1::RectF(W*0.18f,y,W*0.70f,y+step),right=D2D1::RectF(W*0.70f,y,W*0.82f,y+step);
+  if(sel){g->brush->SetColor(rgba(0.12f,0.42f,1.f));g->brush->SetOpacity(0.35f);g->rt->FillRectangle(D2D1::RectF(W*0.16f,y,W*0.84f,y+step),g->brush.Get());g->brush->SetOpacity(1);}
+  ComPtr<IDWriteTextLayout> l;
+  g->dw->CreateTextLayout(label.c_str(),static_cast<UINT32>(label.size()),g->fBody.Get(),left.right-left.left,step,&l);
+  if(l){l->SetTextAlignment(DWRITE_TEXT_ALIGNMENT_LEADING);
+   g->brush->SetColor(sel?rgba(1,1,1):rgba(0.82f,0.87f,0.97f));
+   g->rt->DrawTextLayout(D2D1::Point2F(left.left,left.top),l.Get(),g->brush.Get());}
+  text(on?L"ON":L"OFF",g->fBody.Get(),right,on?rgba(0.35f,1.f,0.45f):rgba(0.55f,0.6f,0.7f),2);
+ }
+ text(L"Applies when you launch the game.  Achievements are disabled while cheats are on.  MvC2 (Flycast): no cheats yet.",
+      g->fSmall.Get(),D2D1::RectF(0,H*0.895f,W,H*0.93f),rgba(0.65f,0.72f,0.85f),2);
+ text(L"←→ GAME      ↑↓ CHEAT      ENTER / ✕ ON-OFF      ESC / ○ BACK",g->fSmall.Get(),D2D1::RectF(0,H*0.94f,W,H*0.98f),rgba(0.6f,0.66f,0.8f),2);
 }
 void render(){
  if(!ensureTarget())return;
@@ -358,7 +416,7 @@ void render(){
   case Screen::Title: drawTitle(now);break;
   case Screen::Menu: drawMenu(now);break;
   case Screen::Credits: drawCredits(now);break;
-  case Screen::Info: drawMenu(now);drawInfo();break;
+  case Screen::Cheats: drawCheats(now);break;
  }
  if(now<g->bannerUntil){
   const float k=static_cast<float>((g->bannerUntil-now)/2200.0);

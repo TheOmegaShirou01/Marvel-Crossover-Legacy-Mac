@@ -15,6 +15,8 @@
 #include "emulator_bridge.hpp"
 #include "mame_backend.hpp"
 #include "mame_sets.hpp"
+#include "cheats.hpp"
+#include "cheat_ex_settings.hpp"
 #include "rom_audit.hpp"
 #include "pause_menu_win.hpp"
 #pragma comment(lib,"strmiids.lib")
@@ -89,6 +91,7 @@ class Selection {
  std::array<HBITMAP,8> cardImages_{};
  bool exMode_=false;
  bool exUnlocked_=false; // unlocked by frontend code
+ bool cheatsUnlocked_=false; // master cheat code entered on the title screen this session
  int selected_=-1;
  int flip_=0;
  Video globe_,preview_;
@@ -118,6 +121,13 @@ class Selection {
   if(selected_>=size()||(exMode_&&!exUnlocked_))return; // Six Marvel or two unlocked EX titles.
   const std::wstring wId=items()[selected_].id;
   const std::string id(wId.begin(),wId.end());
+  const auto pokes=cheatPokesFor(id);
+  const fs::path script=assets_/"MCL_UserData"/"cheats_active.lua";
+  if(!pokes.empty()){
+   std::error_code ec;fs::create_directories(script.parent_path(),ec);
+   std::ofstream out(script,std::ios::trunc);out<<mcl::buildCheatLua(id,pokes);
+   emulator_->setCheatScript(out?script:fs::path{});
+  }else emulator_->setCheatScript({});
   auto prepared=session_->prepare(id);
   if(!prepared.ok){
    auto text=std::wstring(prepared.message.begin(),prepared.message.end());
@@ -131,10 +141,26 @@ class Selection {
    text+=why.empty()?L"Check the emulator path, game ROM and hardware BIOS.":std::wstring(why.begin(),why.end());
    MessageBoxW(wnd_,text.c_str(),L"Launch failed",MB_ICONWARNING);return;
   }
-  SetWindowTextW(info_,L"MAME session started. Original operator controls apply; custom cheats, achievements and pause are not connected yet.");
+  if(!pokes.empty()&&!mcl::usesFlycast(id)){
+   session_->onCheatApplicationStatus(true); // cheats on: mastery achievements stay locked for this run
+   SetWindowTextW(info_,L"Game started WITH CHEATS ON. Achievements that forbid cheats are disabled for this run.");
+  }else SetWindowTextW(info_,L"Game started. Press Esc in MAME to quit back to this screen.");
   updateLaunch();
  }
 
+ // Cheats switched on for this game: Marvel cheats need the master code this session,
+ // EX cheats need CHEAT EX (always true when the EX cards are reachable).
+ std::vector<mcl::Poke> cheatPokesFor(const std::string& id) const{
+  if(id=="sfexp"||id=="sfex2p"){
+   if(!exUnlocked_)return {};
+   mcl::ExCheatSettings ex(assets_/"MCL_UserData"/"cheat_ex_settings.txt");ex.load();
+   const auto& o=ex.options(id);
+   return mcl::exCheatPokes(id,o.get(mcl::ExCheat::Health),o.get(mcl::ExCheat::Power),o.get(mcl::ExCheat::Time));
+  }
+  if(!cheatsUnlocked_)return {};
+  mcl::CheatSettings s(assets_/"MCL_UserData"/"marvel_cheats.txt");s.load();
+  return s.activePokes(id);
+ }
  HBRUSH dark_=nullptr;
  HFONT heading_=nullptr,font_=nullptr;
  static LRESULT CALLBACK proc(HWND h,UINT m,WPARAM w,LPARAM l){
@@ -332,7 +358,7 @@ class Selection {
   MessageBoxW(wnd_,msg.c_str(),L"Game could not start",MB_ICONWARNING|MB_OK);
  }
 public:
- explicit Selection(fs::path root,bool exUnlocked,mcl::Collection& model,bool startInEx):exMode_(startInEx&&exUnlocked),exUnlocked_(exUnlocked),assets_(std::move(root)),model_(model){}
+ explicit Selection(fs::path root,bool exUnlocked,mcl::Collection& model,bool startInEx,bool cheatsUnlocked):exMode_(startInEx&&exUnlocked),exUnlocked_(exUnlocked),cheatsUnlocked_(cheatsUnlocked),assets_(std::move(root)),model_(model){}
  int run(HWND owner){
   HRESULT hr=CoInitializeEx(nullptr,COINIT_APARTMENTTHREADED);bool com=SUCCEEDED(hr);
   HINSTANCE inst=GetModuleHandleW(nullptr);WNDCLASSEXW wc{};wc.cbSize=sizeof(wc);wc.hInstance=inst;wc.lpszClassName=L"MCLArcadeSelection_v033";wc.lpfnWndProc=proc;wc.hCursor=LoadCursor(nullptr,IDC_ARROW);wc.hbrBackground=(HBRUSH)(COLOR_WINDOW+1);RegisterClassExW(&wc);
@@ -344,5 +370,5 @@ public:
   if(com)CoUninitialize();return 0;
  }
 };
-int show(HWND owner,const fs::path& root,bool cheatExUnlocked,mcl::Collection& model,bool startInEx){Selection view(root,cheatExUnlocked,model,startInEx);return view.run(owner);}
+int show(HWND owner,const fs::path& root,bool cheatExUnlocked,mcl::Collection& model,bool startInEx,bool cheatsUnlocked){Selection view(root,cheatExUnlocked,model,startInEx,cheatsUnlocked);return view.run(owner);}
 }

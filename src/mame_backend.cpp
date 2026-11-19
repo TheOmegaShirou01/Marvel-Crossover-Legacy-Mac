@@ -109,6 +109,7 @@ struct MameBackend::Private {
  fs::path log;          // MAME console capture
  fs::path flycast;      // Flycast executable
  fs::path activeLog;    // log of the current/last launch (MAME capture or flycast.log)
+ fs::path cheatScript;  // -autoboot_script for the next MAME launch
  std::string lastError;
  ULONGLONG startedAt=0;
  explicit Private(fs::path e):executable(std::move(e)){}
@@ -147,7 +148,14 @@ bool MameBackend::start(const std::string& id,const RomSearchPath& roms){
   // Flycast writes its own flycast.log next to the exe; clear the previous one first.
   p_->activeLog=spec.executable.parent_path()/"flycast.log";
   std::error_code rm;fs::remove(p_->activeLog,rm);
- }else p_->activeLog=p_->log;
+ }else{
+  p_->activeLog=p_->log;
+  std::error_code ce;
+  if(!p_->cheatScript.empty()&&fs::is_regular_file(p_->cheatScript,ce)){
+   spec.arguments.push_back(L"-autoboot_script");
+   spec.arguments.push_back(fs::absolute(p_->cheatScript).wstring());
+  }
+ }
  std::wstring cmd=quote(spec.executable.wstring());
  for(const auto& arg:spec.arguments){cmd+=L" ";cmd+=quote(arg);}
  std::vector<wchar_t> mutableCommand(cmd.begin(),cmd.end());mutableCommand.push_back(L'\0');
@@ -178,6 +186,7 @@ bool MameBackend::start(const std::string& id,const RomSearchPath& roms){
 void MameBackend::setLogFile(fs::path file){p_->log=std::move(file);}
 fs::path MameBackend::logFile() const {return p_->activeLog.empty()?p_->log:p_->activeLog;}
 void MameBackend::setFlycastExecutable(fs::path file){p_->flycast=std::move(file);}
+void MameBackend::setCheatScript(fs::path file){p_->cheatScript=std::move(file);}
 std::string MameBackend::lastStartError() const {return p_->lastError;}
 bool MameBackend::lastExit(unsigned long& code,double& seconds) const{
  if(!p_->process||WaitForSingleObject(p_->process,0)!=WAIT_OBJECT_0)return false;

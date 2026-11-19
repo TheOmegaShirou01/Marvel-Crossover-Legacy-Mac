@@ -12,7 +12,8 @@
 namespace mcl_title {
 struct Callbacks {
  // Open Arcade Select (owned by the title window). startInEx opens straight on the EX cards.
- std::function<void(HWND owner,bool cheatExUnlocked,bool startInEx)> arcade;
+ // cheatsUnlocked: master cheat code entered this session (Marvel cheats apply).
+ std::function<void(HWND owner,bool cheatExUnlocked,bool startInEx,bool cheatsUnlocked)> arcade;
  // Open the options / features window.
  std::function<void(HWND owner,bool cheatExUnlocked)> options;
 };
