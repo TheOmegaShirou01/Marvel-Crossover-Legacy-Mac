@@ -292,6 +292,43 @@ void onPad(Pad p){
  }
 }
 
+// ---------- keyboard-only actions ----------
+void startMenu(){
+ playVoice();g->bannerFlash=1.f;g->menu.resetCodes();
+ setScreen(Screen::Menu);goLayout(1,g->now());g->itemBolts.clear();
+}
+// Enter: confirm on every screen; does not touch cheat-code progress on title/menu.
+void onConfirm(){
+ if(!IsWindowEnabled(g->hwnd))return;
+ switch(g->screen){
+  case Screen::Title: startMenu();break;
+  case Screen::Menu: g->menu.resetCodes();activate(g->menu.selected());break;
+  case Screen::Cheats: onPad(Pad::Cross);break;   // toggle the highlighted cheat
+  case Screen::Credits: setScreen(Screen::Menu);break;
+ }
+}
+// Esc: back on every screen.
+void onBack(){
+ if(!IsWindowEnabled(g->hwnd))return;
+ switch(g->screen){
+  case Screen::Title: break;
+  case Screen::Menu: g->menu.resetCodes();setScreen(Screen::Title);goLayout(0,g->now());break;
+  case Screen::Cheats: case Screen::Credits: setScreen(Screen::Menu);break;
+ }
+}
+// X / C / Backspace / Space: cheat-code buttons. On the title screen and main menu they only
+// feed the codes; elsewhere X/Space act like confirm and C like back.
+void onCodeKey(Pad p){
+ if(!IsWindowEnabled(g->hwnd))return;
+ if(g->screen==Screen::Title||g->screen==Screen::Menu){
+  const auto c=g->menu.feedCodes(p);
+  if(c.unlocked==MK::CheatExUnlocked)showBanner(L"CHEAT EX UNLOCKED!");
+  else if(c.unlocked==MK::CheatsUnlocked)showBanner(L"CHEATS UNLOCKED!");
+  return;
+ }
+ if(p==Pad::Cross||p==Pad::Start)onConfirm();
+ else if(p==Pad::Circle)onBack();
+}
 void drawBackground(){
  const float W=g->W(),H=g->H();
  if(g->video.latest(g->videoPixels,g->vw,g->vh,g->videoSerial)){
@@ -353,7 +390,7 @@ void drawMenu(double now){
    text(label,g->fMenu.Get(),r,rgba(0.86f,0.9f,1.f),H*0.0035f,appear*0.85f);
   }
  }
- text(L"↑↓ CHOOSE      ENTER / ✕ SELECT      ESC / ○ BACK      ALT+ENTER  WINDOW / FULLSCREEN",g->fSmall.Get(),D2D1::RectF(0,H*0.94f,W,H*0.98f),rgba(0.6f,0.66f,0.8f),2,0.85f);
+ text(L"↑↓ CHOOSE      ENTER  SELECT      ESC  BACK      ALT+ENTER  WINDOW / FULLSCREEN",g->fSmall.Get(),D2D1::RectF(0,H*0.94f,W,H*0.98f),rgba(0.6f,0.66f,0.8f),2,0.85f);
 }
 void drawCredits(double now){
  const float W=g->W(),H=g->H();
@@ -474,16 +511,24 @@ LRESULT CALLBACK proc(HWND h,UINT m,WPARAM w,LPARAM l){
    if(w==VK_RETURN&&(HIWORD(l)&KF_ALTDOWN)){setFullscreen(!g->fullscreen);return 0;}
    break;
   case WM_KEYDOWN:{
+   // Keyboard layout:
+   //   Enter = select/confirm (never part of a cheat code)   Esc = back
+   //   Arrows = move + code directions (no auto-repeat on title/menu, a held key would break a code)
+   //   X = Cross, C = Circle, Backspace = Select, Space = Start: cheat-code buttons only on the
+   //   title screen and main menu, so a mistyped code can never open a menu item.
    const bool repeat=(l&(1<<30))!=0;
+   const bool lists=g&&g->screen==Screen::Cheats; // auto-repeat is handy only in the cheat list
    switch(w){
-    case VK_UP: onPad(Pad::Up);return 0;
-    case VK_DOWN: onPad(Pad::Down);return 0;
+    case VK_UP: if(!repeat||lists)onPad(Pad::Up);return 0;
+    case VK_DOWN: if(!repeat||lists)onPad(Pad::Down);return 0;
     case VK_LEFT: if(!repeat)onPad(Pad::Left);return 0;
     case VK_RIGHT: if(!repeat)onPad(Pad::Right);return 0;
-    case 'X': case VK_SPACE: if(!repeat)onPad(Pad::Cross);return 0;
-    case 'C': case VK_ESCAPE: if(!repeat)onPad(Pad::Circle);return 0;
-    case VK_BACK: if(!repeat)onPad(Pad::Select);return 0;
-    case VK_RETURN: if(!repeat)onPad(Pad::Start);return 0;
+    case 'X': if(!repeat)onCodeKey(Pad::Cross);return 0;
+    case 'C': if(!repeat)onCodeKey(Pad::Circle);return 0;
+    case VK_BACK: if(!repeat)onCodeKey(Pad::Select);return 0;
+    case VK_SPACE: if(!repeat)onCodeKey(Pad::Start);return 0;
+    case VK_RETURN: if(!repeat)onConfirm();return 0;
+    case VK_ESCAPE: if(!repeat)onBack();return 0;
    }
    break;}
   case WM_LBUTTONDOWN:
