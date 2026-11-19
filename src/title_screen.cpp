@@ -295,7 +295,7 @@ void drawTitle(double now){
  const bool on=std::fmod(now,900.0)<600.0;
  if(on)text(L"PRESS START",g->fPress.Get(),D2D1::RectF(0,H*0.74f,W,H*0.84f),rgba(1.f,0.84f,0.25f),H*0.005f);
  text(L"ENTER  /  START BUTTON",g->fSmall.Get(),D2D1::RectF(0,H*0.84f,W,H*0.88f),rgba(0.75f,0.82f,0.95f),2,0.85f);
- text(L"UNOFFICIAL FAN COLLECTION   •   ORIGINAL GAMES © CAPCOM   •   MARVEL CHARACTERS © MARVEL",g->fSmall.Get(),D2D1::RectF(0,H*0.94f,W,H*0.98f),rgba(0.55f,0.6f,0.72f),2,0.8f);
+ text(L"© 2026 YAMANATSUCHI INITIATIVE      © 1997 MARVEL, CAPCOM, ARIKA",g->fSmall.Get(),D2D1::RectF(0,H*0.94f,W,H*0.98f),rgba(0.78f,0.82f,0.92f),2,0.9f);
 }
 void drawMenu(double now){
  const float W=g->W(),H=g->H();

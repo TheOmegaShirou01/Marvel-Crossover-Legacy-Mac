@@ -16,7 +16,7 @@ if not defined VSROOT (
 call "%VSROOT%\VC\Auxiliary\Build\vcvars64.bat"
 if errorlevel 1 exit /b 1
 if not exist bin mkdir bin
-cl /nologo /std:c++17 /EHsc /W4 /DUNICODE /D_UNICODE /DWIN32_LEAN_AND_MEAN /O2 /Fe:bin\MarvelCrossoverLegacy_Features.exe src\main_win.cpp src\core.cpp src\arcade_select.cpp src\cheat_ex_settings.cpp src\cheat_ex_settings_win.cpp src\external_roms.cpp src\emulator_bridge.cpp src\mame_backend.cpp src\rom_audit.cpp src\pause_controls.cpp src\pause_menu_win.cpp src\lightning.cpp src\earth_video.cpp src\title_screen.cpp /link /SUBSYSTEM:WINDOWS comctl32.lib shell32.lib strmiids.lib ole32.lib user32.lib gdi32.lib d2d1.lib dwrite.lib windowscodecs.lib xinput.lib winmm.lib mfplat.lib mfreadwrite.lib mfuuid.lib propsys.lib
+cl /nologo /utf-8 /std:c++17 /EHsc /W4 /DUNICODE /D_UNICODE /DWIN32_LEAN_AND_MEAN /O2 /Fe:bin\MarvelCrossoverLegacy_Features.exe src\main_win.cpp src\core.cpp src\arcade_select.cpp src\cheat_ex_settings.cpp src\cheat_ex_settings_win.cpp src\external_roms.cpp src\emulator_bridge.cpp src\mame_backend.cpp src\rom_audit.cpp src\pause_controls.cpp src\pause_menu_win.cpp src\lightning.cpp src\earth_video.cpp src\title_screen.cpp /link /SUBSYSTEM:WINDOWS comctl32.lib shell32.lib strmiids.lib ole32.lib user32.lib gdi32.lib d2d1.lib dwrite.lib windowscodecs.lib xinput.lib winmm.lib mfplat.lib mfreadwrite.lib mfuuid.lib propsys.lib
 if errorlevel 1 (
  echo BUILD FAILED
  exit /b 1
