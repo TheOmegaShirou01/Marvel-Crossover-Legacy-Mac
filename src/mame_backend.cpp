@@ -1,6 +1,7 @@
 #include "mame_backend.hpp"
 #include "mame_sets.hpp"
 #include <algorithm>
+#include <cctype>
 #include <fstream>
 #include <system_error>
 #include <utility>
@@ -9,6 +10,21 @@
 #endif
 namespace mcl {
 namespace fs=std::filesystem;
+std::vector<std::string> summarizeMameLog(const std::string& log,std::size_t maxLines){
+ std::vector<std::string> out;
+ std::size_t pos=0;
+ while(pos<log.size()&&out.size()<maxLines){
+  auto end=log.find('\n',pos);if(end==std::string::npos)end=log.size();
+  std::string line=log.substr(pos,end-pos);pos=end+1;
+  while(!line.empty()&&(line.back()=='\r'||line.back()==' '))line.pop_back();
+  std::string low=line;for(auto& c:low)c=static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
+  if(low.find("not found")!=std::string::npos||low.find("incorrect")!=std::string::npos||
+     low.find("required files are missing")!=std::string::npos||low.find("fatal")!=std::string::npos||
+     low.find("error")!=std::string::npos||low.find("unknown system")!=std::string::npos)
+   out.push_back(line);
+ }
+ return out;
+}
 fs::path readMameExecutable(const fs::path& configFile){
  std::ifstream f(configFile,std::ios::binary);
  std::string s;
@@ -65,6 +81,8 @@ struct MameBackend::Private {
  fs::path executable;
  HANDLE process=nullptr;
  DWORD pid=0;
+ fs::path log;
+ ULONGLONG startedAt=0;
  explicit Private(fs::path e):executable(std::move(e)){}
  ~Private(){if(process)CloseHandle(process);}
 };
@@ -98,11 +116,33 @@ bool MameBackend::start(const std::string& id,const RomSearchPath& roms){
  STARTUPINFOW startup{};startup.cb=sizeof(startup);
  PROCESS_INFORMATION proc{};
  std::wstring workingDir=spec.executable.parent_path().wstring();
+ // Capture MAME's console output so a failed start can be explained to the player.
+ HANDLE logHandle=INVALID_HANDLE_VALUE;
+ if(!p_->log.empty()){
+  std::error_code ec;fs::create_directories(p_->log.parent_path(),ec);
+  SECURITY_ATTRIBUTES sa{sizeof sa,nullptr,TRUE};
+  logHandle=CreateFileW(p_->log.c_str(),GENERIC_WRITE,FILE_SHARE_READ|FILE_SHARE_WRITE,&sa,CREATE_ALWAYS,FILE_ATTRIBUTE_NORMAL,nullptr);
+  if(logHandle!=INVALID_HANDLE_VALUE){
+   startup.dwFlags|=STARTF_USESTDHANDLES;
+   startup.hStdOutput=logHandle;startup.hStdError=logHandle;startup.hStdInput=nullptr;
+  }
+ }
  // CREATE_NO_WINDOW: console builds of MAME (mame64.exe) otherwise open an extra
  // black console window beside the game window. The game window is unaffected.
- if(!CreateProcessW(spec.executable.c_str(),mutableCommand.data(),nullptr,nullptr,FALSE,CREATE_NO_WINDOW,nullptr,
-        workingDir.c_str(),&startup,&proc))return false;
+ const BOOL ok=CreateProcessW(spec.executable.c_str(),mutableCommand.data(),nullptr,nullptr,
+        logHandle!=INVALID_HANDLE_VALUE,CREATE_NO_WINDOW,nullptr,workingDir.c_str(),&startup,&proc);
+ if(logHandle!=INVALID_HANDLE_VALUE)CloseHandle(logHandle);
+ if(!ok)return false;
  p_->process=proc.hProcess;p_->pid=proc.dwProcessId;CloseHandle(proc.hThread);
+ p_->startedAt=GetTickCount64();
+ return true;
+}
+void MameBackend::setLogFile(fs::path file){p_->log=std::move(file);}
+fs::path MameBackend::logFile() const {return p_->log;}
+bool MameBackend::lastExit(unsigned long& code,double& seconds) const{
+ if(!p_->process||WaitForSingleObject(p_->process,0)!=WAIT_OBJECT_0)return false;
+ DWORD c=0;if(!GetExitCodeProcess(p_->process,&c))return false;
+ code=c;seconds=static_cast<double>(GetTickCount64()-p_->startedAt)/1000.0;
  return true;
 }
 struct CloseTarget {DWORD pid;bool sent;};

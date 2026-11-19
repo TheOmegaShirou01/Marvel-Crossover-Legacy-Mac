@@ -38,6 +38,21 @@ int main(){
  // Parent missing everywhere -> rejected.
  fs::remove(root/"ROM Files"/"xmcota.zip");
  assert(!mcl::createCps2LaunchSpec(exe,two,"xmcota",spec,reason));
+ // Failed-start explanation picks the relevant MAME lines only.
+ {
+  const std::string log=
+   "mpr-23084.ic32s NOT FOUND (tried in mvsc2 naomi)\r\n"
+   "315-6146.bin NOT FOUND (tried in mie mvsc2 naomi)\r\n"
+   "WARNING: the machine might not run correctly.\n"
+   "Required files are missing, the machine cannot be run.\n"
+   "Average speed: 100%\n";
+  const auto lines=mcl::summarizeMameLog(log,10);
+  assert(lines.size()==3);
+  assert(lines[0]=="mpr-23084.ic32s NOT FOUND (tried in mvsc2 naomi)");
+  assert(lines[2].find("Required files are missing")==0);
+  assert(mcl::summarizeMameLog(log,1).size()==1);
+  assert(mcl::summarizeMameLog("Average speed: 99.8%\n").empty());
+ }
  {std::ofstream f(root/"mame_executable.txt");f<<"mame test.exe\n";}
  assert(mcl::readMameExecutable(root/"mame_executable.txt")==exe);
  fs::remove_all(root);

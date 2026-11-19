@@ -32,6 +32,9 @@ bool createLaunchSpec(const std::filesystem::path& emulator,
  MameLaunchSpec& output,std::string& reason);
 // Plain-text config: one absolute emulator executable path per line (first line used).
 std::filesystem::path readMameExecutable(const std::filesystem::path& configFile);
+// Picks the lines of MAME's console output that explain a failed start
+// (missing/wrong ROM files, fatal errors), at most maxLines.
+std::vector<std::string> summarizeMameLog(const std::string& log,std::size_t maxLines=10);
 #ifdef _WIN32
 class MameBackend final : public EmulatorBackend {
  struct Private;
@@ -48,6 +51,11 @@ public:
  bool running()const;
  // Best-effort default MAME F5 UI pause key. This does not confirm paused state.
  bool requestPauseHotkey();
+ // MAME's stdout/stderr for each launch is written here (overwritten per launch).
+ void setLogFile(std::filesystem::path file);
+ std::filesystem::path logFile() const;
+ // After the process has ended (and before stop()), its exit code and run time.
+ bool lastExit(unsigned long& exitCode,double& secondsRan) const;
 };
 #endif
 }
