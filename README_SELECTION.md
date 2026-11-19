@@ -1,0 +1,12 @@
+# Arcade Selection checkpoint v0.3.3
+- Uses the exact user-supplied 4K Earth rotation MP4 and all eight authentic 15-second fighting footage files.
+- New Windows Win32 + DirectShow window, entered using OPEN ARCADE SELECT from existing feature prototype.
+- The default grid has exactly six Marvel games in 3x2 layout. Highlighting a game triggers a timer-driven compress-expand card flip, then opens its own embedded DirectShow video child window. Navigation is arrow-key or clicking the game card.
+- Earth background plays in a separate DirectShow video child window behind the cards, with playback looping at the end of the video.
+- CHEAT EX stays locked: the EX previews are included in the package but intentionally cannot be accessed without a future authenticated title-screen secret code integration.
+- No external media player is used in this new view; old feature window retains a fallback PLAY PREVIEW button.
+- The game launch button is intentionally disabled until emulator backend exists; never claim gameplay is playable.
+- DirectShow availability of MP4/H264 depends on Windows multimedia codecs. Cannot confirm actual Windows rendering in this Linux environment.
+- Card labels are plain text placeholders, not official logos. No AI content used.
+- There is no working audio ducking, game boot integration, or title-screen code handler yet.
+- Original user source footage and Earth MP4 are preserved unchanged.

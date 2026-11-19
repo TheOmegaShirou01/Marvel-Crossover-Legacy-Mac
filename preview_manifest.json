@@ -1,0 +1,14 @@
+{
+  "version": "0.3.2",
+  "game_previews": {
+    "msh": "Previews/msh.mp4",
+    "xmvsf": "Previews/xmvsf.mp4",
+    "mshvsf": "Previews/mshvsf.mp4",
+    "mvsc": "Previews/mvsc.mp4",
+    "mvsc2": "Previews/mvsc2.mp4",
+    "sfexp": "Previews/sfexp.mp4",
+    "sfex2p": "Previews/sfex2p.mp4",
+    "xmcota": "Previews/xmcota.mp4"
+  },
+  "playback": "Windows associated media player; embedded video playback not implemented"
+}

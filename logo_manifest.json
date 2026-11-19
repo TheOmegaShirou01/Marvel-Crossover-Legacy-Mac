@@ -1,0 +1,85 @@
+{
+  "version": "0.3.4",
+  "cards": {
+    "xmcota": {
+      "original": "Original/XCotA_logo.webp",
+      "card_png": "Cards/xmcota.png",
+      "win32_bitmap": "Cards/xmcota.bmp",
+      "size": [
+        320,
+        175
+      ],
+      "preserves_aspect_ratio": true
+    },
+    "msh": {
+      "original": "Original/msh.png",
+      "card_png": "Cards/msh.png",
+      "win32_bitmap": "Cards/msh.bmp",
+      "size": [
+        320,
+        175
+      ],
+      "preserves_aspect_ratio": true
+    },
+    "xmvsf": {
+      "original": "Original/xmvssf.jpeg",
+      "card_png": "Cards/xmvsf.png",
+      "win32_bitmap": "Cards/xmvsf.bmp",
+      "size": [
+        320,
+        175
+      ],
+      "preserves_aspect_ratio": true
+    },
+    "mshvsf": {
+      "original": "Original/MSHvSF.webp",
+      "card_png": "Cards/mshvsf.png",
+      "win32_bitmap": "Cards/mshvsf.bmp",
+      "size": [
+        320,
+        175
+      ],
+      "preserves_aspect_ratio": true
+    },
+    "mvsc": {
+      "original": "Original/Mar_Cap_Logo.webp",
+      "card_png": "Cards/mvsc.png",
+      "win32_bitmap": "Cards/mvsc.bmp",
+      "size": [
+        320,
+        175
+      ],
+      "preserves_aspect_ratio": true
+    },
+    "mvsc2": {
+      "original": "Original/MvC2_logo.webp",
+      "card_png": "Cards/mvsc2.png",
+      "win32_bitmap": "Cards/mvsc2.bmp",
+      "size": [
+        320,
+        175
+      ],
+      "preserves_aspect_ratio": true
+    },
+    "sfexp": {
+      "original": "Original/Street_Fighter_EX_Plus_Alpha_Logo.png",
+      "card_png": "Cards/sfexp.png",
+      "win32_bitmap": "Cards/sfexp.bmp",
+      "size": [
+        320,
+        175
+      ],
+      "preserves_aspect_ratio": true
+    },
+    "sfex2p": {
+      "original": "Original/sfex2p.png",
+      "card_png": "Cards/sfex2p.png",
+      "win32_bitmap": "Cards/sfex2p.bmp",
+      "size": [
+        320,
+        175
+      ],
+      "preserves_aspect_ratio": true
+    }
+  }
+}

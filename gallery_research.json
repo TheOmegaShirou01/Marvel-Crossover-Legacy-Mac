@@ -1,0 +1,2818 @@
+[
+  {
+    "type": "game",
+    "id": "xmcota",
+    "name": "X-Men: Children of the Atom",
+    "year": 1994,
+    "hardware": "CPS-2",
+    "developer": "Capcom",
+    "history": "Capcom’s first Marvel-character fighting game. Mutants and enemies battle in large, animated arenas, with X-Power abilities and air combos. The arcade story climaxes in confrontations with Juggernaut and Magneto.",
+    "mechanics": "Mutant battles, large sprites, X-Power, air combos; original arcade bosses Juggernaut and Magneto.",
+    "background_art_note": "Use captured/extracted original arcade stage art only; no external copyrighted images bundled.",
+    "sources": [
+      "https://www.mobygames.com/game/3753/x-men-children-of-the-atom/",
+      "https://www.arcade-history.com/game/3211/x-men-children-of-the-atom"
+    ],
+    "image_status": "pending_original_arcade_capture"
+  },
+  {
+    "type": "character",
+    "id": "xmcota_colossus",
+    "game": "xmcota",
+    "name": "Colossus",
+    "bio": "Piotr Rasputin transforms his skin into organic steel, using formidable strength and durability.",
+    "role": "regular_or_original_roster",
+    "portrait_asset": "",
+    "portrait_status": "pending_original_rom_extraction",
+    "source_urls": [
+      "https://www.mobygames.com/game/3753/x-men-children-of-the-atom/",
+      "https://www.arcade-history.com/game/3211/x-men-children-of-the-atom"
+    ]
+  },
+  {
+    "type": "character",
+    "id": "xmcota_cyclops",
+    "game": "xmcota",
+    "name": "Cyclops",
+    "bio": "Scott Summers leads with tactical discipline and destructive optic blasts emitted from his eyes.",
+    "role": "regular_or_original_roster",
+    "portrait_asset": "",
+    "portrait_status": "pending_original_rom_extraction",
+    "source_urls": [
+      "https://www.mobygames.com/game/3753/x-men-children-of-the-atom/",
+      "https://www.arcade-history.com/game/3211/x-men-children-of-the-atom"
+    ]
+  },
+  {
+    "type": "character",
+    "id": "xmcota_iceman",
+    "game": "xmcota",
+    "name": "Iceman",
+    "bio": "Bobby Drake turns moisture into ice, attacking with frozen projectiles and defensive ice constructs.",
+    "role": "regular_or_original_roster",
+    "portrait_asset": "",
+    "portrait_status": "pending_original_rom_extraction",
+    "source_urls": [
+      "https://www.mobygames.com/game/3753/x-men-children-of-the-atom/",
+      "https://www.arcade-history.com/game/3211/x-men-children-of-the-atom"
+    ]
+  },
+  {
+    "type": "character",
+    "id": "xmcota_psylocke",
+    "game": "xmcota",
+    "name": "Psylocke",
+    "bio": "The psychic mutant fights with nimble martial arts and focused psychic-energy blades.",
+    "role": "regular_or_original_roster",
+    "portrait_asset": "",
+    "portrait_status": "pending_original_rom_extraction",
+    "source_urls": [
+      "https://www.mobygames.com/game/3753/x-men-children-of-the-atom/",
+      "https://www.arcade-history.com/game/3211/x-men-children-of-the-atom"
+    ]
+  },
+  {
+    "type": "character",
+    "id": "xmcota_storm",
+    "game": "xmcota",
+    "name": "Storm",
+    "bio": "Ororo Munroe is an X-Men leader who commands wind, lightning and other weather phenomena.",
+    "role": "regular_or_original_roster",
+    "portrait_asset": "",
+    "portrait_status": "pending_original_rom_extraction",
+    "source_urls": [
+      "https://www.mobygames.com/game/3753/x-men-children-of-the-atom/",
+      "https://www.arcade-history.com/game/3211/x-men-children-of-the-atom"
+    ]
+  },
+  {
+    "type": "character",
+    "id": "xmcota_wolverine",
+    "game": "xmcota",
+    "name": "Wolverine",
+    "bio": "The ferocious X-Man fights with retractable claws, rapid strikes and extraordinary healing abilities.",
+    "role": "regular_or_original_roster",
+    "portrait_asset": "",
+    "portrait_status": "pending_original_rom_extraction",
+    "source_urls": [
+      "https://www.mobygames.com/game/3753/x-men-children-of-the-atom/",
+      "https://www.arcade-history.com/game/3211/x-men-children-of-the-atom"
+    ]
+  },
+  {
+    "type": "character",
+    "id": "xmcota_omega_red",
+    "game": "xmcota",
+    "name": "Omega Red",
+    "bio": "A dangerous mutant opponent who attacks with extendable carbonadium coils.",
+    "role": "regular_or_original_roster",
+    "portrait_asset": "",
+    "portrait_status": "pending_original_rom_extraction",
+    "source_urls": [
+      "https://www.mobygames.com/game/3753/x-men-children-of-the-atom/",
+      "https://www.arcade-history.com/game/3211/x-men-children-of-the-atom"
+    ]
+  },
+  {
+    "type": "character",
+    "id": "xmcota_sentinel",
+    "game": "xmcota",
+    "name": "Sentinel",
+    "bio": "A mutant-hunting robot with heavy armor, energy attacks and imposing mechanical reach.",
+    "role": "regular_or_original_roster",
+    "portrait_asset": "",
+    "portrait_status": "pending_original_rom_extraction",
+    "source_urls": [
+      "https://www.mobygames.com/game/3753/x-men-children-of-the-atom/",
+      "https://www.arcade-history.com/game/3211/x-men-children-of-the-atom"
+    ]
+  },
+  {
+    "type": "character",
+    "id": "xmcota_silver_samurai",
+    "game": "xmcota",
+    "name": "Silver Samurai",
+    "bio": "A katana-wielding mutant adversary whose blade can channel powerful energy.",
+    "role": "regular_or_original_roster",
+    "portrait_asset": "",
+    "portrait_status": "pending_original_rom_extraction",
+    "source_urls": [
+      "https://www.mobygames.com/game/3753/x-men-children-of-the-atom/",
+      "https://www.arcade-history.com/game/3211/x-men-children-of-the-atom"
+    ]
+  },
+  {
+    "type": "character",
+    "id": "xmcota_spiral",
+    "game": "xmcota",
+    "name": "Spiral",
+    "bio": "A six-armed warrior and sorceress associated with Mojo, blending blade attacks with teleportation and magic.",
+    "role": "regular_or_original_roster",
+    "portrait_asset": "",
+    "portrait_status": "pending_original_rom_extraction",
+    "source_urls": [
+      "https://www.mobygames.com/game/3753/x-men-children-of-the-atom/",
+      "https://www.arcade-history.com/game/3211/x-men-children-of-the-atom"
+    ]
+  },
+  {
+    "type": "character",
+    "id": "xmcota_akuma",
+    "game": "xmcota",
+    "name": "Akuma",
+    "bio": "A ruthless practitioner of the Satsui no Hado; a secret guest fighter in some early Marvel arcade appearances.",
+    "role": "hidden",
+    "portrait_asset": "",
+    "portrait_status": "pending_original_rom_extraction",
+    "source_urls": [
+      "https://www.mobygames.com/game/3753/x-men-children-of-the-atom/",
+      "https://www.arcade-history.com/game/3211/x-men-children-of-the-atom"
+    ]
+  },
+  {
+    "type": "character",
+    "id": "xmcota_juggernaut",
+    "game": "xmcota",
+    "name": "Juggernaut",
+    "bio": "Cain Marko draws overwhelming strength from the mystical Crimson Gem of Cyttorak.",
+    "role": "arcade_boss",
+    "portrait_asset": "",
+    "portrait_status": "pending_original_rom_extraction",
+    "source_urls": [
+      "https://www.mobygames.com/game/3753/x-men-children-of-the-atom/",
+      "https://www.arcade-history.com/game/3211/x-men-children-of-the-atom"
+    ]
+  },
+  {
+    "type": "character",
+    "id": "xmcota_magneto",
+    "game": "xmcota",
+    "name": "Magneto",
+    "bio": "The master of magnetism manipulates metal and magnetic fields and frequently challenges the X-Men.",
+    "role": "arcade_boss",
+    "portrait_asset": "",
+    "portrait_status": "pending_original_rom_extraction",
+    "source_urls": [
+      "https://www.mobygames.com/game/3753/x-men-children-of-the-atom/",
+      "https://www.arcade-history.com/game/3211/x-men-children-of-the-atom"
+    ]
+  },
+  {
+    "type": "game",
+    "id": "msh",
+    "name": "Marvel Super Heroes",
+    "year": 1995,
+    "hardware": "CPS-2",
+    "developer": "Capcom",
+    "history": "A one-on-one Marvel fighter built around the six Infinity Gems. Gem choice and activation changes battle tactics while the story builds toward Thanos.",
+    "mechanics": "The Infinity Gems—Power, Time, Space, Reality, Soul and Mind—provide special effects.",
+    "background_art_note": "Use captured/extracted original arcade stage art only; no external copyrighted images bundled.",
+    "sources": [
+      "https://sfwowr.com/MSH.htm",
+      "https://www.arcade-history.com/game/1571"
+    ],
+    "image_status": "pending_original_arcade_capture"
+  },
+  {
+    "type": "character",
+    "id": "msh_hulk",
+    "game": "msh",
+    "name": "Hulk",
+    "bio": "Bruce Banner transforms into a near-unstoppable gamma-powered powerhouse.",
+    "role": "regular_or_original_roster",
+    "portrait_asset": "",
+    "portrait_status": "pending_original_rom_extraction",
+    "source_urls": [
+      "https://sfwowr.com/MSH.htm",
+      "https://www.arcade-history.com/game/1571"
+    ]
+  },
+  {
+    "type": "character",
+    "id": "msh_wolverine",
+    "game": "msh",
+    "name": "Wolverine",
+    "bio": "The ferocious X-Man fights with retractable claws, rapid strikes and extraordinary healing abilities.",
+    "role": "regular_or_original_roster",
+    "portrait_asset": "",
+    "portrait_status": "pending_original_rom_extraction",
+    "source_urls": [
+      "https://sfwowr.com/MSH.htm",
+      "https://www.arcade-history.com/game/1571"
+    ]
+  },
+  {
+    "type": "character",
+    "id": "msh_spider_man",
+    "game": "msh",
+    "name": "Spider-Man",
+    "bio": "Peter Parker combines spider-like agility, web shooters and fast improvisation in battle.",
+    "role": "regular_or_original_roster",
+    "portrait_asset": "",
+    "portrait_status": "pending_original_rom_extraction",
+    "source_urls": [
+      "https://sfwowr.com/MSH.htm",
+      "https://www.arcade-history.com/game/1571"
+    ]
+  },
+  {
+    "type": "character",
+    "id": "msh_magneto",
+    "game": "msh",
+    "name": "Magneto",
+    "bio": "The master of magnetism manipulates metal and magnetic fields and frequently challenges the X-Men.",
+    "role": "regular_or_original_roster",
+    "portrait_asset": "",
+    "portrait_status": "pending_original_rom_extraction",
+    "source_urls": [
+      "https://sfwowr.com/MSH.htm",
+      "https://www.arcade-history.com/game/1571"
+    ]
+  },
+  {
+    "type": "character",
+    "id": "msh_juggernaut",
+    "game": "msh",
+    "name": "Juggernaut",
+    "bio": "Cain Marko draws overwhelming strength from the mystical Crimson Gem of Cyttorak.",
+    "role": "regular_or_original_roster",
+    "portrait_asset": "",
+    "portrait_status": "pending_original_rom_extraction",
+    "source_urls": [
+      "https://sfwowr.com/MSH.htm",
+      "https://www.arcade-history.com/game/1571"
+    ]
+  },
+  {
+    "type": "character",
+    "id": "msh_iron_man",
+    "game": "msh",
+    "name": "Iron Man",
+    "bio": "Tony Stark fights in advanced powered armor equipped with energy weapons and flight systems.",
+    "role": "regular_or_original_roster",
+    "portrait_asset": "",
+    "portrait_status": "pending_original_rom_extraction",
+    "source_urls": [
+      "https://sfwowr.com/MSH.htm",
+      "https://www.arcade-history.com/game/1571"
+    ]
+  },
+  {
+    "type": "character",
+    "id": "msh_psylocke",
+    "game": "msh",
+    "name": "Psylocke",
+    "bio": "The psychic mutant fights with nimble martial arts and focused psychic-energy blades.",
+    "role": "regular_or_original_roster",
+    "portrait_asset": "",
+    "portrait_status": "pending_original_rom_extraction",
+    "source_urls": [
+      "https://sfwowr.com/MSH.htm",
+      "https://www.arcade-history.com/game/1571"
+    ]
+  },
+  {
+    "type": "character",
+    "id": "msh_captain_america",
+    "game": "msh",
+    "name": "Captain America",
+    "bio": "Steve Rogers uses a near-indestructible shield and exceptional hand-to-hand technique.",
+    "role": "regular_or_original_roster",
+    "portrait_asset": "",
+    "portrait_status": "pending_original_rom_extraction",
+    "source_urls": [
+      "https://sfwowr.com/MSH.htm",
+      "https://www.arcade-history.com/game/1571"
+    ]
+  },
+  {
+    "type": "character",
+    "id": "msh_shuma_gorath",
+    "game": "msh",
+    "name": "Shuma-Gorath",
+    "bio": "An ancient extradimensional entity known for tentacles, bizarre transformations and mystical attacks.",
+    "role": "regular_or_original_roster",
+    "portrait_asset": "",
+    "portrait_status": "pending_original_rom_extraction",
+    "source_urls": [
+      "https://sfwowr.com/MSH.htm",
+      "https://www.arcade-history.com/game/1571"
+    ]
+  },
+  {
+    "type": "character",
+    "id": "msh_blackheart",
+    "game": "msh",
+    "name": "Blackheart",
+    "bio": "A demonic Marvel adversary whose attacks summon sinister forces and supernatural energy.",
+    "role": "regular_or_original_roster",
+    "portrait_asset": "",
+    "portrait_status": "pending_original_rom_extraction",
+    "source_urls": [
+      "https://sfwowr.com/MSH.htm",
+      "https://www.arcade-history.com/game/1571"
+    ]
+  },
+  {
+    "type": "character",
+    "id": "msh_doctor_doom",
+    "game": "msh",
+    "name": "Doctor Doom",
+    "bio": "Victor von Doom is an armored Latverian ruler and scientific genius who also practices sorcery.",
+    "role": "boss_or_hidden",
+    "portrait_asset": "",
+    "portrait_status": "pending_original_rom_extraction",
+    "source_urls": [
+      "https://sfwowr.com/MSH.htm",
+      "https://www.arcade-history.com/game/1571"
+    ]
+  },
+  {
+    "type": "character",
+    "id": "msh_thanos",
+    "game": "msh",
+    "name": "Thanos",
+    "bio": "A formidable cosmic antagonist whose schemes center on power and the Infinity Gems.",
+    "role": "arcade_boss",
+    "portrait_asset": "",
+    "portrait_status": "pending_original_rom_extraction",
+    "source_urls": [
+      "https://sfwowr.com/MSH.htm",
+      "https://www.arcade-history.com/game/1571"
+    ]
+  },
+  {
+    "type": "character",
+    "id": "msh_anita",
+    "game": "msh",
+    "name": "Anita",
+    "bio": "A child associated with Capcom’s Darkstalkers setting, appearing as a special hidden guest in some versions.",
+    "role": "regional_guest",
+    "portrait_asset": "",
+    "portrait_status": "pending_original_rom_extraction",
+    "source_urls": [
+      "https://sfwowr.com/MSH.htm",
+      "https://www.arcade-history.com/game/1571"
+    ]
+  },
+  {
+    "type": "game",
+    "id": "xmvsf",
+    "name": "X-Men vs. Street Fighter",
+    "year": 1996,
+    "hardware": "CPS-2",
+    "developer": "Capcom",
+    "history": "Capcom pairs the X-Men with Street Fighter warriors in fast two-on-two tag battles. Cross-Over Combinations and dramatic Hyper Combos establish the series’ tag-team style.",
+    "mechanics": "Two-character teams; Marvel mutants and Street Fighter rivals; Apocalypse as arcade boss.",
+    "background_art_note": "Use captured/extracted original arcade stage art only; no external copyrighted images bundled.",
+    "sources": [
+      "https://www.arcade-history.com/game/3212",
+      "https://combopedia.com/x-men-vs-street-fighter"
+    ],
+    "image_status": "pending_original_arcade_capture"
+  },
+  {
+    "type": "character",
+    "id": "xmvsf_cyclops",
+    "game": "xmvsf",
+    "name": "Cyclops",
+    "bio": "Scott Summers leads with tactical discipline and destructive optic blasts emitted from his eyes.",
+    "role": "regular_or_original_roster",
+    "portrait_asset": "",
+    "portrait_status": "pending_original_rom_extraction",
+    "source_urls": [
+      "https://www.arcade-history.com/game/3212",
+      "https://combopedia.com/x-men-vs-street-fighter"
+    ]
+  },
+  {
+    "type": "character",
+    "id": "xmvsf_gambit",
+    "game": "xmvsf",
+    "name": "Gambit",
+    "bio": "Remy LeBeau channels kinetic energy through playing cards and wields a fighting staff.",
+    "role": "regular_or_original_roster",
+    "portrait_asset": "",
+    "portrait_status": "pending_original_rom_extraction",
+    "source_urls": [
+      "https://www.arcade-history.com/game/3212",
+      "https://combopedia.com/x-men-vs-street-fighter"
+    ]
+  },
+  {
+    "type": "character",
+    "id": "xmvsf_juggernaut",
+    "game": "xmvsf",
+    "name": "Juggernaut",
+    "bio": "Cain Marko draws overwhelming strength from the mystical Crimson Gem of Cyttorak.",
+    "role": "regular_or_original_roster",
+    "portrait_asset": "",
+    "portrait_status": "pending_original_rom_extraction",
+    "source_urls": [
+      "https://www.arcade-history.com/game/3212",
+      "https://combopedia.com/x-men-vs-street-fighter"
+    ]
+  },
+  {
+    "type": "character",
+    "id": "xmvsf_magneto",
+    "game": "xmvsf",
+    "name": "Magneto",
+    "bio": "The master of magnetism manipulates metal and magnetic fields and frequently challenges the X-Men.",
+    "role": "regular_or_original_roster",
+    "portrait_asset": "",
+    "portrait_status": "pending_original_rom_extraction",
+    "source_urls": [
+      "https://www.arcade-history.com/game/3212",
+      "https://combopedia.com/x-men-vs-street-fighter"
+    ]
+  },
+  {
+    "type": "character",
+    "id": "xmvsf_rogue",
+    "game": "xmvsf",
+    "name": "Rogue",
+    "bio": "A powerful X-Man known for flight, strength and an ability to absorb powers through contact.",
+    "role": "regular_or_original_roster",
+    "portrait_asset": "",
+    "portrait_status": "pending_original_rom_extraction",
+    "source_urls": [
+      "https://www.arcade-history.com/game/3212",
+      "https://combopedia.com/x-men-vs-street-fighter"
+    ]
+  },
+  {
+    "type": "character",
+    "id": "xmvsf_sabretooth",
+    "game": "xmvsf",
+    "name": "Sabretooth",
+    "bio": "A savage mutant with claws, powerful senses and a long-standing rivalry with Wolverine.",
+    "role": "regular_or_original_roster",
+    "portrait_asset": "",
+    "portrait_status": "pending_original_rom_extraction",
+    "source_urls": [
+      "https://www.arcade-history.com/game/3212",
+      "https://combopedia.com/x-men-vs-street-fighter"
+    ]
+  },
+  {
+    "type": "character",
+    "id": "xmvsf_storm",
+    "game": "xmvsf",
+    "name": "Storm",
+    "bio": "Ororo Munroe is an X-Men leader who commands wind, lightning and other weather phenomena.",
+    "role": "regular_or_original_roster",
+    "portrait_asset": "",
+    "portrait_status": "pending_original_rom_extraction",
+    "source_urls": [
+      "https://www.arcade-history.com/game/3212",
+      "https://combopedia.com/x-men-vs-street-fighter"
+    ]
+  },
+  {
+    "type": "character",
+    "id": "xmvsf_wolverine",
+    "game": "xmvsf",
+    "name": "Wolverine",
+    "bio": "The ferocious X-Man fights with retractable claws, rapid strikes and extraordinary healing abilities.",
+    "role": "regular_or_original_roster",
+    "portrait_asset": "",
+    "portrait_status": "pending_original_rom_extraction",
+    "source_urls": [
+      "https://www.arcade-history.com/game/3212",
+      "https://combopedia.com/x-men-vs-street-fighter"
+    ]
+  },
+  {
+    "type": "character",
+    "id": "xmvsf_akuma",
+    "game": "xmvsf",
+    "name": "Akuma",
+    "bio": "A ruthless practitioner of the Satsui no Hado; a secret guest fighter in some early Marvel arcade appearances.",
+    "role": "regular_or_original_roster",
+    "portrait_asset": "",
+    "portrait_status": "pending_original_rom_extraction",
+    "source_urls": [
+      "https://www.arcade-history.com/game/3212",
+      "https://combopedia.com/x-men-vs-street-fighter"
+    ]
+  },
+  {
+    "type": "character",
+    "id": "xmvsf_cammy",
+    "game": "xmvsf",
+    "name": "Cammy",
+    "bio": "A fast, disciplined fighter affiliated with Shadaloo during her early versus-series appearance.",
+    "role": "regular_or_original_roster",
+    "portrait_asset": "",
+    "portrait_status": "pending_original_rom_extraction",
+    "source_urls": [
+      "https://www.arcade-history.com/game/3212",
+      "https://combopedia.com/x-men-vs-street-fighter"
+    ]
+  },
+  {
+    "type": "character",
+    "id": "xmvsf_charlie",
+    "game": "xmvsf",
+    "name": "Charlie",
+    "bio": "Also known as Nash, a military fighter who uses Sonic Boom and acrobatic strikes.",
+    "role": "regular_or_original_roster",
+    "portrait_asset": "",
+    "portrait_status": "pending_original_rom_extraction",
+    "source_urls": [
+      "https://www.arcade-history.com/game/3212",
+      "https://combopedia.com/x-men-vs-street-fighter"
+    ]
+  },
+  {
+    "type": "character",
+    "id": "xmvsf_chun_li",
+    "game": "xmvsf",
+    "name": "Chun-Li",
+    "bio": "An Interpol investigator and elite martial artist recognized for rapid kicks and the Kikoken.",
+    "role": "regular_or_original_roster",
+    "portrait_asset": "",
+    "portrait_status": "pending_original_rom_extraction",
+    "source_urls": [
+      "https://www.arcade-history.com/game/3212",
+      "https://combopedia.com/x-men-vs-street-fighter"
+    ]
+  },
+  {
+    "type": "character",
+    "id": "xmvsf_dhalsim",
+    "game": "xmvsf",
+    "name": "Dhalsim",
+    "bio": "A yogi and martial artist who attacks from long range using stretching limbs and mystical flames.",
+    "role": "regular_or_original_roster",
+    "portrait_asset": "",
+    "portrait_status": "pending_original_rom_extraction",
+    "source_urls": [
+      "https://www.arcade-history.com/game/3212",
+      "https://combopedia.com/x-men-vs-street-fighter"
+    ]
+  },
+  {
+    "type": "character",
+    "id": "xmvsf_ken",
+    "game": "xmvsf",
+    "name": "Ken",
+    "bio": "Ryu’s longtime friend and rival, known for aggressive martial arts and fiery variations of his Shoryuken.",
+    "role": "regular_or_original_roster",
+    "portrait_asset": "",
+    "portrait_status": "pending_original_rom_extraction",
+    "source_urls": [
+      "https://www.arcade-history.com/game/3212",
+      "https://combopedia.com/x-men-vs-street-fighter"
+    ]
+  },
+  {
+    "type": "character",
+    "id": "xmvsf_m_bison",
+    "game": "xmvsf",
+    "name": "M. Bison",
+    "bio": "The tyrannical head of Shadaloo, wielding Psycho Power in his attacks.",
+    "role": "regular_or_original_roster",
+    "portrait_asset": "",
+    "portrait_status": "pending_original_rom_extraction",
+    "source_urls": [
+      "https://www.arcade-history.com/game/3212",
+      "https://combopedia.com/x-men-vs-street-fighter"
+    ]
+  },
+  {
+    "type": "character",
+    "id": "xmvsf_ryu",
+    "game": "xmvsf",
+    "name": "Ryu",
+    "bio": "A wandering martial artist devoted to improving his skills. His Hadouken and Shoryuken are signatures of the Street Fighter series.",
+    "role": "regular_or_original_roster",
+    "portrait_asset": "",
+    "portrait_status": "pending_original_rom_extraction",
+    "source_urls": [
+      "https://www.arcade-history.com/game/3212",
+      "https://combopedia.com/x-men-vs-street-fighter"
+    ]
+  },
+  {
+    "type": "character",
+    "id": "xmvsf_zangief",
+    "game": "xmvsf",
+    "name": "Zangief",
+    "bio": "A professional wrestler famous for punishing throws and the Spinning Piledriver.",
+    "role": "regular_or_original_roster",
+    "portrait_asset": "",
+    "portrait_status": "pending_original_rom_extraction",
+    "source_urls": [
+      "https://www.arcade-history.com/game/3212",
+      "https://combopedia.com/x-men-vs-street-fighter"
+    ]
+  },
+  {
+    "type": "character",
+    "id": "xmvsf_apocalypse",
+    "game": "xmvsf",
+    "name": "Apocalypse",
+    "bio": "A gigantic mutant supervillain who serves as a boss in the early crossover fighters.",
+    "role": "arcade_boss",
+    "portrait_asset": "",
+    "portrait_status": "pending_original_rom_extraction",
+    "source_urls": [
+      "https://www.arcade-history.com/game/3212",
+      "https://combopedia.com/x-men-vs-street-fighter"
+    ]
+  },
+  {
+    "type": "game",
+    "id": "mshvsf",
+    "name": "Marvel Super Heroes vs. Street Fighter",
+    "year": 1997,
+    "hardware": "CPS-2",
+    "developer": "Capcom",
+    "history": "An expanded superhero-versus-martial-arts crossover with assist mechanics, secret fighter variants and Cyber-Akuma. Regional arcade versions differ in hidden-character availability.",
+    "mechanics": "Special hidden variants include Dark Sakura, Shadow Charlie and Mech-Zangief; Japan has Norimaro.",
+    "background_art_note": "Use captured/extracted original arcade stage art only; no external copyrighted images bundled.",
+    "sources": [
+      "https://www.arcade-history.com/game/1572",
+      "https://arcadepatches.com/mshvsf-restoration/"
+    ],
+    "image_status": "pending_original_arcade_capture"
+  },
+  {
+    "type": "character",
+    "id": "mshvsf_blackheart",
+    "game": "mshvsf",
+    "name": "Blackheart",
+    "bio": "A demonic Marvel adversary whose attacks summon sinister forces and supernatural energy.",
+    "role": "regular_or_original_roster",
+    "portrait_asset": "",
+    "portrait_status": "pending_original_rom_extraction",
+    "source_urls": [
+      "https://www.arcade-history.com/game/1572",
+      "https://arcadepatches.com/mshvsf-restoration/"
+    ]
+  },
+  {
+    "type": "character",
+    "id": "mshvsf_captain_america",
+    "game": "mshvsf",
+    "name": "Captain America",
+    "bio": "Steve Rogers uses a near-indestructible shield and exceptional hand-to-hand technique.",
+    "role": "regular_or_original_roster",
+    "portrait_asset": "",
+    "portrait_status": "pending_original_rom_extraction",
+    "source_urls": [
+      "https://www.arcade-history.com/game/1572",
+      "https://arcadepatches.com/mshvsf-restoration/"
+    ]
+  },
+  {
+    "type": "character",
+    "id": "mshvsf_cyclops",
+    "game": "mshvsf",
+    "name": "Cyclops",
+    "bio": "Scott Summers leads with tactical discipline and destructive optic blasts emitted from his eyes.",
+    "role": "regular_or_original_roster",
+    "portrait_asset": "",
+    "portrait_status": "pending_original_rom_extraction",
+    "source_urls": [
+      "https://www.arcade-history.com/game/1572",
+      "https://arcadepatches.com/mshvsf-restoration/"
+    ]
+  },
+  {
+    "type": "character",
+    "id": "mshvsf_hulk",
+    "game": "mshvsf",
+    "name": "Hulk",
+    "bio": "Bruce Banner transforms into a near-unstoppable gamma-powered powerhouse.",
+    "role": "regular_or_original_roster",
+    "portrait_asset": "",
+    "portrait_status": "pending_original_rom_extraction",
+    "source_urls": [
+      "https://www.arcade-history.com/game/1572",
+      "https://arcadepatches.com/mshvsf-restoration/"
+    ]
+  },
+  {
+    "type": "character",
+    "id": "mshvsf_omega_red",
+    "game": "mshvsf",
+    "name": "Omega Red",
+    "bio": "A dangerous mutant opponent who attacks with extendable carbonadium coils.",
+    "role": "regular_or_original_roster",
+    "portrait_asset": "",
+    "portrait_status": "pending_original_rom_extraction",
+    "source_urls": [
+      "https://www.arcade-history.com/game/1572",
+      "https://arcadepatches.com/mshvsf-restoration/"
+    ]
+  },
+  {
+    "type": "character",
+    "id": "mshvsf_shuma_gorath",
+    "game": "mshvsf",
+    "name": "Shuma-Gorath",
+    "bio": "An ancient extradimensional entity known for tentacles, bizarre transformations and mystical attacks.",
+    "role": "regular_or_original_roster",
+    "portrait_asset": "",
+    "portrait_status": "pending_original_rom_extraction",
+    "source_urls": [
+      "https://www.arcade-history.com/game/1572",
+      "https://arcadepatches.com/mshvsf-restoration/"
+    ]
+  },
+  {
+    "type": "character",
+    "id": "mshvsf_spider_man",
+    "game": "mshvsf",
+    "name": "Spider-Man",
+    "bio": "Peter Parker combines spider-like agility, web shooters and fast improvisation in battle.",
+    "role": "regular_or_original_roster",
+    "portrait_asset": "",
+    "portrait_status": "pending_original_rom_extraction",
+    "source_urls": [
+      "https://www.arcade-history.com/game/1572",
+      "https://arcadepatches.com/mshvsf-restoration/"
+    ]
+  },
+  {
+    "type": "character",
+    "id": "mshvsf_wolverine",
+    "game": "mshvsf",
+    "name": "Wolverine",
+    "bio": "The ferocious X-Man fights with retractable claws, rapid strikes and extraordinary healing abilities.",
+    "role": "regular_or_original_roster",
+    "portrait_asset": "",
+    "portrait_status": "pending_original_rom_extraction",
+    "source_urls": [
+      "https://www.arcade-history.com/game/1572",
+      "https://arcadepatches.com/mshvsf-restoration/"
+    ]
+  },
+  {
+    "type": "character",
+    "id": "mshvsf_akuma",
+    "game": "mshvsf",
+    "name": "Akuma",
+    "bio": "A ruthless practitioner of the Satsui no Hado; a secret guest fighter in some early Marvel arcade appearances.",
+    "role": "regular_or_original_roster",
+    "portrait_asset": "",
+    "portrait_status": "pending_original_rom_extraction",
+    "source_urls": [
+      "https://www.arcade-history.com/game/1572",
+      "https://arcadepatches.com/mshvsf-restoration/"
+    ]
+  },
+  {
+    "type": "character",
+    "id": "mshvsf_chun_li",
+    "game": "mshvsf",
+    "name": "Chun-Li",
+    "bio": "An Interpol investigator and elite martial artist recognized for rapid kicks and the Kikoken.",
+    "role": "regular_or_original_roster",
+    "portrait_asset": "",
+    "portrait_status": "pending_original_rom_extraction",
+    "source_urls": [
+      "https://www.arcade-history.com/game/1572",
+      "https://arcadepatches.com/mshvsf-restoration/"
+    ]
+  },
+  {
+    "type": "character",
+    "id": "mshvsf_dan",
+    "game": "mshvsf",
+    "name": "Dan",
+    "bio": "A brash martial artist who practices Saikyo-ryu and brings comic bravado to battle.",
+    "role": "regular_or_original_roster",
+    "portrait_asset": "",
+    "portrait_status": "pending_original_rom_extraction",
+    "source_urls": [
+      "https://www.arcade-history.com/game/1572",
+      "https://arcadepatches.com/mshvsf-restoration/"
+    ]
+  },
+  {
+    "type": "character",
+    "id": "mshvsf_dhalsim",
+    "game": "mshvsf",
+    "name": "Dhalsim",
+    "bio": "A yogi and martial artist who attacks from long range using stretching limbs and mystical flames.",
+    "role": "regular_or_original_roster",
+    "portrait_asset": "",
+    "portrait_status": "pending_original_rom_extraction",
+    "source_urls": [
+      "https://www.arcade-history.com/game/1572",
+      "https://arcadepatches.com/mshvsf-restoration/"
+    ]
+  },
+  {
+    "type": "character",
+    "id": "mshvsf_ken",
+    "game": "mshvsf",
+    "name": "Ken",
+    "bio": "Ryu’s longtime friend and rival, known for aggressive martial arts and fiery variations of his Shoryuken.",
+    "role": "regular_or_original_roster",
+    "portrait_asset": "",
+    "portrait_status": "pending_original_rom_extraction",
+    "source_urls": [
+      "https://www.arcade-history.com/game/1572",
+      "https://arcadepatches.com/mshvsf-restoration/"
+    ]
+  },
+  {
+    "type": "character",
+    "id": "mshvsf_m_bison",
+    "game": "mshvsf",
+    "name": "M. Bison",
+    "bio": "The tyrannical head of Shadaloo, wielding Psycho Power in his attacks.",
+    "role": "regular_or_original_roster",
+    "portrait_asset": "",
+    "portrait_status": "pending_original_rom_extraction",
+    "source_urls": [
+      "https://www.arcade-history.com/game/1572",
+      "https://arcadepatches.com/mshvsf-restoration/"
+    ]
+  },
+  {
+    "type": "character",
+    "id": "mshvsf_ryu",
+    "game": "mshvsf",
+    "name": "Ryu",
+    "bio": "A wandering martial artist devoted to improving his skills. His Hadouken and Shoryuken are signatures of the Street Fighter series.",
+    "role": "regular_or_original_roster",
+    "portrait_asset": "",
+    "portrait_status": "pending_original_rom_extraction",
+    "source_urls": [
+      "https://www.arcade-history.com/game/1572",
+      "https://arcadepatches.com/mshvsf-restoration/"
+    ]
+  },
+  {
+    "type": "character",
+    "id": "mshvsf_sakura",
+    "game": "mshvsf",
+    "name": "Sakura",
+    "bio": "A spirited student and self-taught fighter inspired by Ryu’s martial arts.",
+    "role": "regular_or_original_roster",
+    "portrait_asset": "",
+    "portrait_status": "pending_original_rom_extraction",
+    "source_urls": [
+      "https://www.arcade-history.com/game/1572",
+      "https://arcadepatches.com/mshvsf-restoration/"
+    ]
+  },
+  {
+    "type": "character",
+    "id": "mshvsf_zangief",
+    "game": "mshvsf",
+    "name": "Zangief",
+    "bio": "A professional wrestler famous for punishing throws and the Spinning Piledriver.",
+    "role": "regular_or_original_roster",
+    "portrait_asset": "",
+    "portrait_status": "pending_original_rom_extraction",
+    "source_urls": [
+      "https://www.arcade-history.com/game/1572",
+      "https://arcadepatches.com/mshvsf-restoration/"
+    ]
+  },
+  {
+    "type": "character",
+    "id": "mshvsf_dark_sakura",
+    "game": "mshvsf",
+    "name": "Dark Sakura",
+    "bio": "A secret altered version of Sakura influenced by dark fighting energy.",
+    "role": "hidden_variant",
+    "portrait_asset": "",
+    "portrait_status": "pending_original_rom_extraction",
+    "source_urls": [
+      "https://www.arcade-history.com/game/1572",
+      "https://arcadepatches.com/mshvsf-restoration/"
+    ]
+  },
+  {
+    "type": "character",
+    "id": "mshvsf_shadow_charlie",
+    "game": "mshvsf",
+    "name": "Shadow Charlie",
+    "bio": "A special darkened variant of Charlie with modified abilities and appearance.",
+    "role": "hidden_variant",
+    "portrait_asset": "",
+    "portrait_status": "pending_original_rom_extraction",
+    "source_urls": [
+      "https://www.arcade-history.com/game/1572",
+      "https://arcadepatches.com/mshvsf-restoration/"
+    ]
+  },
+  {
+    "type": "character",
+    "id": "mshvsf_mech_zangief",
+    "game": "mshvsf",
+    "name": "Mech-Zangief",
+    "bio": "A hidden cybernetic variant of Zangief emphasizing armored grappling power.",
+    "role": "hidden_variant",
+    "portrait_asset": "",
+    "portrait_status": "pending_original_rom_extraction",
+    "source_urls": [
+      "https://www.arcade-history.com/game/1572",
+      "https://arcadepatches.com/mshvsf-restoration/"
+    ]
+  },
+  {
+    "type": "character",
+    "id": "mshvsf_armored_spider_man",
+    "game": "mshvsf",
+    "name": "Armored Spider-Man",
+    "bio": "A hidden alternate version of Spider-Man distinguished by his armored appearance.",
+    "role": "hidden_variant",
+    "portrait_asset": "",
+    "portrait_status": "pending_original_rom_extraction",
+    "source_urls": [
+      "https://www.arcade-history.com/game/1572",
+      "https://arcadepatches.com/mshvsf-restoration/"
+    ]
+  },
+  {
+    "type": "character",
+    "id": "mshvsf_u_s_agent",
+    "game": "mshvsf",
+    "name": "U.S. Agent",
+    "bio": "John Walker is a Marvel fighter represented as a hidden Captain America variant.",
+    "role": "hidden_variant",
+    "portrait_asset": "",
+    "portrait_status": "pending_original_rom_extraction",
+    "source_urls": [
+      "https://www.arcade-history.com/game/1572",
+      "https://arcadepatches.com/mshvsf-restoration/"
+    ]
+  },
+  {
+    "type": "character",
+    "id": "mshvsf_mephisto",
+    "game": "mshvsf",
+    "name": "Mephisto",
+    "bio": "A Marvel demon represented in this game as a hidden altered Blackheart variant.",
+    "role": "hidden_variant",
+    "portrait_asset": "",
+    "portrait_status": "pending_original_rom_extraction",
+    "source_urls": [
+      "https://www.arcade-history.com/game/1572",
+      "https://arcadepatches.com/mshvsf-restoration/"
+    ]
+  },
+  {
+    "type": "character",
+    "id": "mshvsf_norimaro",
+    "game": "mshvsf",
+    "name": "Norimaro",
+    "bio": "An unusual comic-relief fighter featured in the Japanese arcade version of Marvel Super Heroes vs. Street Fighter.",
+    "role": "regional_jp",
+    "portrait_asset": "",
+    "portrait_status": "pending_original_rom_extraction",
+    "source_urls": [
+      "https://www.arcade-history.com/game/1572",
+      "https://arcadepatches.com/mshvsf-restoration/"
+    ]
+  },
+  {
+    "type": "character",
+    "id": "mshvsf_cyber_akuma",
+    "game": "mshvsf",
+    "name": "Cyber-Akuma",
+    "bio": "A cybernetically enhanced Akuma who serves as a powerful boss opponent.",
+    "role": "arcade_boss",
+    "portrait_asset": "",
+    "portrait_status": "pending_original_rom_extraction",
+    "source_urls": [
+      "https://www.arcade-history.com/game/1572",
+      "https://arcadepatches.com/mshvsf-restoration/"
+    ]
+  },
+  {
+    "type": "character",
+    "id": "mshvsf_apocalypse",
+    "game": "mshvsf",
+    "name": "Apocalypse",
+    "bio": "A gigantic mutant supervillain who serves as a boss in the early crossover fighters.",
+    "role": "arcade_boss",
+    "portrait_asset": "",
+    "portrait_status": "pending_original_rom_extraction",
+    "source_urls": [
+      "https://www.arcade-history.com/game/1572",
+      "https://arcadepatches.com/mshvsf-restoration/"
+    ]
+  },
+  {
+    "type": "game",
+    "id": "mvsc",
+    "name": "Marvel vs. Capcom: Clash of Super Heroes",
+    "year": 1998,
+    "hardware": "CPS-2",
+    "developer": "Capcom",
+    "history": "The crossover broadens beyond Street Fighter to the Capcom universe. Two-fighter teams can summon limited-use Special Partners and unleash Duo Team Attacks; Onslaught appears as the final boss.",
+    "mechanics": "Special Partners, Duo Team Attacks, and original Marvel-and-Capcom lineups.",
+    "background_art_note": "Use captured/extracted original arcade stage art only; no external copyrighted images bundled.",
+    "sources": [
+      "https://www.mobygames.com/game/3679/marvel-vs-capcom-clash-of-super-heroes/",
+      "https://www.arcade-history.com/game/1573/"
+    ],
+    "image_status": "pending_original_arcade_capture"
+  },
+  {
+    "type": "character",
+    "id": "mvsc_captain_america",
+    "game": "mvsc",
+    "name": "Captain America",
+    "bio": "Steve Rogers uses a near-indestructible shield and exceptional hand-to-hand technique.",
+    "role": "regular_or_original_roster",
+    "portrait_asset": "",
+    "portrait_status": "pending_original_rom_extraction",
+    "source_urls": [
+      "https://www.mobygames.com/game/3679/marvel-vs-capcom-clash-of-super-heroes/",
+      "https://www.arcade-history.com/game/1573/"
+    ]
+  },
+  {
+    "type": "character",
+    "id": "mvsc_gambit",
+    "game": "mvsc",
+    "name": "Gambit",
+    "bio": "Remy LeBeau channels kinetic energy through playing cards and wields a fighting staff.",
+    "role": "regular_or_original_roster",
+    "portrait_asset": "",
+    "portrait_status": "pending_original_rom_extraction",
+    "source_urls": [
+      "https://www.mobygames.com/game/3679/marvel-vs-capcom-clash-of-super-heroes/",
+      "https://www.arcade-history.com/game/1573/"
+    ]
+  },
+  {
+    "type": "character",
+    "id": "mvsc_hulk",
+    "game": "mvsc",
+    "name": "Hulk",
+    "bio": "Bruce Banner transforms into a near-unstoppable gamma-powered powerhouse.",
+    "role": "regular_or_original_roster",
+    "portrait_asset": "",
+    "portrait_status": "pending_original_rom_extraction",
+    "source_urls": [
+      "https://www.mobygames.com/game/3679/marvel-vs-capcom-clash-of-super-heroes/",
+      "https://www.arcade-history.com/game/1573/"
+    ]
+  },
+  {
+    "type": "character",
+    "id": "mvsc_spider_man",
+    "game": "mvsc",
+    "name": "Spider-Man",
+    "bio": "Peter Parker combines spider-like agility, web shooters and fast improvisation in battle.",
+    "role": "regular_or_original_roster",
+    "portrait_asset": "",
+    "portrait_status": "pending_original_rom_extraction",
+    "source_urls": [
+      "https://www.mobygames.com/game/3679/marvel-vs-capcom-clash-of-super-heroes/",
+      "https://www.arcade-history.com/game/1573/"
+    ]
+  },
+  {
+    "type": "character",
+    "id": "mvsc_venom",
+    "game": "mvsc",
+    "name": "Venom",
+    "bio": "A symbiote-enhanced Spider-Man adversary whose shape-shifting form grants unusual attacks.",
+    "role": "regular_or_original_roster",
+    "portrait_asset": "",
+    "portrait_status": "pending_original_rom_extraction",
+    "source_urls": [
+      "https://www.mobygames.com/game/3679/marvel-vs-capcom-clash-of-super-heroes/",
+      "https://www.arcade-history.com/game/1573/"
+    ]
+  },
+  {
+    "type": "character",
+    "id": "mvsc_war_machine",
+    "game": "mvsc",
+    "name": "War Machine",
+    "bio": "James Rhodes pilots heavily armed combat armor with powerful cannons and explosives.",
+    "role": "regular_or_original_roster",
+    "portrait_asset": "",
+    "portrait_status": "pending_original_rom_extraction",
+    "source_urls": [
+      "https://www.mobygames.com/game/3679/marvel-vs-capcom-clash-of-super-heroes/",
+      "https://www.arcade-history.com/game/1573/"
+    ]
+  },
+  {
+    "type": "character",
+    "id": "mvsc_wolverine",
+    "game": "mvsc",
+    "name": "Wolverine",
+    "bio": "The ferocious X-Man fights with retractable claws, rapid strikes and extraordinary healing abilities.",
+    "role": "regular_or_original_roster",
+    "portrait_asset": "",
+    "portrait_status": "pending_original_rom_extraction",
+    "source_urls": [
+      "https://www.mobygames.com/game/3679/marvel-vs-capcom-clash-of-super-heroes/",
+      "https://www.arcade-history.com/game/1573/"
+    ]
+  },
+  {
+    "type": "character",
+    "id": "mvsc_captain_commando",
+    "game": "mvsc",
+    "name": "Captain Commando",
+    "bio": "Capcom’s armored futuristic hero who leads a team of crime-fighters.",
+    "role": "regular_or_original_roster",
+    "portrait_asset": "",
+    "portrait_status": "pending_original_rom_extraction",
+    "source_urls": [
+      "https://www.mobygames.com/game/3679/marvel-vs-capcom-clash-of-super-heroes/",
+      "https://www.arcade-history.com/game/1573/"
+    ]
+  },
+  {
+    "type": "character",
+    "id": "mvsc_chun_li",
+    "game": "mvsc",
+    "name": "Chun-Li",
+    "bio": "An Interpol investigator and elite martial artist recognized for rapid kicks and the Kikoken.",
+    "role": "regular_or_original_roster",
+    "portrait_asset": "",
+    "portrait_status": "pending_original_rom_extraction",
+    "source_urls": [
+      "https://www.mobygames.com/game/3679/marvel-vs-capcom-clash-of-super-heroes/",
+      "https://www.arcade-history.com/game/1573/"
+    ]
+  },
+  {
+    "type": "character",
+    "id": "mvsc_jin_saotome",
+    "game": "mvsc",
+    "name": "Jin Saotome",
+    "bio": "A pilot from Cyberbots whose flashy attacks include explosive mechanical power.",
+    "role": "regular_or_original_roster",
+    "portrait_asset": "",
+    "portrait_status": "pending_original_rom_extraction",
+    "source_urls": [
+      "https://www.mobygames.com/game/3679/marvel-vs-capcom-clash-of-super-heroes/",
+      "https://www.arcade-history.com/game/1573/"
+    ]
+  },
+  {
+    "type": "character",
+    "id": "mvsc_mega_man",
+    "game": "mvsc",
+    "name": "Mega Man",
+    "bio": "Capcom’s blue robot hero, using his arm cannon and special weapon abilities.",
+    "role": "regular_or_original_roster",
+    "portrait_asset": "",
+    "portrait_status": "pending_original_rom_extraction",
+    "source_urls": [
+      "https://www.mobygames.com/game/3679/marvel-vs-capcom-clash-of-super-heroes/",
+      "https://www.arcade-history.com/game/1573/"
+    ]
+  },
+  {
+    "type": "character",
+    "id": "mvsc_morrigan",
+    "game": "mvsc",
+    "name": "Morrigan",
+    "bio": "A powerful succubus from Darkstalkers who uses Soul Fist projectiles and aerial mobility.",
+    "role": "regular_or_original_roster",
+    "portrait_asset": "",
+    "portrait_status": "pending_original_rom_extraction",
+    "source_urls": [
+      "https://www.mobygames.com/game/3679/marvel-vs-capcom-clash-of-super-heroes/",
+      "https://www.arcade-history.com/game/1573/"
+    ]
+  },
+  {
+    "type": "character",
+    "id": "mvsc_ryu",
+    "game": "mvsc",
+    "name": "Ryu",
+    "bio": "A wandering martial artist devoted to improving his skills. His Hadouken and Shoryuken are signatures of the Street Fighter series.",
+    "role": "regular_or_original_roster",
+    "portrait_asset": "",
+    "portrait_status": "pending_original_rom_extraction",
+    "source_urls": [
+      "https://www.mobygames.com/game/3679/marvel-vs-capcom-clash-of-super-heroes/",
+      "https://www.arcade-history.com/game/1573/"
+    ]
+  },
+  {
+    "type": "character",
+    "id": "mvsc_strider_hiryu",
+    "game": "mvsc",
+    "name": "Strider Hiryu",
+    "bio": "A futuristic ninja armed with the Cypher plasma sword and acrobatic mobility.",
+    "role": "regular_or_original_roster",
+    "portrait_asset": "",
+    "portrait_status": "pending_original_rom_extraction",
+    "source_urls": [
+      "https://www.mobygames.com/game/3679/marvel-vs-capcom-clash-of-super-heroes/",
+      "https://www.arcade-history.com/game/1573/"
+    ]
+  },
+  {
+    "type": "character",
+    "id": "mvsc_zangief",
+    "game": "mvsc",
+    "name": "Zangief",
+    "bio": "A professional wrestler famous for punishing throws and the Spinning Piledriver.",
+    "role": "regular_or_original_roster",
+    "portrait_asset": "",
+    "portrait_status": "pending_original_rom_extraction",
+    "source_urls": [
+      "https://www.mobygames.com/game/3679/marvel-vs-capcom-clash-of-super-heroes/",
+      "https://www.arcade-history.com/game/1573/"
+    ]
+  },
+  {
+    "type": "character",
+    "id": "mvsc_roll",
+    "game": "mvsc",
+    "name": "Roll",
+    "bio": "Mega Man’s companion robot, appearing as a secret playable Capcom guest.",
+    "role": "hidden_variant",
+    "portrait_asset": "",
+    "portrait_status": "pending_original_rom_extraction",
+    "source_urls": [
+      "https://www.mobygames.com/game/3679/marvel-vs-capcom-clash-of-super-heroes/",
+      "https://www.arcade-history.com/game/1573/"
+    ]
+  },
+  {
+    "type": "character",
+    "id": "mvsc_shadow_lady",
+    "game": "mvsc",
+    "name": "Shadow Lady",
+    "bio": "A secret cybernetic variation of Chun-Li with altered combat moves.",
+    "role": "hidden_variant",
+    "portrait_asset": "",
+    "portrait_status": "pending_original_rom_extraction",
+    "source_urls": [
+      "https://www.mobygames.com/game/3679/marvel-vs-capcom-clash-of-super-heroes/",
+      "https://www.arcade-history.com/game/1573/"
+    ]
+  },
+  {
+    "type": "character",
+    "id": "mvsc_lilith_mode_morrigan",
+    "game": "mvsc",
+    "name": "Lilith-Mode Morrigan",
+    "bio": "A secret Morrigan variant modeled after Lilith from Darkstalkers.",
+    "role": "hidden_variant",
+    "portrait_asset": "",
+    "portrait_status": "pending_original_rom_extraction",
+    "source_urls": [
+      "https://www.mobygames.com/game/3679/marvel-vs-capcom-clash-of-super-heroes/",
+      "https://www.arcade-history.com/game/1573/"
+    ]
+  },
+  {
+    "type": "character",
+    "id": "mvsc_gold_war_machine",
+    "game": "mvsc",
+    "name": "Gold War Machine",
+    "bio": "A golden armored hidden version of War Machine with altered traits.",
+    "role": "hidden_variant",
+    "portrait_asset": "",
+    "portrait_status": "pending_original_rom_extraction",
+    "source_urls": [
+      "https://www.mobygames.com/game/3679/marvel-vs-capcom-clash-of-super-heroes/",
+      "https://www.arcade-history.com/game/1573/"
+    ]
+  },
+  {
+    "type": "character",
+    "id": "mvsc_orange_hulk",
+    "game": "mvsc",
+    "name": "Orange Hulk",
+    "bio": "An alternate-color hidden Hulk variant with modified combat properties.",
+    "role": "hidden_variant",
+    "portrait_asset": "",
+    "portrait_status": "pending_original_rom_extraction",
+    "source_urls": [
+      "https://www.mobygames.com/game/3679/marvel-vs-capcom-clash-of-super-heroes/",
+      "https://www.arcade-history.com/game/1573/"
+    ]
+  },
+  {
+    "type": "character",
+    "id": "mvsc_hyper_venom",
+    "game": "mvsc",
+    "name": "Hyper Venom",
+    "bio": "A high-speed hidden variation of Venom.",
+    "role": "hidden_variant",
+    "portrait_asset": "",
+    "portrait_status": "pending_original_rom_extraction",
+    "source_urls": [
+      "https://www.mobygames.com/game/3679/marvel-vs-capcom-clash-of-super-heroes/",
+      "https://www.arcade-history.com/game/1573/"
+    ]
+  },
+  {
+    "type": "character",
+    "id": "mvsc_onslaught",
+    "game": "mvsc",
+    "name": "Onslaught",
+    "bio": "A devastating psychic-mutant entity who serves as the final boss of Marvel vs. Capcom.",
+    "role": "arcade_boss",
+    "portrait_asset": "",
+    "portrait_status": "pending_original_rom_extraction",
+    "source_urls": [
+      "https://www.mobygames.com/game/3679/marvel-vs-capcom-clash-of-super-heroes/",
+      "https://www.arcade-history.com/game/1573/"
+    ]
+  },
+  {
+    "type": "game",
+    "id": "mvsc2",
+    "name": "Marvel vs. Capcom 2: New Age of Heroes",
+    "year": 2000,
+    "hardware": "NAOMI",
+    "developer": "Capcom",
+    "history": "Capcom’s large-scale sequel features 56 selectable character slots, three-character teams, assists and chainable Hyper Combos. The arcade finale pits teams against Abyss and its multiple forms.",
+    "mechanics": "Three-on-three tag teams; large roster; original NAOMI arcade presentation.",
+    "background_art_note": "Use captured/extracted original arcade stage art only; no external copyrighted images bundled.",
+    "sources": [
+      "https://www.gamesradar.com/the-56-characters-of-marvel-vs-capcom-2/",
+      "https://liquipedia.net/fighters/Marvel_vs._Capcom_2/Game_Information"
+    ],
+    "image_status": "pending_original_arcade_capture"
+  },
+  {
+    "type": "character",
+    "id": "mvsc2_akuma",
+    "game": "mvsc2",
+    "name": "Akuma",
+    "bio": "A ruthless practitioner of the Satsui no Hado; a secret guest fighter in some early Marvel arcade appearances.",
+    "role": "regular_or_original_roster",
+    "portrait_asset": "",
+    "portrait_status": "pending_original_rom_extraction",
+    "source_urls": [
+      "https://www.gamesradar.com/the-56-characters-of-marvel-vs-capcom-2/",
+      "https://liquipedia.net/fighters/Marvel_vs._Capcom_2/Game_Information"
+    ]
+  },
+  {
+    "type": "character",
+    "id": "mvsc2_amingo",
+    "game": "mvsc2",
+    "name": "Amingo",
+    "bio": "An original Marvel vs. Capcom 2 plant-like fighter whose body morphs into unusual forms.",
+    "role": "regular_or_original_roster",
+    "portrait_asset": "",
+    "portrait_status": "pending_original_rom_extraction",
+    "source_urls": [
+      "https://www.gamesradar.com/the-56-characters-of-marvel-vs-capcom-2/",
+      "https://liquipedia.net/fighters/Marvel_vs._Capcom_2/Game_Information"
+    ]
+  },
+  {
+    "type": "character",
+    "id": "mvsc2_anakaris",
+    "game": "mvsc2",
+    "name": "Anakaris",
+    "bio": "An ancient Darkstalkers pharaoh with bizarre magic and body-shifting attacks.",
+    "role": "regular_or_original_roster",
+    "portrait_asset": "",
+    "portrait_status": "pending_original_rom_extraction",
+    "source_urls": [
+      "https://www.gamesradar.com/the-56-characters-of-marvel-vs-capcom-2/",
+      "https://liquipedia.net/fighters/Marvel_vs._Capcom_2/Game_Information"
+    ]
+  },
+  {
+    "type": "character",
+    "id": "mvsc2_b_b_hood",
+    "game": "mvsc2",
+    "name": "B. B. Hood",
+    "bio": "A deceptively innocent-looking Darkstalkers hunter with an arsenal of concealed weapons.",
+    "role": "regular_or_original_roster",
+    "portrait_asset": "",
+    "portrait_status": "pending_original_rom_extraction",
+    "source_urls": [
+      "https://www.gamesradar.com/the-56-characters-of-marvel-vs-capcom-2/",
+      "https://liquipedia.net/fighters/Marvel_vs._Capcom_2/Game_Information"
+    ]
+  },
+  {
+    "type": "character",
+    "id": "mvsc2_blackheart",
+    "game": "mvsc2",
+    "name": "Blackheart",
+    "bio": "A demonic Marvel adversary whose attacks summon sinister forces and supernatural energy.",
+    "role": "regular_or_original_roster",
+    "portrait_asset": "",
+    "portrait_status": "pending_original_rom_extraction",
+    "source_urls": [
+      "https://www.gamesradar.com/the-56-characters-of-marvel-vs-capcom-2/",
+      "https://liquipedia.net/fighters/Marvel_vs._Capcom_2/Game_Information"
+    ]
+  },
+  {
+    "type": "character",
+    "id": "mvsc2_cable",
+    "game": "mvsc2",
+    "name": "Cable",
+    "bio": "A futuristic mutant soldier who combines heavy firearms and technological weapons.",
+    "role": "regular_or_original_roster",
+    "portrait_asset": "",
+    "portrait_status": "pending_original_rom_extraction",
+    "source_urls": [
+      "https://www.gamesradar.com/the-56-characters-of-marvel-vs-capcom-2/",
+      "https://liquipedia.net/fighters/Marvel_vs._Capcom_2/Game_Information"
+    ]
+  },
+  {
+    "type": "character",
+    "id": "mvsc2_cammy",
+    "game": "mvsc2",
+    "name": "Cammy",
+    "bio": "A fast, disciplined fighter affiliated with Shadaloo during her early versus-series appearance.",
+    "role": "regular_or_original_roster",
+    "portrait_asset": "",
+    "portrait_status": "pending_original_rom_extraction",
+    "source_urls": [
+      "https://www.gamesradar.com/the-56-characters-of-marvel-vs-capcom-2/",
+      "https://liquipedia.net/fighters/Marvel_vs._Capcom_2/Game_Information"
+    ]
+  },
+  {
+    "type": "character",
+    "id": "mvsc2_captain_america",
+    "game": "mvsc2",
+    "name": "Captain America",
+    "bio": "Steve Rogers uses a near-indestructible shield and exceptional hand-to-hand technique.",
+    "role": "regular_or_original_roster",
+    "portrait_asset": "",
+    "portrait_status": "pending_original_rom_extraction",
+    "source_urls": [
+      "https://www.gamesradar.com/the-56-characters-of-marvel-vs-capcom-2/",
+      "https://liquipedia.net/fighters/Marvel_vs._Capcom_2/Game_Information"
+    ]
+  },
+  {
+    "type": "character",
+    "id": "mvsc2_captain_commando",
+    "game": "mvsc2",
+    "name": "Captain Commando",
+    "bio": "Capcom’s armored futuristic hero who leads a team of crime-fighters.",
+    "role": "regular_or_original_roster",
+    "portrait_asset": "",
+    "portrait_status": "pending_original_rom_extraction",
+    "source_urls": [
+      "https://www.gamesradar.com/the-56-characters-of-marvel-vs-capcom-2/",
+      "https://liquipedia.net/fighters/Marvel_vs._Capcom_2/Game_Information"
+    ]
+  },
+  {
+    "type": "character",
+    "id": "mvsc2_charlie",
+    "game": "mvsc2",
+    "name": "Charlie",
+    "bio": "Also known as Nash, a military fighter who uses Sonic Boom and acrobatic strikes.",
+    "role": "regular_or_original_roster",
+    "portrait_asset": "",
+    "portrait_status": "pending_original_rom_extraction",
+    "source_urls": [
+      "https://www.gamesradar.com/the-56-characters-of-marvel-vs-capcom-2/",
+      "https://liquipedia.net/fighters/Marvel_vs._Capcom_2/Game_Information"
+    ]
+  },
+  {
+    "type": "character",
+    "id": "mvsc2_chun_li",
+    "game": "mvsc2",
+    "name": "Chun-Li",
+    "bio": "An Interpol investigator and elite martial artist recognized for rapid kicks and the Kikoken.",
+    "role": "regular_or_original_roster",
+    "portrait_asset": "",
+    "portrait_status": "pending_original_rom_extraction",
+    "source_urls": [
+      "https://www.gamesradar.com/the-56-characters-of-marvel-vs-capcom-2/",
+      "https://liquipedia.net/fighters/Marvel_vs._Capcom_2/Game_Information"
+    ]
+  },
+  {
+    "type": "character",
+    "id": "mvsc2_colossus",
+    "game": "mvsc2",
+    "name": "Colossus",
+    "bio": "Piotr Rasputin transforms his skin into organic steel, using formidable strength and durability.",
+    "role": "regular_or_original_roster",
+    "portrait_asset": "",
+    "portrait_status": "pending_original_rom_extraction",
+    "source_urls": [
+      "https://www.gamesradar.com/the-56-characters-of-marvel-vs-capcom-2/",
+      "https://liquipedia.net/fighters/Marvel_vs._Capcom_2/Game_Information"
+    ]
+  },
+  {
+    "type": "character",
+    "id": "mvsc2_cyclops",
+    "game": "mvsc2",
+    "name": "Cyclops",
+    "bio": "Scott Summers leads with tactical discipline and destructive optic blasts emitted from his eyes.",
+    "role": "regular_or_original_roster",
+    "portrait_asset": "",
+    "portrait_status": "pending_original_rom_extraction",
+    "source_urls": [
+      "https://www.gamesradar.com/the-56-characters-of-marvel-vs-capcom-2/",
+      "https://liquipedia.net/fighters/Marvel_vs._Capcom_2/Game_Information"
+    ]
+  },
+  {
+    "type": "character",
+    "id": "mvsc2_dan",
+    "game": "mvsc2",
+    "name": "Dan",
+    "bio": "A brash martial artist who practices Saikyo-ryu and brings comic bravado to battle.",
+    "role": "regular_or_original_roster",
+    "portrait_asset": "",
+    "portrait_status": "pending_original_rom_extraction",
+    "source_urls": [
+      "https://www.gamesradar.com/the-56-characters-of-marvel-vs-capcom-2/",
+      "https://liquipedia.net/fighters/Marvel_vs._Capcom_2/Game_Information"
+    ]
+  },
+  {
+    "type": "character",
+    "id": "mvsc2_dhalsim",
+    "game": "mvsc2",
+    "name": "Dhalsim",
+    "bio": "A yogi and martial artist who attacks from long range using stretching limbs and mystical flames.",
+    "role": "regular_or_original_roster",
+    "portrait_asset": "",
+    "portrait_status": "pending_original_rom_extraction",
+    "source_urls": [
+      "https://www.gamesradar.com/the-56-characters-of-marvel-vs-capcom-2/",
+      "https://liquipedia.net/fighters/Marvel_vs._Capcom_2/Game_Information"
+    ]
+  },
+  {
+    "type": "character",
+    "id": "mvsc2_doctor_doom",
+    "game": "mvsc2",
+    "name": "Doctor Doom",
+    "bio": "Victor von Doom is an armored Latverian ruler and scientific genius who also practices sorcery.",
+    "role": "regular_or_original_roster",
+    "portrait_asset": "",
+    "portrait_status": "pending_original_rom_extraction",
+    "source_urls": [
+      "https://www.gamesradar.com/the-56-characters-of-marvel-vs-capcom-2/",
+      "https://liquipedia.net/fighters/Marvel_vs._Capcom_2/Game_Information"
+    ]
+  },
+  {
+    "type": "character",
+    "id": "mvsc2_felicia",
+    "game": "mvsc2",
+    "name": "Felicia",
+    "bio": "An energetic catwoman from Darkstalkers with fast claw attacks.",
+    "role": "regular_or_original_roster",
+    "portrait_asset": "",
+    "portrait_status": "pending_original_rom_extraction",
+    "source_urls": [
+      "https://www.gamesradar.com/the-56-characters-of-marvel-vs-capcom-2/",
+      "https://liquipedia.net/fighters/Marvel_vs._Capcom_2/Game_Information"
+    ]
+  },
+  {
+    "type": "character",
+    "id": "mvsc2_gambit",
+    "game": "mvsc2",
+    "name": "Gambit",
+    "bio": "Remy LeBeau channels kinetic energy through playing cards and wields a fighting staff.",
+    "role": "regular_or_original_roster",
+    "portrait_asset": "",
+    "portrait_status": "pending_original_rom_extraction",
+    "source_urls": [
+      "https://www.gamesradar.com/the-56-characters-of-marvel-vs-capcom-2/",
+      "https://liquipedia.net/fighters/Marvel_vs._Capcom_2/Game_Information"
+    ]
+  },
+  {
+    "type": "character",
+    "id": "mvsc2_guile",
+    "game": "mvsc2",
+    "name": "Guile",
+    "bio": "A disciplined military fighter known for Sonic Boom and Flash Kick.",
+    "role": "regular_or_original_roster",
+    "portrait_asset": "",
+    "portrait_status": "pending_original_rom_extraction",
+    "source_urls": [
+      "https://www.gamesradar.com/the-56-characters-of-marvel-vs-capcom-2/",
+      "https://liquipedia.net/fighters/Marvel_vs._Capcom_2/Game_Information"
+    ]
+  },
+  {
+    "type": "character",
+    "id": "mvsc2_hayato",
+    "game": "mvsc2",
+    "name": "Hayato",
+    "bio": "A Star Gladiator swordsman who carries a plasma blade into the crossover.",
+    "role": "regular_or_original_roster",
+    "portrait_asset": "",
+    "portrait_status": "pending_original_rom_extraction",
+    "source_urls": [
+      "https://www.gamesradar.com/the-56-characters-of-marvel-vs-capcom-2/",
+      "https://liquipedia.net/fighters/Marvel_vs._Capcom_2/Game_Information"
+    ]
+  },
+  {
+    "type": "character",
+    "id": "mvsc2_hulk",
+    "game": "mvsc2",
+    "name": "Hulk",
+    "bio": "Bruce Banner transforms into a near-unstoppable gamma-powered powerhouse.",
+    "role": "regular_or_original_roster",
+    "portrait_asset": "",
+    "portrait_status": "pending_original_rom_extraction",
+    "source_urls": [
+      "https://www.gamesradar.com/the-56-characters-of-marvel-vs-capcom-2/",
+      "https://liquipedia.net/fighters/Marvel_vs._Capcom_2/Game_Information"
+    ]
+  },
+  {
+    "type": "character",
+    "id": "mvsc2_iceman",
+    "game": "mvsc2",
+    "name": "Iceman",
+    "bio": "Bobby Drake turns moisture into ice, attacking with frozen projectiles and defensive ice constructs.",
+    "role": "regular_or_original_roster",
+    "portrait_asset": "",
+    "portrait_status": "pending_original_rom_extraction",
+    "source_urls": [
+      "https://www.gamesradar.com/the-56-characters-of-marvel-vs-capcom-2/",
+      "https://liquipedia.net/fighters/Marvel_vs._Capcom_2/Game_Information"
+    ]
+  },
+  {
+    "type": "character",
+    "id": "mvsc2_iron_man",
+    "game": "mvsc2",
+    "name": "Iron Man",
+    "bio": "Tony Stark fights in advanced powered armor equipped with energy weapons and flight systems.",
+    "role": "regular_or_original_roster",
+    "portrait_asset": "",
+    "portrait_status": "pending_original_rom_extraction",
+    "source_urls": [
+      "https://www.gamesradar.com/the-56-characters-of-marvel-vs-capcom-2/",
+      "https://liquipedia.net/fighters/Marvel_vs._Capcom_2/Game_Information"
+    ]
+  },
+  {
+    "type": "character",
+    "id": "mvsc2_jill_valentine",
+    "game": "mvsc2",
+    "name": "Jill Valentine",
+    "bio": "A Resident Evil protagonist who uses firearms, tools and support summons.",
+    "role": "regular_or_original_roster",
+    "portrait_asset": "",
+    "portrait_status": "pending_original_rom_extraction",
+    "source_urls": [
+      "https://www.gamesradar.com/the-56-characters-of-marvel-vs-capcom-2/",
+      "https://liquipedia.net/fighters/Marvel_vs._Capcom_2/Game_Information"
+    ]
+  },
+  {
+    "type": "character",
+    "id": "mvsc2_jin_saotome",
+    "game": "mvsc2",
+    "name": "Jin Saotome",
+    "bio": "A pilot from Cyberbots whose flashy attacks include explosive mechanical power.",
+    "role": "regular_or_original_roster",
+    "portrait_asset": "",
+    "portrait_status": "pending_original_rom_extraction",
+    "source_urls": [
+      "https://www.gamesradar.com/the-56-characters-of-marvel-vs-capcom-2/",
+      "https://liquipedia.net/fighters/Marvel_vs._Capcom_2/Game_Information"
+    ]
+  },
+  {
+    "type": "character",
+    "id": "mvsc2_juggernaut",
+    "game": "mvsc2",
+    "name": "Juggernaut",
+    "bio": "Cain Marko draws overwhelming strength from the mystical Crimson Gem of Cyttorak.",
+    "role": "regular_or_original_roster",
+    "portrait_asset": "",
+    "portrait_status": "pending_original_rom_extraction",
+    "source_urls": [
+      "https://www.gamesradar.com/the-56-characters-of-marvel-vs-capcom-2/",
+      "https://liquipedia.net/fighters/Marvel_vs._Capcom_2/Game_Information"
+    ]
+  },
+  {
+    "type": "character",
+    "id": "mvsc2_ken",
+    "game": "mvsc2",
+    "name": "Ken",
+    "bio": "Ryu’s longtime friend and rival, known for aggressive martial arts and fiery variations of his Shoryuken.",
+    "role": "regular_or_original_roster",
+    "portrait_asset": "",
+    "portrait_status": "pending_original_rom_extraction",
+    "source_urls": [
+      "https://www.gamesradar.com/the-56-characters-of-marvel-vs-capcom-2/",
+      "https://liquipedia.net/fighters/Marvel_vs._Capcom_2/Game_Information"
+    ]
+  },
+  {
+    "type": "character",
+    "id": "mvsc2_m_bison",
+    "game": "mvsc2",
+    "name": "M. Bison",
+    "bio": "The tyrannical head of Shadaloo, wielding Psycho Power in his attacks.",
+    "role": "regular_or_original_roster",
+    "portrait_asset": "",
+    "portrait_status": "pending_original_rom_extraction",
+    "source_urls": [
+      "https://www.gamesradar.com/the-56-characters-of-marvel-vs-capcom-2/",
+      "https://liquipedia.net/fighters/Marvel_vs._Capcom_2/Game_Information"
+    ]
+  },
+  {
+    "type": "character",
+    "id": "mvsc2_magneto",
+    "game": "mvsc2",
+    "name": "Magneto",
+    "bio": "The master of magnetism manipulates metal and magnetic fields and frequently challenges the X-Men.",
+    "role": "regular_or_original_roster",
+    "portrait_asset": "",
+    "portrait_status": "pending_original_rom_extraction",
+    "source_urls": [
+      "https://www.gamesradar.com/the-56-characters-of-marvel-vs-capcom-2/",
+      "https://liquipedia.net/fighters/Marvel_vs._Capcom_2/Game_Information"
+    ]
+  },
+  {
+    "type": "character",
+    "id": "mvsc2_marrow",
+    "game": "mvsc2",
+    "name": "Marrow",
+    "bio": "A mutant who grows and weaponizes bone spikes.",
+    "role": "regular_or_original_roster",
+    "portrait_asset": "",
+    "portrait_status": "pending_original_rom_extraction",
+    "source_urls": [
+      "https://www.gamesradar.com/the-56-characters-of-marvel-vs-capcom-2/",
+      "https://liquipedia.net/fighters/Marvel_vs._Capcom_2/Game_Information"
+    ]
+  },
+  {
+    "type": "character",
+    "id": "mvsc2_mega_man",
+    "game": "mvsc2",
+    "name": "Mega Man",
+    "bio": "Capcom’s blue robot hero, using his arm cannon and special weapon abilities.",
+    "role": "regular_or_original_roster",
+    "portrait_asset": "",
+    "portrait_status": "pending_original_rom_extraction",
+    "source_urls": [
+      "https://www.gamesradar.com/the-56-characters-of-marvel-vs-capcom-2/",
+      "https://liquipedia.net/fighters/Marvel_vs._Capcom_2/Game_Information"
+    ]
+  },
+  {
+    "type": "character",
+    "id": "mvsc2_morrigan",
+    "game": "mvsc2",
+    "name": "Morrigan",
+    "bio": "A powerful succubus from Darkstalkers who uses Soul Fist projectiles and aerial mobility.",
+    "role": "regular_or_original_roster",
+    "portrait_asset": "",
+    "portrait_status": "pending_original_rom_extraction",
+    "source_urls": [
+      "https://www.gamesradar.com/the-56-characters-of-marvel-vs-capcom-2/",
+      "https://liquipedia.net/fighters/Marvel_vs._Capcom_2/Game_Information"
+    ]
+  },
+  {
+    "type": "character",
+    "id": "mvsc2_omega_red",
+    "game": "mvsc2",
+    "name": "Omega Red",
+    "bio": "A dangerous mutant opponent who attacks with extendable carbonadium coils.",
+    "role": "regular_or_original_roster",
+    "portrait_asset": "",
+    "portrait_status": "pending_original_rom_extraction",
+    "source_urls": [
+      "https://www.gamesradar.com/the-56-characters-of-marvel-vs-capcom-2/",
+      "https://liquipedia.net/fighters/Marvel_vs._Capcom_2/Game_Information"
+    ]
+  },
+  {
+    "type": "character",
+    "id": "mvsc2_psylocke",
+    "game": "mvsc2",
+    "name": "Psylocke",
+    "bio": "The psychic mutant fights with nimble martial arts and focused psychic-energy blades.",
+    "role": "regular_or_original_roster",
+    "portrait_asset": "",
+    "portrait_status": "pending_original_rom_extraction",
+    "source_urls": [
+      "https://www.gamesradar.com/the-56-characters-of-marvel-vs-capcom-2/",
+      "https://liquipedia.net/fighters/Marvel_vs._Capcom_2/Game_Information"
+    ]
+  },
+  {
+    "type": "character",
+    "id": "mvsc2_rogue",
+    "game": "mvsc2",
+    "name": "Rogue",
+    "bio": "A powerful X-Man known for flight, strength and an ability to absorb powers through contact.",
+    "role": "regular_or_original_roster",
+    "portrait_asset": "",
+    "portrait_status": "pending_original_rom_extraction",
+    "source_urls": [
+      "https://www.gamesradar.com/the-56-characters-of-marvel-vs-capcom-2/",
+      "https://liquipedia.net/fighters/Marvel_vs._Capcom_2/Game_Information"
+    ]
+  },
+  {
+    "type": "character",
+    "id": "mvsc2_roll",
+    "game": "mvsc2",
+    "name": "Roll",
+    "bio": "Mega Man’s companion robot, appearing as a secret playable Capcom guest.",
+    "role": "regular_or_original_roster",
+    "portrait_asset": "",
+    "portrait_status": "pending_original_rom_extraction",
+    "source_urls": [
+      "https://www.gamesradar.com/the-56-characters-of-marvel-vs-capcom-2/",
+      "https://liquipedia.net/fighters/Marvel_vs._Capcom_2/Game_Information"
+    ]
+  },
+  {
+    "type": "character",
+    "id": "mvsc2_ruby_heart",
+    "game": "mvsc2",
+    "name": "Ruby Heart",
+    "bio": "An original Marvel vs. Capcom 2 pirate captain who fights with mystical artifacts.",
+    "role": "regular_or_original_roster",
+    "portrait_asset": "",
+    "portrait_status": "pending_original_rom_extraction",
+    "source_urls": [
+      "https://www.gamesradar.com/the-56-characters-of-marvel-vs-capcom-2/",
+      "https://liquipedia.net/fighters/Marvel_vs._Capcom_2/Game_Information"
+    ]
+  },
+  {
+    "type": "character",
+    "id": "mvsc2_ryu",
+    "game": "mvsc2",
+    "name": "Ryu",
+    "bio": "A wandering martial artist devoted to improving his skills. His Hadouken and Shoryuken are signatures of the Street Fighter series.",
+    "role": "regular_or_original_roster",
+    "portrait_asset": "",
+    "portrait_status": "pending_original_rom_extraction",
+    "source_urls": [
+      "https://www.gamesradar.com/the-56-characters-of-marvel-vs-capcom-2/",
+      "https://liquipedia.net/fighters/Marvel_vs._Capcom_2/Game_Information"
+    ]
+  },
+  {
+    "type": "character",
+    "id": "mvsc2_sabretooth",
+    "game": "mvsc2",
+    "name": "Sabretooth",
+    "bio": "A savage mutant with claws, powerful senses and a long-standing rivalry with Wolverine.",
+    "role": "regular_or_original_roster",
+    "portrait_asset": "",
+    "portrait_status": "pending_original_rom_extraction",
+    "source_urls": [
+      "https://www.gamesradar.com/the-56-characters-of-marvel-vs-capcom-2/",
+      "https://liquipedia.net/fighters/Marvel_vs._Capcom_2/Game_Information"
+    ]
+  },
+  {
+    "type": "character",
+    "id": "mvsc2_sakura",
+    "game": "mvsc2",
+    "name": "Sakura",
+    "bio": "A spirited student and self-taught fighter inspired by Ryu’s martial arts.",
+    "role": "regular_or_original_roster",
+    "portrait_asset": "",
+    "portrait_status": "pending_original_rom_extraction",
+    "source_urls": [
+      "https://www.gamesradar.com/the-56-characters-of-marvel-vs-capcom-2/",
+      "https://liquipedia.net/fighters/Marvel_vs._Capcom_2/Game_Information"
+    ]
+  },
+  {
+    "type": "character",
+    "id": "mvsc2_sentinel",
+    "game": "mvsc2",
+    "name": "Sentinel",
+    "bio": "A mutant-hunting robot with heavy armor, energy attacks and imposing mechanical reach.",
+    "role": "regular_or_original_roster",
+    "portrait_asset": "",
+    "portrait_status": "pending_original_rom_extraction",
+    "source_urls": [
+      "https://www.gamesradar.com/the-56-characters-of-marvel-vs-capcom-2/",
+      "https://liquipedia.net/fighters/Marvel_vs._Capcom_2/Game_Information"
+    ]
+  },
+  {
+    "type": "character",
+    "id": "mvsc2_servbot",
+    "game": "mvsc2",
+    "name": "Servbot",
+    "bio": "One of Tron Bonne’s little helper robots, appearing as a separate playable fighter.",
+    "role": "regular_or_original_roster",
+    "portrait_asset": "",
+    "portrait_status": "pending_original_rom_extraction",
+    "source_urls": [
+      "https://www.gamesradar.com/the-56-characters-of-marvel-vs-capcom-2/",
+      "https://liquipedia.net/fighters/Marvel_vs._Capcom_2/Game_Information"
+    ]
+  },
+  {
+    "type": "character",
+    "id": "mvsc2_shuma_gorath",
+    "game": "mvsc2",
+    "name": "Shuma-Gorath",
+    "bio": "An ancient extradimensional entity known for tentacles, bizarre transformations and mystical attacks.",
+    "role": "regular_or_original_roster",
+    "portrait_asset": "",
+    "portrait_status": "pending_original_rom_extraction",
+    "source_urls": [
+      "https://www.gamesradar.com/the-56-characters-of-marvel-vs-capcom-2/",
+      "https://liquipedia.net/fighters/Marvel_vs._Capcom_2/Game_Information"
+    ]
+  },
+  {
+    "type": "character",
+    "id": "mvsc2_silver_samurai",
+    "game": "mvsc2",
+    "name": "Silver Samurai",
+    "bio": "A katana-wielding mutant adversary whose blade can channel powerful energy.",
+    "role": "regular_or_original_roster",
+    "portrait_asset": "",
+    "portrait_status": "pending_original_rom_extraction",
+    "source_urls": [
+      "https://www.gamesradar.com/the-56-characters-of-marvel-vs-capcom-2/",
+      "https://liquipedia.net/fighters/Marvel_vs._Capcom_2/Game_Information"
+    ]
+  },
+  {
+    "type": "character",
+    "id": "mvsc2_sonson",
+    "game": "mvsc2",
+    "name": "SonSon",
+    "bio": "A monkey-girl martial artist based on Capcom’s SonSon legacy.",
+    "role": "regular_or_original_roster",
+    "portrait_asset": "",
+    "portrait_status": "pending_original_rom_extraction",
+    "source_urls": [
+      "https://www.gamesradar.com/the-56-characters-of-marvel-vs-capcom-2/",
+      "https://liquipedia.net/fighters/Marvel_vs._Capcom_2/Game_Information"
+    ]
+  },
+  {
+    "type": "character",
+    "id": "mvsc2_spider_man",
+    "game": "mvsc2",
+    "name": "Spider-Man",
+    "bio": "Peter Parker combines spider-like agility, web shooters and fast improvisation in battle.",
+    "role": "regular_or_original_roster",
+    "portrait_asset": "",
+    "portrait_status": "pending_original_rom_extraction",
+    "source_urls": [
+      "https://www.gamesradar.com/the-56-characters-of-marvel-vs-capcom-2/",
+      "https://liquipedia.net/fighters/Marvel_vs._Capcom_2/Game_Information"
+    ]
+  },
+  {
+    "type": "character",
+    "id": "mvsc2_spiral",
+    "game": "mvsc2",
+    "name": "Spiral",
+    "bio": "A six-armed warrior and sorceress associated with Mojo, blending blade attacks with teleportation and magic.",
+    "role": "regular_or_original_roster",
+    "portrait_asset": "",
+    "portrait_status": "pending_original_rom_extraction",
+    "source_urls": [
+      "https://www.gamesradar.com/the-56-characters-of-marvel-vs-capcom-2/",
+      "https://liquipedia.net/fighters/Marvel_vs._Capcom_2/Game_Information"
+    ]
+  },
+  {
+    "type": "character",
+    "id": "mvsc2_storm",
+    "game": "mvsc2",
+    "name": "Storm",
+    "bio": "Ororo Munroe is an X-Men leader who commands wind, lightning and other weather phenomena.",
+    "role": "regular_or_original_roster",
+    "portrait_asset": "",
+    "portrait_status": "pending_original_rom_extraction",
+    "source_urls": [
+      "https://www.gamesradar.com/the-56-characters-of-marvel-vs-capcom-2/",
+      "https://liquipedia.net/fighters/Marvel_vs._Capcom_2/Game_Information"
+    ]
+  },
+  {
+    "type": "character",
+    "id": "mvsc2_strider_hiryu",
+    "game": "mvsc2",
+    "name": "Strider Hiryu",
+    "bio": "A futuristic ninja armed with the Cypher plasma sword and acrobatic mobility.",
+    "role": "regular_or_original_roster",
+    "portrait_asset": "",
+    "portrait_status": "pending_original_rom_extraction",
+    "source_urls": [
+      "https://www.gamesradar.com/the-56-characters-of-marvel-vs-capcom-2/",
+      "https://liquipedia.net/fighters/Marvel_vs._Capcom_2/Game_Information"
+    ]
+  },
+  {
+    "type": "character",
+    "id": "mvsc2_thanos",
+    "game": "mvsc2",
+    "name": "Thanos",
+    "bio": "A formidable cosmic antagonist whose schemes center on power and the Infinity Gems.",
+    "role": "regular_or_original_roster",
+    "portrait_asset": "",
+    "portrait_status": "pending_original_rom_extraction",
+    "source_urls": [
+      "https://www.gamesradar.com/the-56-characters-of-marvel-vs-capcom-2/",
+      "https://liquipedia.net/fighters/Marvel_vs._Capcom_2/Game_Information"
+    ]
+  },
+  {
+    "type": "character",
+    "id": "mvsc2_tron_bonne",
+    "game": "mvsc2",
+    "name": "Tron Bonne",
+    "bio": "A Mega Man Legends rival who commands mechanical Servbots and machines.",
+    "role": "regular_or_original_roster",
+    "portrait_asset": "",
+    "portrait_status": "pending_original_rom_extraction",
+    "source_urls": [
+      "https://www.gamesradar.com/the-56-characters-of-marvel-vs-capcom-2/",
+      "https://liquipedia.net/fighters/Marvel_vs._Capcom_2/Game_Information"
+    ]
+  },
+  {
+    "type": "character",
+    "id": "mvsc2_venom",
+    "game": "mvsc2",
+    "name": "Venom",
+    "bio": "A symbiote-enhanced Spider-Man adversary whose shape-shifting form grants unusual attacks.",
+    "role": "regular_or_original_roster",
+    "portrait_asset": "",
+    "portrait_status": "pending_original_rom_extraction",
+    "source_urls": [
+      "https://www.gamesradar.com/the-56-characters-of-marvel-vs-capcom-2/",
+      "https://liquipedia.net/fighters/Marvel_vs._Capcom_2/Game_Information"
+    ]
+  },
+  {
+    "type": "character",
+    "id": "mvsc2_war_machine",
+    "game": "mvsc2",
+    "name": "War Machine",
+    "bio": "James Rhodes pilots heavily armed combat armor with powerful cannons and explosives.",
+    "role": "regular_or_original_roster",
+    "portrait_asset": "",
+    "portrait_status": "pending_original_rom_extraction",
+    "source_urls": [
+      "https://www.gamesradar.com/the-56-characters-of-marvel-vs-capcom-2/",
+      "https://liquipedia.net/fighters/Marvel_vs._Capcom_2/Game_Information"
+    ]
+  },
+  {
+    "type": "character",
+    "id": "mvsc2_wolverine_adamantium",
+    "game": "mvsc2",
+    "name": "Wolverine (Adamantium)",
+    "bio": "The adamantium-clawed version of Wolverine, known for fast rushdown and relentless close combat.",
+    "role": "regular_or_original_roster",
+    "portrait_asset": "",
+    "portrait_status": "pending_original_rom_extraction",
+    "source_urls": [
+      "https://www.gamesradar.com/the-56-characters-of-marvel-vs-capcom-2/",
+      "https://liquipedia.net/fighters/Marvel_vs._Capcom_2/Game_Information"
+    ]
+  },
+  {
+    "type": "character",
+    "id": "mvsc2_wolverine_bone_claws",
+    "game": "mvsc2",
+    "name": "Wolverine (Bone Claws)",
+    "bio": "A separate Wolverine roster slot representing his earlier bone-clawed appearance in Marvel vs. Capcom 2.",
+    "role": "regular_or_original_roster",
+    "portrait_asset": "",
+    "portrait_status": "pending_original_rom_extraction",
+    "source_urls": [
+      "https://www.gamesradar.com/the-56-characters-of-marvel-vs-capcom-2/",
+      "https://liquipedia.net/fighters/Marvel_vs._Capcom_2/Game_Information"
+    ]
+  },
+  {
+    "type": "character",
+    "id": "mvsc2_zangief",
+    "game": "mvsc2",
+    "name": "Zangief",
+    "bio": "A professional wrestler famous for punishing throws and the Spinning Piledriver.",
+    "role": "regular_or_original_roster",
+    "portrait_asset": "",
+    "portrait_status": "pending_original_rom_extraction",
+    "source_urls": [
+      "https://www.gamesradar.com/the-56-characters-of-marvel-vs-capcom-2/",
+      "https://liquipedia.net/fighters/Marvel_vs._Capcom_2/Game_Information"
+    ]
+  },
+  {
+    "type": "game",
+    "id": "sfexp",
+    "name": "Street Fighter EX Plus",
+    "year": 1997,
+    "hardware": "Capcom ZN-1",
+    "developer": "Arika / Capcom",
+    "history": "An enhanced arcade revision of the first polygonal Street Fighter EX. Arika’s new fighters face classic Street Fighter opponents in a 3D-looking arena with traditional two-dimensional combat.",
+    "mechanics": "The arcade EX Plus differs from the later PlayStation EX Plus Alpha.",
+    "background_art_note": "Use captured/extracted original arcade stage art only; no external copyrighted images bundled.",
+    "sources": [
+      "https://www.arika.co.jp/game/game_en.html",
+      "https://www.mobygames.com/game/135004/street-fighter-ex-plus/"
+    ],
+    "image_status": "pending_original_arcade_capture"
+  },
+  {
+    "type": "character",
+    "id": "sfexp_ryu",
+    "game": "sfexp",
+    "name": "Ryu",
+    "bio": "A wandering martial artist devoted to improving his skills. His Hadouken and Shoryuken are signatures of the Street Fighter series.",
+    "role": "regular_or_original_roster",
+    "portrait_asset": "",
+    "portrait_status": "pending_original_rom_extraction",
+    "source_urls": [
+      "https://www.arika.co.jp/game/game_en.html",
+      "https://www.mobygames.com/game/135004/street-fighter-ex-plus/"
+    ]
+  },
+  {
+    "type": "character",
+    "id": "sfexp_ken",
+    "game": "sfexp",
+    "name": "Ken",
+    "bio": "Ryu’s longtime friend and rival, known for aggressive martial arts and fiery variations of his Shoryuken.",
+    "role": "regular_or_original_roster",
+    "portrait_asset": "",
+    "portrait_status": "pending_original_rom_extraction",
+    "source_urls": [
+      "https://www.arika.co.jp/game/game_en.html",
+      "https://www.mobygames.com/game/135004/street-fighter-ex-plus/"
+    ]
+  },
+  {
+    "type": "character",
+    "id": "sfexp_chun_li",
+    "game": "sfexp",
+    "name": "Chun-Li",
+    "bio": "An Interpol investigator and elite martial artist recognized for rapid kicks and the Kikoken.",
+    "role": "regular_or_original_roster",
+    "portrait_asset": "",
+    "portrait_status": "pending_original_rom_extraction",
+    "source_urls": [
+      "https://www.arika.co.jp/game/game_en.html",
+      "https://www.mobygames.com/game/135004/street-fighter-ex-plus/"
+    ]
+  },
+  {
+    "type": "character",
+    "id": "sfexp_guile",
+    "game": "sfexp",
+    "name": "Guile",
+    "bio": "A disciplined military fighter known for Sonic Boom and Flash Kick.",
+    "role": "regular_or_original_roster",
+    "portrait_asset": "",
+    "portrait_status": "pending_original_rom_extraction",
+    "source_urls": [
+      "https://www.arika.co.jp/game/game_en.html",
+      "https://www.mobygames.com/game/135004/street-fighter-ex-plus/"
+    ]
+  },
+  {
+    "type": "character",
+    "id": "sfexp_zangief",
+    "game": "sfexp",
+    "name": "Zangief",
+    "bio": "A professional wrestler famous for punishing throws and the Spinning Piledriver.",
+    "role": "regular_or_original_roster",
+    "portrait_asset": "",
+    "portrait_status": "pending_original_rom_extraction",
+    "source_urls": [
+      "https://www.arika.co.jp/game/game_en.html",
+      "https://www.mobygames.com/game/135004/street-fighter-ex-plus/"
+    ]
+  },
+  {
+    "type": "character",
+    "id": "sfexp_hokuto",
+    "game": "sfexp",
+    "name": "Hokuto",
+    "bio": "An Arika martial artist linked to the EX series’ mysterious combat traditions.",
+    "role": "regular_or_original_roster",
+    "portrait_asset": "",
+    "portrait_status": "pending_original_rom_extraction",
+    "source_urls": [
+      "https://www.arika.co.jp/game/game_en.html",
+      "https://www.mobygames.com/game/135004/street-fighter-ex-plus/"
+    ]
+  },
+  {
+    "type": "character",
+    "id": "sfexp_kairi",
+    "game": "sfexp",
+    "name": "Kairi",
+    "bio": "A wandering warrior from Arika’s EX cast with powerful energy-driven combat.",
+    "role": "regular_or_original_roster",
+    "portrait_asset": "",
+    "portrait_status": "pending_original_rom_extraction",
+    "source_urls": [
+      "https://www.arika.co.jp/game/game_en.html",
+      "https://www.mobygames.com/game/135004/street-fighter-ex-plus/"
+    ]
+  },
+  {
+    "type": "character",
+    "id": "sfexp_skullomania",
+    "game": "sfexp",
+    "name": "Skullomania",
+    "bio": "A costumed hero figure from the EX series with acrobatic, theatrical fighting techniques.",
+    "role": "regular_or_original_roster",
+    "portrait_asset": "",
+    "portrait_status": "pending_original_rom_extraction",
+    "source_urls": [
+      "https://www.arika.co.jp/game/game_en.html",
+      "https://www.mobygames.com/game/135004/street-fighter-ex-plus/"
+    ]
+  },
+  {
+    "type": "character",
+    "id": "sfexp_darun_mister",
+    "game": "sfexp",
+    "name": "Darun Mister",
+    "bio": "An Indian professional wrestler with spectacular grappling moves.",
+    "role": "regular_or_original_roster",
+    "portrait_asset": "",
+    "portrait_status": "pending_original_rom_extraction",
+    "source_urls": [
+      "https://www.arika.co.jp/game/game_en.html",
+      "https://www.mobygames.com/game/135004/street-fighter-ex-plus/"
+    ]
+  },
+  {
+    "type": "character",
+    "id": "sfexp_pullum_purna",
+    "game": "sfexp",
+    "name": "Pullum Purna",
+    "bio": "An Arika fighter associated with acrobatic kicks and elegant martial arts.",
+    "role": "regular_or_original_roster",
+    "portrait_asset": "",
+    "portrait_status": "pending_original_rom_extraction",
+    "source_urls": [
+      "https://www.arika.co.jp/game/game_en.html",
+      "https://www.mobygames.com/game/135004/street-fighter-ex-plus/"
+    ]
+  },
+  {
+    "type": "character",
+    "id": "sfexp_doctrine_dark",
+    "game": "sfexp",
+    "name": "Doctrine Dark",
+    "bio": "A masked fighter who employs weapons and unusual defensive tactics.",
+    "role": "regular_or_original_roster",
+    "portrait_asset": "",
+    "portrait_status": "pending_original_rom_extraction",
+    "source_urls": [
+      "https://www.arika.co.jp/game/game_en.html",
+      "https://www.mobygames.com/game/135004/street-fighter-ex-plus/"
+    ]
+  },
+  {
+    "type": "character",
+    "id": "sfexp_cracker_jack",
+    "game": "sfexp",
+    "name": "Cracker Jack",
+    "bio": "A hard-hitting bodyguard and boxer-like brawler in the EX series.",
+    "role": "regular_or_original_roster",
+    "portrait_asset": "",
+    "portrait_status": "pending_original_rom_extraction",
+    "source_urls": [
+      "https://www.arika.co.jp/game/game_en.html",
+      "https://www.mobygames.com/game/135004/street-fighter-ex-plus/"
+    ]
+  },
+  {
+    "type": "character",
+    "id": "sfexp_allen_snider",
+    "game": "sfexp",
+    "name": "Allen Snider",
+    "bio": "An American martial artist from the original EX roster.",
+    "role": "regular_or_original_roster",
+    "portrait_asset": "",
+    "portrait_status": "pending_original_rom_extraction",
+    "source_urls": [
+      "https://www.arika.co.jp/game/game_en.html",
+      "https://www.mobygames.com/game/135004/street-fighter-ex-plus/"
+    ]
+  },
+  {
+    "type": "character",
+    "id": "sfexp_blair_dame",
+    "game": "sfexp",
+    "name": "Blair Dame",
+    "bio": "An athletic fighter from the original EX roster.",
+    "role": "regular_or_original_roster",
+    "portrait_asset": "",
+    "portrait_status": "pending_original_rom_extraction",
+    "source_urls": [
+      "https://www.arika.co.jp/game/game_en.html",
+      "https://www.mobygames.com/game/135004/street-fighter-ex-plus/"
+    ]
+  },
+  {
+    "type": "character",
+    "id": "sfexp_garuda",
+    "game": "sfexp",
+    "name": "Garuda",
+    "bio": "A sinister armored warrior with supernatural attacks in the EX storyline.",
+    "role": "regular_or_original_roster",
+    "portrait_asset": "",
+    "portrait_status": "pending_original_rom_extraction",
+    "source_urls": [
+      "https://www.arika.co.jp/game/game_en.html",
+      "https://www.mobygames.com/game/135004/street-fighter-ex-plus/"
+    ]
+  },
+  {
+    "type": "character",
+    "id": "sfexp_akuma",
+    "game": "sfexp",
+    "name": "Akuma",
+    "bio": "A ruthless practitioner of the Satsui no Hado; a secret guest fighter in some early Marvel arcade appearances.",
+    "role": "regular_or_original_roster",
+    "portrait_asset": "",
+    "portrait_status": "pending_original_rom_extraction",
+    "source_urls": [
+      "https://www.arika.co.jp/game/game_en.html",
+      "https://www.mobygames.com/game/135004/street-fighter-ex-plus/"
+    ]
+  },
+  {
+    "type": "character",
+    "id": "sfexp_m_bison",
+    "game": "sfexp",
+    "name": "M. Bison",
+    "bio": "The tyrannical head of Shadaloo, wielding Psycho Power in his attacks.",
+    "role": "regular_or_original_roster",
+    "portrait_asset": "",
+    "portrait_status": "pending_original_rom_extraction",
+    "source_urls": [
+      "https://www.arika.co.jp/game/game_en.html",
+      "https://www.mobygames.com/game/135004/street-fighter-ex-plus/"
+    ]
+  },
+  {
+    "type": "character",
+    "id": "sfexp_evil_ryu",
+    "game": "sfexp",
+    "name": "Evil Ryu",
+    "bio": "A dark Ryu variant representing a dangerous aggressive fighting influence.",
+    "role": "regular_or_original_roster",
+    "portrait_asset": "",
+    "portrait_status": "pending_original_rom_extraction",
+    "source_urls": [
+      "https://www.arika.co.jp/game/game_en.html",
+      "https://www.mobygames.com/game/135004/street-fighter-ex-plus/"
+    ]
+  },
+  {
+    "type": "character",
+    "id": "sfexp_bloody_hokuto",
+    "game": "sfexp",
+    "name": "Bloody Hokuto",
+    "bio": "A darker version of Hokuto that appears among EX Plus character variations.",
+    "role": "regular_or_original_roster",
+    "portrait_asset": "",
+    "portrait_status": "pending_original_rom_extraction",
+    "source_urls": [
+      "https://www.arika.co.jp/game/game_en.html",
+      "https://www.mobygames.com/game/135004/street-fighter-ex-plus/"
+    ]
+  },
+  {
+    "type": "character",
+    "id": "sfexp_cycloid_beta",
+    "game": "sfexp",
+    "name": "Cycloid Beta",
+    "bio": "A mechanical EX Plus bonus fighter with experimental abilities.",
+    "role": "regular_or_original_roster",
+    "portrait_asset": "",
+    "portrait_status": "pending_original_rom_extraction",
+    "source_urls": [
+      "https://www.arika.co.jp/game/game_en.html",
+      "https://www.mobygames.com/game/135004/street-fighter-ex-plus/"
+    ]
+  },
+  {
+    "type": "character",
+    "id": "sfexp_cycloid_gamma",
+    "game": "sfexp",
+    "name": "Cycloid Gamma",
+    "bio": "A second mechanical EX Plus bonus fighter with its own attack style.",
+    "role": "regular_or_original_roster",
+    "portrait_asset": "",
+    "portrait_status": "pending_original_rom_extraction",
+    "source_urls": [
+      "https://www.arika.co.jp/game/game_en.html",
+      "https://www.mobygames.com/game/135004/street-fighter-ex-plus/"
+    ]
+  },
+  {
+    "type": "game",
+    "id": "sfex2p",
+    "name": "Street Fighter EX2 Plus",
+    "year": 1999,
+    "hardware": "Capcom ZN-2",
+    "developer": "Arika / Capcom",
+    "history": "The expanded arcade release of Street Fighter EX2 adds fighters and special-move variations while emphasizing EX’s combination-based combat. Arika’s fighters share the stage with Capcom veterans.",
+    "mechanics": "Arcade EX2 Plus; some console-only content should not be attributed to this version.",
+    "background_art_note": "Use captured/extracted original arcade stage art only; no external copyrighted images bundled.",
+    "sources": [
+      "https://www.arika.co.jp/game/game_en.html",
+      "https://www.arcade-history.com/game/2654/"
+    ],
+    "image_status": "pending_original_arcade_capture"
+  },
+  {
+    "type": "character",
+    "id": "sfex2p_ryu",
+    "game": "sfex2p",
+    "name": "Ryu",
+    "bio": "A wandering martial artist devoted to improving his skills. His Hadouken and Shoryuken are signatures of the Street Fighter series.",
+    "role": "regular_or_original_roster",
+    "portrait_asset": "",
+    "portrait_status": "pending_original_rom_extraction",
+    "source_urls": [
+      "https://www.arika.co.jp/game/game_en.html",
+      "https://www.arcade-history.com/game/2654/"
+    ]
+  },
+  {
+    "type": "character",
+    "id": "sfex2p_ken",
+    "game": "sfex2p",
+    "name": "Ken",
+    "bio": "Ryu’s longtime friend and rival, known for aggressive martial arts and fiery variations of his Shoryuken.",
+    "role": "regular_or_original_roster",
+    "portrait_asset": "",
+    "portrait_status": "pending_original_rom_extraction",
+    "source_urls": [
+      "https://www.arika.co.jp/game/game_en.html",
+      "https://www.arcade-history.com/game/2654/"
+    ]
+  },
+  {
+    "type": "character",
+    "id": "sfex2p_chun_li",
+    "game": "sfex2p",
+    "name": "Chun-Li",
+    "bio": "An Interpol investigator and elite martial artist recognized for rapid kicks and the Kikoken.",
+    "role": "regular_or_original_roster",
+    "portrait_asset": "",
+    "portrait_status": "pending_original_rom_extraction",
+    "source_urls": [
+      "https://www.arika.co.jp/game/game_en.html",
+      "https://www.arcade-history.com/game/2654/"
+    ]
+  },
+  {
+    "type": "character",
+    "id": "sfex2p_guile",
+    "game": "sfex2p",
+    "name": "Guile",
+    "bio": "A disciplined military fighter known for Sonic Boom and Flash Kick.",
+    "role": "regular_or_original_roster",
+    "portrait_asset": "",
+    "portrait_status": "pending_original_rom_extraction",
+    "source_urls": [
+      "https://www.arika.co.jp/game/game_en.html",
+      "https://www.arcade-history.com/game/2654/"
+    ]
+  },
+  {
+    "type": "character",
+    "id": "sfex2p_zangief",
+    "game": "sfex2p",
+    "name": "Zangief",
+    "bio": "A professional wrestler famous for punishing throws and the Spinning Piledriver.",
+    "role": "regular_or_original_roster",
+    "portrait_asset": "",
+    "portrait_status": "pending_original_rom_extraction",
+    "source_urls": [
+      "https://www.arika.co.jp/game/game_en.html",
+      "https://www.arcade-history.com/game/2654/"
+    ]
+  },
+  {
+    "type": "character",
+    "id": "sfex2p_m_bison",
+    "game": "sfex2p",
+    "name": "M. Bison",
+    "bio": "The tyrannical head of Shadaloo, wielding Psycho Power in his attacks.",
+    "role": "regular_or_original_roster",
+    "portrait_asset": "",
+    "portrait_status": "pending_original_rom_extraction",
+    "source_urls": [
+      "https://www.arika.co.jp/game/game_en.html",
+      "https://www.arcade-history.com/game/2654/"
+    ]
+  },
+  {
+    "type": "character",
+    "id": "sfex2p_dhalsim",
+    "game": "sfex2p",
+    "name": "Dhalsim",
+    "bio": "A yogi and martial artist who attacks from long range using stretching limbs and mystical flames.",
+    "role": "regular_or_original_roster",
+    "portrait_asset": "",
+    "portrait_status": "pending_original_rom_extraction",
+    "source_urls": [
+      "https://www.arika.co.jp/game/game_en.html",
+      "https://www.arcade-history.com/game/2654/"
+    ]
+  },
+  {
+    "type": "character",
+    "id": "sfex2p_blanka",
+    "game": "sfex2p",
+    "name": "Blanka",
+    "bio": "A feral fighter known for rolling attacks and electric shocks.",
+    "role": "regular_or_original_roster",
+    "portrait_asset": "",
+    "portrait_status": "pending_original_rom_extraction",
+    "source_urls": [
+      "https://www.arika.co.jp/game/game_en.html",
+      "https://www.arcade-history.com/game/2654/"
+    ]
+  },
+  {
+    "type": "character",
+    "id": "sfex2p_vega",
+    "game": "sfex2p",
+    "name": "Vega",
+    "bio": "The masked, claw-wielding Shadaloo fighter, known for speed and wall-jumping attacks.",
+    "role": "regular_or_original_roster",
+    "portrait_asset": "",
+    "portrait_status": "pending_original_rom_extraction",
+    "source_urls": [
+      "https://www.arika.co.jp/game/game_en.html",
+      "https://www.arcade-history.com/game/2654/"
+    ]
+  },
+  {
+    "type": "character",
+    "id": "sfex2p_sagat",
+    "game": "sfex2p",
+    "name": "Sagat",
+    "bio": "A Muay Thai specialist famous for Tiger Shot and Tiger Uppercut.",
+    "role": "regular_or_original_roster",
+    "portrait_asset": "",
+    "portrait_status": "pending_original_rom_extraction",
+    "source_urls": [
+      "https://www.arika.co.jp/game/game_en.html",
+      "https://www.arcade-history.com/game/2654/"
+    ]
+  },
+  {
+    "type": "character",
+    "id": "sfex2p_skullomania",
+    "game": "sfex2p",
+    "name": "Skullomania",
+    "bio": "A costumed hero figure from the EX series with acrobatic, theatrical fighting techniques.",
+    "role": "regular_or_original_roster",
+    "portrait_asset": "",
+    "portrait_status": "pending_original_rom_extraction",
+    "source_urls": [
+      "https://www.arika.co.jp/game/game_en.html",
+      "https://www.arcade-history.com/game/2654/"
+    ]
+  },
+  {
+    "type": "character",
+    "id": "sfex2p_hokuto",
+    "game": "sfex2p",
+    "name": "Hokuto",
+    "bio": "An Arika martial artist linked to the EX series’ mysterious combat traditions.",
+    "role": "regular_or_original_roster",
+    "portrait_asset": "",
+    "portrait_status": "pending_original_rom_extraction",
+    "source_urls": [
+      "https://www.arika.co.jp/game/game_en.html",
+      "https://www.arcade-history.com/game/2654/"
+    ]
+  },
+  {
+    "type": "character",
+    "id": "sfex2p_kairi",
+    "game": "sfex2p",
+    "name": "Kairi",
+    "bio": "A wandering warrior from Arika’s EX cast with powerful energy-driven combat.",
+    "role": "regular_or_original_roster",
+    "portrait_asset": "",
+    "portrait_status": "pending_original_rom_extraction",
+    "source_urls": [
+      "https://www.arika.co.jp/game/game_en.html",
+      "https://www.arcade-history.com/game/2654/"
+    ]
+  },
+  {
+    "type": "character",
+    "id": "sfex2p_garuda",
+    "game": "sfex2p",
+    "name": "Garuda",
+    "bio": "A sinister armored warrior with supernatural attacks in the EX storyline.",
+    "role": "regular_or_original_roster",
+    "portrait_asset": "",
+    "portrait_status": "pending_original_rom_extraction",
+    "source_urls": [
+      "https://www.arika.co.jp/game/game_en.html",
+      "https://www.arcade-history.com/game/2654/"
+    ]
+  },
+  {
+    "type": "character",
+    "id": "sfex2p_darun_mister",
+    "game": "sfex2p",
+    "name": "Darun Mister",
+    "bio": "An Indian professional wrestler with spectacular grappling moves.",
+    "role": "regular_or_original_roster",
+    "portrait_asset": "",
+    "portrait_status": "pending_original_rom_extraction",
+    "source_urls": [
+      "https://www.arika.co.jp/game/game_en.html",
+      "https://www.arcade-history.com/game/2654/"
+    ]
+  },
+  {
+    "type": "character",
+    "id": "sfex2p_pullum_purna",
+    "game": "sfex2p",
+    "name": "Pullum Purna",
+    "bio": "An Arika fighter associated with acrobatic kicks and elegant martial arts.",
+    "role": "regular_or_original_roster",
+    "portrait_asset": "",
+    "portrait_status": "pending_original_rom_extraction",
+    "source_urls": [
+      "https://www.arika.co.jp/game/game_en.html",
+      "https://www.arcade-history.com/game/2654/"
+    ]
+  },
+  {
+    "type": "character",
+    "id": "sfex2p_doctrine_dark",
+    "game": "sfex2p",
+    "name": "Doctrine Dark",
+    "bio": "A masked fighter who employs weapons and unusual defensive tactics.",
+    "role": "regular_or_original_roster",
+    "portrait_asset": "",
+    "portrait_status": "pending_original_rom_extraction",
+    "source_urls": [
+      "https://www.arika.co.jp/game/game_en.html",
+      "https://www.arcade-history.com/game/2654/"
+    ]
+  },
+  {
+    "type": "character",
+    "id": "sfex2p_cracker_jack",
+    "game": "sfex2p",
+    "name": "Cracker Jack",
+    "bio": "A hard-hitting bodyguard and boxer-like brawler in the EX series.",
+    "role": "regular_or_original_roster",
+    "portrait_asset": "",
+    "portrait_status": "pending_original_rom_extraction",
+    "source_urls": [
+      "https://www.arika.co.jp/game/game_en.html",
+      "https://www.arcade-history.com/game/2654/"
+    ]
+  },
+  {
+    "type": "character",
+    "id": "sfex2p_sharon",
+    "game": "sfex2p",
+    "name": "Sharon",
+    "bio": "A mysterious agent introduced in the Street Fighter EX2 era.",
+    "role": "regular_or_original_roster",
+    "portrait_asset": "",
+    "portrait_status": "pending_original_rom_extraction",
+    "source_urls": [
+      "https://www.arika.co.jp/game/game_en.html",
+      "https://www.arcade-history.com/game/2654/"
+    ]
+  },
+  {
+    "type": "character",
+    "id": "sfex2p_nanase",
+    "game": "sfex2p",
+    "name": "Nanase",
+    "bio": "A younger EX-era fighter whose attacks emphasize staff techniques.",
+    "role": "regular_or_original_roster",
+    "portrait_asset": "",
+    "portrait_status": "pending_original_rom_extraction",
+    "source_urls": [
+      "https://www.arika.co.jp/game/game_en.html",
+      "https://www.arcade-history.com/game/2654/"
+    ]
+  },
+  {
+    "type": "character",
+    "id": "sfex2p_rosso",
+    "game": "sfex2p",
+    "name": "Rosso",
+    "bio": "A fighter introduced in the EX2 series with distinctive martial arts.",
+    "role": "regular_or_original_roster",
+    "portrait_asset": "",
+    "portrait_status": "pending_original_rom_extraction",
+    "source_urls": [
+      "https://www.arika.co.jp/game/game_en.html",
+      "https://www.arcade-history.com/game/2654/"
+    ]
+  },
+  {
+    "type": "character",
+    "id": "sfex2p_area",
+    "game": "sfex2p",
+    "name": "Area",
+    "bio": "An inventive EX fighter with mechanical gadgets and her rollerblade-like movement.",
+    "role": "regular_or_original_roster",
+    "portrait_asset": "",
+    "portrait_status": "pending_original_rom_extraction",
+    "source_urls": [
+      "https://www.arika.co.jp/game/game_en.html",
+      "https://www.arcade-history.com/game/2654/"
+    ]
+  },
+  {
+    "type": "character",
+    "id": "sfex2p_shadowgeist",
+    "game": "sfex2p",
+    "name": "Shadowgeist",
+    "bio": "A darkly costumed avenger in the EX series.",
+    "role": "regular_or_original_roster",
+    "portrait_asset": "",
+    "portrait_status": "pending_original_rom_extraction",
+    "source_urls": [
+      "https://www.arika.co.jp/game/game_en.html",
+      "https://www.arcade-history.com/game/2654/"
+    ]
+  }
+]

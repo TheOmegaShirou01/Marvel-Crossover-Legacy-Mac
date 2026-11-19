@@ -1,0 +1,51 @@
+{
+  "version": "0.3.3",
+  "source": "User uploaded original video assets only",
+  "assets": {
+    "xmcota": {
+      "file": "Previews/xmcota.mp4",
+      "sha256": "c0a82b8997828ad5106c4bee6c798682fd6713ced5890611331d1bff33eb6060",
+      "kind": "combat-preview"
+    },
+    "msh": {
+      "file": "Previews/msh.mp4",
+      "sha256": "b32bc5cc816becbe2d347efc29e3f7f56690bd0212a910121970486c7868bb67",
+      "kind": "combat-preview"
+    },
+    "xmvsf": {
+      "file": "Previews/xmvsf.mp4",
+      "sha256": "41f6235ac1ec139b957dcaf166814f7ee2e57d61bcfda4eb7288466167960b98",
+      "kind": "combat-preview"
+    },
+    "mshvsf": {
+      "file": "Previews/mshvsf.mp4",
+      "sha256": "0b03f3b1e65055f981cca8590aa64af7f1ec06bf66dd25dc9efafdf0f63fc623",
+      "kind": "combat-preview"
+    },
+    "mvsc": {
+      "file": "Previews/mvsc.mp4",
+      "sha256": "e0e1d18615dd01e91257fe157504fc2de03c6ce631bef985b36cbddc090e75f2",
+      "kind": "combat-preview"
+    },
+    "mvsc2": {
+      "file": "Previews/mvsc2.mp4",
+      "sha256": "4e29def5ec02fed53bd0e7962129dfba814b6ce14492ba2f3af175214a867e5f",
+      "kind": "combat-preview"
+    },
+    "sfexp": {
+      "file": "Previews/sfexp.mp4",
+      "sha256": "ff1fcac13fc5d22ab281d5d6e0e44c199c36cb48c30b76eb15e5ce6324eda848",
+      "kind": "combat-preview"
+    },
+    "sfex2p": {
+      "file": "Previews/sfex2p.mp4",
+      "sha256": "2525bcf2aee2c9e092d6f9fcca2e3c3dbe9b85e90cfe1b6322cb2fc43787ea65",
+      "kind": "combat-preview"
+    },
+    "earth_background": {
+      "file": "earth_background.mp4",
+      "sha256": "08a25e0418b1b561765eabef6a0dd18f43d015c21519b52d579810aab45a6b56",
+      "kind": "user-supplied-original"
+    }
+  }
+}

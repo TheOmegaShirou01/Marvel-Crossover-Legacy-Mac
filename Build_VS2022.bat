@@ -1,0 +1,48 @@
+@echo off
+setlocal
+cd /d "%~dp0"
+set "VSPATH="
+for %%V in ("%ProgramFiles%\Microsoft Visual Studio\Installer\vswhere.exe" "%ProgramFiles(x86)%\Microsoft Visual Studio\Installer\vswhere.exe") do if exist %%V set "VSPATH=%%~V"
+if not defined VSPATH (
+ echo ERROR: Visual Studio vswhere.exe was not found.
+ exit /b 1
+)
+set "VSROOT="
+for /f "usebackq delims=" %%P in (`"%VSPATH%" -latest -products * -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath`) do set "VSROOT=%%P"
+if not defined VSROOT (
+ echo ERROR: Visual Studio 2022 C++ tools are not installed.
+ exit /b 1
+)
+call "%VSROOT%\VC\Auxiliary\Build\vcvars64.bat"
+if errorlevel 1 exit /b 1
+if not exist bin mkdir bin
+cl /nologo /std:c++17 /EHsc /W4 /DUNICODE /D_UNICODE /DWIN32_LEAN_AND_MEAN /O2 /Fe:bin\MarvelCrossoverLegacy_Features.exe src\main_win.cpp src\core.cpp src\arcade_select.cpp src\cheat_ex_settings.cpp src\cheat_ex_settings_win.cpp src\external_roms.cpp src\emulator_bridge.cpp src\mame_backend.cpp src\rom_audit.cpp src\pause_controls.cpp src\pause_menu_win.cpp /link /SUBSYSTEM:WINDOWS comctl32.lib shell32.lib strmiids.lib ole32.lib user32.lib gdi32.lib
+if errorlevel 1 (
+ echo BUILD FAILED
+ exit /b 1
+)
+REM Optional media are supplied in a separate assets pack; absence must not break C++ build.
+if exist "earth_background.mp4" (
+ copy /Y "earth_background.mp4" "bin\earth_background.mp4" >nul
+ if errorlevel 1 echo WARNING: Could not copy Earth background video.
+) else (echo WARNING: Earth background missing; selection window will use fallback.)
+if not exist "bin\Gallery" mkdir "bin\Gallery"
+copy /Y "Gallery\arcade_gallery.mclgallery" "bin\Gallery\arcade_gallery.mclgallery" >nul
+if errorlevel 1 (
+ echo ERROR: Gallery package was not installed to bin\Gallery
+ exit /b 1
+)
+if not exist "bin\Previews" mkdir "bin\Previews"
+if exist "Previews\*.mp4" (
+ copy /Y "Previews\*.mp4" "bin\Previews\" >nul
+ if errorlevel 1 echo WARNING: Could not copy some gameplay previews.
+) else (echo WARNING: No gameplay previews found; install optional media pack.)
+if not exist "bin\Logos" mkdir "bin\Logos"
+if not exist "bin\Logos\Cards" mkdir "bin\Logos\Cards"
+copy /Y "Logos\Cards\*.bmp" "bin\Logos\Cards\" >nul
+if errorlevel 1 (echo ERROR: Missing logo card bitmaps & exit /b 1)
+REM IMPORTANT: ROMs/BIOS are external. Do not copy or package them.
+REM Optional: create bin\rom_directory.txt with ONE path to your external ROM folder.
+REM This script does not write to ROM archives and does not install them.
+echo BUILD SUCCESS: bin\MarvelCrossoverLegacy_Features.exe
+endlocal

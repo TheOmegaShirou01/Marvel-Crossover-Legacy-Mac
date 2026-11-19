@@ -1,0 +1,170 @@
+{
+  "collection": "Marvel: Crossover Legacy",
+  "version": "0.3.6",
+  "user_supplied": true,
+  "archive_count": 17,
+  "game_ids": {
+    "xmcota": [
+      "xmcota.zip",
+      "xmcotau.zip",
+      "xmcotau (1).zip"
+    ],
+    "msh": [
+      "msh.zip",
+      "mshud.zip"
+    ],
+    "xmvsf": [
+      "xmvsf.zip",
+      "xmvsfur2.zip"
+    ],
+    "mshvsf": [
+      "mshvsf.zip",
+      "mshvsfu1d.zip"
+    ],
+    "mvsc": [
+      "mvsc.zip",
+      "mvscu.zip"
+    ],
+    "mvsc2": [
+      "mvsc2.zip"
+    ],
+    "sfexp": [
+      "sfexp.zip"
+    ],
+    "sfex2p": [
+      "sfex2p.zip"
+    ]
+  },
+  "bios_files": [
+    "naomi.zip",
+    "coh1000c.zip",
+    "coh3002c.zip"
+  ],
+  "files": [
+    {
+      "filename": "xmcota.zip",
+      "sha256": "d04b2d1c2f98de25f84145d01db436b5567c3e1afc1257dda3d02736f7aa6ea8",
+      "size": 20054178,
+      "entries": 20,
+      "kind": "game"
+    },
+    {
+      "filename": "xmcotau.zip",
+      "sha256": "35cf45f4dddb9e00e8c0746cc7d45f813a531f7adf27a4d4d45750cb821a80b1",
+      "size": 18915721,
+      "entries": 20,
+      "kind": "game"
+    },
+    {
+      "filename": "xmcotau (1).zip",
+      "sha256": "1203640ca1b7fc5f12e1406091d937e6e0c283091a8a3368ea3bf1f647e63891",
+      "size": 842377,
+      "entries": 5,
+      "kind": "game"
+    },
+    {
+      "filename": "msh.zip",
+      "sha256": "1f4e64248ee6f521c33ecfdb5828519fdd0e858cee0c666479fd85dcd98e462c",
+      "size": 20099116,
+      "entries": 20,
+      "kind": "game"
+    },
+    {
+      "filename": "mshud.zip",
+      "sha256": "3579834cbb6c2136c78a01f52e369eb8a6134c25b97849e3aedcfb43764f88a3",
+      "size": 20531002,
+      "entries": 26,
+      "kind": "game"
+    },
+    {
+      "filename": "xmvsf.zip",
+      "sha256": "137e4740a47e7867da83734cef3d13e8d7be6ca27e37370e5420c267758f6c5f",
+      "size": 19605532,
+      "entries": 19,
+      "kind": "game"
+    },
+    {
+      "filename": "xmvsfur2.zip",
+      "sha256": "20778821a207537bc13f4c8eeb4a96f52dace1d509449d84ed527923a5a1e44f",
+      "size": 20231891,
+      "entries": 24,
+      "kind": "game"
+    },
+    {
+      "filename": "mshvsf.zip",
+      "sha256": "0cfd373de0db3517d2dab0e468dbbe7947d3717ace70944daf23d726cb768091",
+      "size": 23124697,
+      "entries": 20,
+      "kind": "game"
+    },
+    {
+      "filename": "mshvsfu1d.zip",
+      "sha256": "a9fd9fc0da66aa74759dc47a4f63e2f84377415441a8733a2530b79e5501fdf4",
+      "size": 23604061,
+      "entries": 26,
+      "kind": "game"
+    },
+    {
+      "filename": "mvsc.zip",
+      "sha256": "54d6e5728dd5deefccd7c3aa41544825fd76a569d24aac222f03744946dcb247",
+      "size": 22699647,
+      "entries": 20,
+      "kind": "game"
+    },
+    {
+      "filename": "mvscu.zip",
+      "sha256": "975ae07d37ddaf1871283b81a602ee33bfdaa6890c0dd46d81c27c5a3558c3f8",
+      "size": 23581770,
+      "entries": 25,
+      "kind": "game"
+    },
+    {
+      "filename": "mvsc2.zip",
+      "sha256": "fc062b64265bf5c7c4a2e4ccf1d4c11fd48d23d77d1e4f55ed25dbe676bf72e5",
+      "size": 83043508,
+      "entries": 18,
+      "kind": "game"
+    },
+    {
+      "filename": "sfexp.zip",
+      "sha256": "3be5cf962f372c4ac59d2a0193bb986e5f09d0b51766ce581c770f34f7f7e480",
+      "size": 11138961,
+      "entries": 10,
+      "kind": "game"
+    },
+    {
+      "filename": "sfex2p.zip",
+      "sha256": "4a42dae145bf63016e0385e2a7d993036ca3eea11f8632291ab628d1c119a7c5",
+      "size": 24880096,
+      "entries": 10,
+      "kind": "game"
+    },
+    {
+      "filename": "naomi.zip",
+      "sha256": "3a22e867bc1881401c288a737fc6fd4f8190975c9f8ee699d24442b3a71a3206",
+      "size": 10403870,
+      "entries": 32,
+      "kind": "bios"
+    },
+    {
+      "filename": "coh1000c.zip",
+      "sha256": "df486f9b603b068b531c00ccb7bfed329943e3c15a4e6fedde14ec9dc6c07801",
+      "size": 278492,
+      "entries": 3,
+      "kind": "bios"
+    },
+    {
+      "filename": "coh3002c.zip",
+      "sha256": "b54984e34f316e4e41de775f991e48beff9289bd30493345767465cfe7ff2a56",
+      "size": 137963,
+      "entries": 2,
+      "kind": "bios"
+    }
+  ],
+  "notes": [
+    "Original user-supplied game ZIPs are copied byte-for-byte.",
+    "ZIP CRC integrity was checked; boot compatibility and license not verified.",
+    "Street Fighter EX3 is NOT a playable ROM and is not in this archive.",
+    "This is a private source checkpoint, not a redistribution release."
+  ]
+}

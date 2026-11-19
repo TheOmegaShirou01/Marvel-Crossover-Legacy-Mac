@@ -1,0 +1,8 @@
+bin/
+FirstBootReports/
+mame_executable.txt
+rom_directory.txt
+*.obj
+*.exe
+Windows_Preflight_Report.txt
+

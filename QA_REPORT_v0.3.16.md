@@ -1,0 +1,2 @@
+# v0.3.16 QA
+14/14 portable C++ test executables compiled with `-std=c++17 -Wall -Wextra -Werror` and passed. First batch of 12 ran; two remaining tests were run separately after the initial batch timed out. Windows GUI compilation, actual MAME pause state detection and in-game overlay are NOT verified. The new transaction intentionally refuses to open the overlay without independently verified paused state. Source-only: no ROMs/BIOS included.

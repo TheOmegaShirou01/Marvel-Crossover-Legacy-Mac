@@ -1,0 +1,54 @@
+{
+  "format": "MCL-GALLERY/1",
+  "version": "0.2.0",
+  "created_utc": "2026-11-19T04:40:55.182483+00:00",
+  "title": "Marvel: Crossover Legacy — Arcade Gallery",
+  "games": 8,
+  "characters": 192,
+  "record_count": 200,
+  "asset_policy": "Textual character notes researched and independently written; images not bundled pending original arcade extraction/rights clearance.",
+  "unlock": {
+    "trigger": "first_verified_arcade_clear_any_of_8_games",
+    "message": "GALLERY UNLOCKED!",
+    "motto": "THE LEGENDS LIVE ON!",
+    "required_clears": 1
+  },
+  "sources": {
+    "xmcota": [
+      "https://www.mobygames.com/game/3753/x-men-children-of-the-atom/",
+      "https://www.arcade-history.com/game/3211/x-men-children-of-the-atom"
+    ],
+    "msh": [
+      "https://sfwowr.com/MSH.htm",
+      "https://www.arcade-history.com/game/1571"
+    ],
+    "xmvsf": [
+      "https://www.arcade-history.com/game/3212",
+      "https://combopedia.com/x-men-vs-street-fighter"
+    ],
+    "mshvsf": [
+      "https://www.arcade-history.com/game/1572",
+      "https://arcadepatches.com/mshvsf-restoration/"
+    ],
+    "mvsc": [
+      "https://www.mobygames.com/game/3679/marvel-vs-capcom-clash-of-super-heroes/",
+      "https://www.arcade-history.com/game/1573/"
+    ],
+    "mvsc2": [
+      "https://www.gamesradar.com/the-56-characters-of-marvel-vs-capcom-2/",
+      "https://liquipedia.net/fighters/Marvel_vs._Capcom_2/Game_Information"
+    ],
+    "sfexp": [
+      "https://www.arika.co.jp/game/game_en.html",
+      "https://www.mobygames.com/game/135004/street-fighter-ex-plus/"
+    ],
+    "sfex2p": [
+      "https://www.arika.co.jp/game/game_en.html",
+      "https://www.arcade-history.com/game/2654/"
+    ]
+  },
+  "requirements": [
+    "emulator_verified_clear_event",
+    "asset_extraction_or_licensed_image_assets"
+  ]
+}

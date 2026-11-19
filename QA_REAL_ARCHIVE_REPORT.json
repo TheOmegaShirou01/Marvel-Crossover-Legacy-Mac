@@ -1,0 +1,28 @@
+{
+  "game": "xmcotau",
+  "rom_directory": "/mnt/data",
+  "files": [
+    {
+      "name": "xmcotau.zip",
+      "status": "archive_readable",
+      "entries": 20,
+      "security_keys": [],
+      "crc_checked": true,
+      "bad_entry": null
+    },
+    {
+      "name": "xmcota.zip",
+      "status": "archive_readable",
+      "entries": 20,
+      "security_keys": [],
+      "crc_checked": true,
+      "bad_entry": null
+    }
+  ],
+  "notes": [
+    "xmcotau.key not found inside named game/parent archives; a separate differently named ZIP is not automatically a recognized MAME set"
+  ],
+  "archive_preflight": "pass",
+  "mame_audit": "not_run",
+  "gameplay": "not_tested"
+}

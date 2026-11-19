@@ -1,0 +1,4 @@
+# v0.3.4 Official logo card integration
+All eight user-supplied original logos are included in `Logos/` under their original filenames. Each has a 320x175 transparent PNG and a 320x175 dark-matte BMP for the Win32 card buttons. The original images are not edited or replaced. Aspect ratios are preserved.
+The Windows Arcade Selection panel loads `Logos/Cards/<game_id>.bmp` into native BS_BITMAP controls, with fallback game text if a bitmap cannot load. These appear only until a selected card flips to the genuine gameplay video. EX cards remain gated by the existing EX unlock state; this checkpoint does not circumvent it.
+Known limitations: final Windows compilation, button image appearance at multiple DPI factors, overlay z-order and actual DirectShow runtime playback remain unverified on Windows. Cards are scaled to a fixed 320x175 image, displayed within resizable native buttons (not GPU texture rendering). No AI assets.
