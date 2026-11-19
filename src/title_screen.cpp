@@ -5,6 +5,8 @@
 #include "menu_model.hpp"
 #include "cheats.hpp"
 #include "game_launcher.hpp"
+#include "music.hpp"
+#include "music_player.hpp"
 #include <map>
 #include <memory>
 #include <d2d1_1.h>
@@ -99,6 +101,12 @@ struct App {
  mcl::LightningField cardBolts{4242u,{0,0,100,60},[]{mcl::LightningConfig c;c.strikes=false;c.frontBolts=false;c.minArcs=2;c.maxArcs=4;c.arcChance=0.3f;return c;}()};
  bool gameRunning=false;
  std::wstring overlay; // modal message panel (failed launch etc.)
+ // Menu music
+ fs::path musicDir;std::vector<mcl::Track> library;
+ std::unique_ptr<mcl::MusicRotation> marvelMusic,exMusic;
+ mcl::MusicPlayer music;const mcl::Track* track=nullptr;std::string musicPool;
+ double fadeStart=-1;std::string pendingPick;bool characterSelectPlayed=false;
+ std::wstring nowPlaying;double nowPlayingSince=-1e9;
  Screen screen=Screen::Title;double screenSince=0;
  double layoutFrom=0,layoutTo=0,layoutStart=-1e9; // 0 = title layout, 1 = menu layout
  std::wstring banner;double bannerUntil=0;float bannerFlash=0;
@@ -260,6 +268,11 @@ const CardInfo* selCards(int& n){
 }
 const CardInfo& selected(){int n=0;const CardInfo* c=selCards(n);return c[std::clamp(g->selCard,0,n-1)];}
 void enterSelect(bool ex){
+ if(!ex&&!g->characterSelectPlayed){
+  // First visit this session: the original MvC1 Character Select theme, then the rotation.
+  g->characterSelectPlayed=true;g->pendingPick="mvsc/MVC1_Character_Select_PS1.mp3";
+  if(g->track&&g->fadeStart<0)g->fadeStart=g->now()-1000; // quick fade into it
+ }
  g->exMode=ex;g->selCard=0;g->selSince=g->now();g->cardBolts.clear();
  g->overlay.clear();setScreen(Screen::Select);goLayout(2,g->now());
 }
@@ -284,6 +297,7 @@ void launchSelected(){
  const auto r=g->cb.launcher->launch(selected().id,g->menu.cheatsUnlocked(),g->menu.cheatExUnlocked()||g->exMode);
  if(!r.ok){g->overlay=L"COULD NOT START THE GAME\n\n"+r.message;return;}
  g->gameRunning=true;g->video.setPaused(true);
+ g->music.stop();g->track=nullptr;g->fadeStart=-1;
 }
 void moveCard(Pad p){
  int n=0;selCards(n);
@@ -630,6 +644,76 @@ void drawOverlay(){
  }
  text(L"ENTER / ESC  OK",g->fSmall.Get(),D2D1::RectF(panel.left,panel.bottom-H*0.05f,panel.right,panel.bottom-H*0.01f),rgba(1.f,0.84f,0.25f),2);
 }
+// ---------- menu music ----------
+constexpr int kMusicVolume=750;
+constexpr double kFadeMs=1500,kMaxPieceMs=180000;
+const wchar_t* musicGameTitle(const std::string& id){
+ if(id=="xmcota")return L"X-MEN: CHILDREN OF THE ATOM";if(id=="msh")return L"MARVEL SUPER HEROES";
+ if(id=="xmvsf")return L"X-MEN VS. STREET FIGHTER";if(id=="mshvsf")return L"MARVEL SUPER HEROES VS. STREET FIGHTER";
+ if(id=="mvsc")return L"MARVEL VS. CAPCOM";if(id=="mvsc2")return L"MARVEL VS. CAPCOM 2";
+ if(id=="sfexp")return L"STREET FIGHTER EX PLUS";if(id=="sfex2p")return L"STREET FIGHTER EX2 PLUS";
+ return L"";
+}
+void loadMusic(){
+ for(const auto& d:{g->dir/"Music",g->dir.parent_path()/"Music"}){
+  std::error_code ec;
+  if(fs::is_regular_file(d/"catalog.tsv",ec)){g->musicDir=d;g->library=mcl::loadMusicCatalog(d/"catalog.tsv");break;}
+ }
+ const auto seed=static_cast<std::uint32_t>(GetTickCount64());
+ g->marvelMusic=std::make_unique<mcl::MusicRotation>(g->library,mcl::marvelMusicGames(),seed);
+ g->exMusic=std::make_unique<mcl::MusicRotation>(g->library,mcl::exMusicGames(),seed^0x9E3779B9u);
+}
+std::string wantedPool(){
+ const bool ex=g->exMode&&(g->screen==Screen::Select||(g->screen==Screen::Cheats&&g->cheatsReturn==Screen::Select));
+ return ex?"ex":"marvel";
+}
+void startNextTrack(const std::string& pool,double now){
+ auto& rot=pool=="ex"?g->exMusic:g->marvelMusic;
+ g->track=nullptr;g->fadeStart=-1;g->musicPool=pool;
+ if(!rot||rot->empty())return;
+ for(int attempt=0;attempt<4&&!g->track;++attempt){
+  const mcl::Track* t=nullptr;
+  if(pool=="marvel"&&!g->pendingPick.empty()){t=rot->pick(g->pendingPick);g->pendingPick.clear();}
+  if(!t)t=rot->next();
+  if(t&&g->music.play(g->musicDir/fs::u8path(t->path),t->startMs,t->endMs,kMusicVolume))g->track=t;
+ }
+ if(g->track){
+  const std::string cap=mcl::trackCaption(*g->track);
+  g->nowPlaying=L"♪  "+std::wstring(cap.begin(),cap.end())+L"   —   "+musicGameTitle(g->track->game);
+  for(auto& c:g->nowPlaying)c=static_cast<wchar_t>(towupper(c));
+  g->nowPlayingSince=now;
+ }
+}
+void updateMusic(double now){
+ if(g->library.empty())return;
+ const std::string want=wantedPool();
+ if(!g->track){startNextTrack(want,now);return;}
+ if(g->fadeStart<0){
+  const int pos=g->music.positionMs();
+  const int end=std::min(g->track->endMs,g->track->startMs+static_cast<int>(kMaxPieceMs));
+  // Fade out at the end of the piece (or 3-minute cap), when the pool changes, or if it stopped.
+  if(want!=g->musicPool||!g->pendingPick.empty()||pos>=end-static_cast<int>(kFadeMs)||!g->music.playing())g->fadeStart=now;
+ }
+ if(g->fadeStart>=0){
+  const double k=(now-g->fadeStart)/kFadeMs;
+  if(k>=1.0){startNextTrack(want,now);return;}
+  g->music.setVolume(static_cast<int>(kMusicVolume*(1.0-k)));
+ }
+}
+void drawNowPlaying(double now){
+ const double age=now-g->nowPlayingSince;
+ if(g->nowPlaying.empty()||age>5000)return;
+ const float a=static_cast<float>(std::min({1.0,age/400.0,(5000-age)/600.0}));
+ const float W=g->W(),H=g->H();
+ ComPtr<IDWriteTextLayout> l;
+ g->dw->CreateTextLayout(g->nowPlaying.c_str(),static_cast<UINT32>(g->nowPlaying.size()),g->fSmall.Get(),W*0.9f,H*0.04f,&l);
+ if(!l)return;
+ l->SetTextAlignment(DWRITE_TEXT_ALIGNMENT_LEADING);
+ g->brush->SetColor(rgba(0,0,0));g->brush->SetOpacity(a);
+ for(int i=0;i<8;++i){const float ang=i*0.785398f;g->rt->DrawTextLayout(D2D1::Point2F(W*0.02f+std::cos(ang)*2,H*0.02f+std::sin(ang)*2),l.Get(),g->brush.Get());}
+ g->brush->SetColor(rgba(1.f,0.84f,0.25f));g->rt->DrawTextLayout(D2D1::Point2F(W*0.02f,H*0.02f),l.Get(),g->brush.Get());
+ g->brush->SetOpacity(1);
+}
 void render(){
  if(!ensureTarget())return;
  const double now=g->now();
@@ -645,6 +729,7 @@ void render(){
   case Screen::Cheats: drawCheats(now);break;
   case Screen::Select: drawSelect(now);break;
  }
+ drawNowPlaying(now);
  if(!g->overlay.empty())drawOverlay();
  if(now<g->bannerUntil){
   const float k=static_cast<float>((g->bannerUntil-now)/2200.0);
@@ -749,6 +834,7 @@ int mcl_title::run(HINSTANCE inst,const fs::path& appDir,const Callbacks& cb){
  if(!app.hwnd){g=nullptr;if(SUCCEEDED(co))CoUninitialize();return 2;}
  setFullscreen(true);
  app.video.start(appDir/"earth_background.mp4",1280,720);
+ loadMusic();
  MSG msg{};bool quit=false;
  while(!quit){
   while(PeekMessageW(&msg,nullptr,0,0,PM_REMOVE)){
@@ -769,9 +855,10 @@ int mcl_title::run(HINSTANCE inst,const fs::path& appDir,const Callbacks& cb){
   if(IsIconic(app.hwnd)||!IsWindowEnabled(app.hwnd)){app.video.setPaused(true);WaitMessage();continue;}
   app.video.setPaused(false);
   pollPad();
+  updateMusic(app.now());
   if(IsWindow(app.hwnd))render();
  }
- app.video.stop();app.preview.stop();
+ app.video.stop();app.preview.stop();app.music.stop();
  mciSendStringW(L"close mcl_voice",nullptr,0,nullptr);
  app.rt.Reset();app.dc.Reset();
  g=nullptr;
