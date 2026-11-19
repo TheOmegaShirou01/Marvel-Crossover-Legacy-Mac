@@ -8,6 +8,7 @@
 #include "music.hpp"
 #include "music_player.hpp"
 #include <map>
+#include <fstream>
 #include <memory>
 #include <d2d1_1.h>
 #include <dwrite.h>
@@ -683,6 +684,13 @@ void startNextTrack(const std::string& pool,double now){
   for(auto& c:g->nowPlaying)c=static_cast<wchar_t>(towupper(c));
   g->nowPlayingSince=now;
  }
+ // Status for troubleshooting: bin\Logs\music_status.txt (overwritten each track).
+ std::error_code ec;fs::create_directories(g->dir/"Logs",ec);
+ std::ofstream log(g->dir/"Logs"/"music_status.txt",std::ios::trunc);
+ log<<"music folder: "<<g->musicDir.u8string()<<"\npieces in catalog: "<<g->library.size()
+    <<"\npool: "<<pool<<" ("<<(rot?rot->size():0)<<" menu pieces)\n";
+ if(g->track)log<<"playing: "<<g->track->path<<" from "<<g->track->startMs<<" to "<<g->track->endMs<<" ms\n";
+ else log<<"playing: NOTHING (no piece could be opened by Windows MCI)\n";
 }
 void updateMusic(double now){
  if(g->library.empty())return;
