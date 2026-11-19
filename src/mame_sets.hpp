@@ -4,9 +4,11 @@
 namespace mcl {
 // Collection game id -> the MAME romset that is actually launched.
 // Collection ids (achievements, stats, saves, cards) stay fixed; only the MAME
-// set changes. Chosen from real MAME 0.227 -verifyroms results on the user's
-// archives (2026-11-19): the USA releases, or the decrypted "Phoenix" builds
-// where the user's archive has no CPS-2 security key.
+// set changes. Chosen from real -verifyroms results on the user's archives
+// (2026-11-19), re-verified and boot-tested on MAME 0.289: the USA releases, or the
+// decrypted "Phoenix" builds where the user's archive has no CPS-2 security key.
+// Not yet runnable with the user's files: mvsc2 (mpr-23084 chip not recognised by
+// MAME, mie/jvs13551 device ROMs missing) and sfexp/sfex2p (small chips missing).
 struct MameSet {
  const char* game;   // collection id
  const char* set;    // MAME romset to launch / audit
