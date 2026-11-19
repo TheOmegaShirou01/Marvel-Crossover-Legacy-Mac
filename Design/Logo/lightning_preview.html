@@ -42,7 +42,7 @@ function jag(a,b,rough,depth){
   }
   return pts;
 }
-let bolts=[], flash=0, nextStrike=performance.now()+1500;
+let bolts=[], flash=0, reflash=0, nextStrike=performance.now()+1200, nextFront=performance.now()+600;
 function spawnArc(now){
   const t=rnd(0,Math.PI*2), span=rnd(0.45,1.1)*(Math.random()<0.5?-1:1);
   // follow the ring with several anchor points so the bolt hugs the curve
@@ -58,7 +58,7 @@ function spawnArc(now){
     const L=rnd(40,140);
     branches.push(jag(s,{x:s.x+Math.cos(ang)*L*1.4,y:s.y+Math.sin(ang)*L},0.35,3));
   }
-  bolts.push({pts,branches,born:now,life:rnd(120,380),w:rnd(1.1,1.7)});
+  bolts.push({pts,branches,born:now,life:rnd(120,380),w:rnd(1.1,1.7),front:false});
 }
 function spawnStrike(now){
   // big bolt from the ring into the starburst behind the lettering
@@ -67,8 +67,23 @@ function spawnStrike(now){
   const pts=jag(a,b,0.28,6), branches=[];
   for(let k=0;k<4;k++){const s=pts[Math.floor(rnd(4,pts.length-4))];
     branches.push(jag(s,{x:s.x+rnd(-160,160),y:s.y+rnd(-110,110)},0.35,4));}
-  bolts.push({pts,branches,born:now,life:rnd(160,320),w:1.7});
-  flash=1;
+  bolts.push({pts,branches,born:now,life:rnd(160,320),w:1.7,front:Math.random()<0.4});
+  flash=1; reflash=now+rnd(70,140); // quick double flash like a real strike
+}
+// Bolt that crosses OVER the front of the logo, side to side, with its own flash.
+function spawnFront(now){
+  const left=Math.random()<0.5;
+  const t1=(left?Math.PI:0)+rnd(-0.55,0.55);              // start near one side
+  const t2=(left?0:Math.PI)+rnd(-0.55,0.55);              // end near the other side
+  const a=ring(t1,rnd(-20,30)), b=ring(t2,rnd(-20,30));
+  // bend through the middle of the lettering at a random height
+  const mid={x:RING.cx+rnd(-180,180), y:RING.cy+rnd(-170,170)};
+  const pts=jag(a,mid,0.2,5).concat(jag(mid,b,0.2,5).slice(1));
+  const branches=[];
+  for(let k=0,n=Math.floor(rnd(2,5));k<n;k++){const s=pts[Math.floor(rnd(3,pts.length-3))];
+    branches.push(jag(s,{x:s.x+rnd(-140,140),y:s.y+rnd(-120,120)},0.35,3));}
+  bolts.push({pts,branches,born:now,life:rnd(90,220),w:1.35,front:true});
+  flash=Math.max(flash,0.55);
 }
 function stroke(pts,w,color,alpha){
   g.globalAlpha=alpha; g.strokeStyle=color; g.lineWidth=w*scale;
@@ -106,13 +121,15 @@ function frame(now){
   // bolts behind the logo
   // keep the ring busy: always 4-7 live arcs so the title is constantly surrounded
   const live=bolts.length; if(live<4||Math.random()<0.45) spawnArc(now); if(live<7&&Math.random()<0.35) spawnArc(now);
-  if(now>nextStrike){spawnStrike(now); nextStrike=now+rnd(1800,3500);}
-  bolts=bolts.filter(b=>drawBolt(b,now));
+  if(now>nextStrike){spawnStrike(now); nextStrike=now+rnd(1200,2400);}
+  if(now>nextFront){spawnFront(now); nextFront=now+rnd(700,1600);}
+  if(reflash&&now>reflash){flash=Math.max(flash,0.8); reflash=0;}
+  bolts=bolts.filter(b=>now-b.born<=b.life);
+  bolts.filter(b=>!b.front).forEach(b=>drawBolt(b,now));
   if(logo.complete) g.drawImage(logo,ox,oy,LOGO_W*scale,LOGO_H*scale);
-  // a few sparks in FRONT of the logo so it feels surrounded
-  for(const b of bolts) if(b.front===undefined) b.front=Math.random()<0.3;
+  // bolts in FRONT of the logo (crossing bolts + some strikes)
   bolts.filter(b=>b.front).forEach(b=>drawBolt(b,now));
-  if(flash>0){g.fillStyle='rgba(190,235,255,'+(flash*0.35)+')';g.fillRect(0,0,c.width,c.height);flash-=0.12;}
+  if(flash>0){g.fillStyle='rgba(190,235,255,'+(flash*0.35)+')';g.fillRect(0,0,c.width,c.height);flash-=0.1;}
   requestAnimationFrame(frame);
 }
 requestAnimationFrame(frame);

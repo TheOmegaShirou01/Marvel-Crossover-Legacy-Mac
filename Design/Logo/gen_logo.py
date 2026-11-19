@@ -56,7 +56,8 @@ def build():
     inner_burst = star(800, 390, 560, 250, 400, 150, 16, -math.pi / 2 + 0.17, jit[::-1])
 
     glints = []
-    for gx, gy, r in [(205, 255, 46), (1365, 300, 38), (520, 120, 30), (1270, 470, 34)]:
+    # Sparkle glints removed at the user's request (2026-11-19); add (x, y, radius) tuples to bring them back.
+    for gx, gy, r in []:
         glints.append(
             f'<path d="M{gx},{gy - r} L{gx + r * 0.16},{gy - r * 0.16} L{gx + r},{gy} L{gx + r * 0.16},{gy + r * 0.16} '
             f'L{gx},{gy + r} L{gx - r * 0.16},{gy + r * 0.16} L{gx - r},{gy} L{gx - r * 0.16},{gy - r * 0.16} Z" '

@@ -143,5 +143,5 @@
     <text x="790" y="628" font-size="138" letter-spacing="34" text-anchor="middle" font-family="Impact, 'Arial Black', sans-serif" fill="url(#shineS)">LEGACY</text>
     </g>
   </g>
-  <path d="M205,209 L212.36,247.64 L251,255 L212.36,262.36 L205,301 L197.64,262.36 L159,255 L197.64,247.64 Z" fill="#fff" filter="url(#glintglow)"/><path d="M1365,262 L1371.08,293.92 L1403,300 L1371.08,306.08 L1365,338 L1358.92,306.08 L1327,300 L1358.92,293.92 Z" fill="#fff" filter="url(#glintglow)"/><path d="M520,90 L524.8,115.2 L550,120 L524.8,124.8 L520,150 L515.2,124.8 L490,120 L515.2,115.2 Z" fill="#fff" filter="url(#glintglow)"/><path d="M1270,436 L1275.44,464.56 L1304,470 L1275.44,475.44 L1270,504 L1264.56,475.44 L1236,470 L1264.56,464.56 Z" fill="#fff" filter="url(#glintglow)"/>
+  
 </svg>
