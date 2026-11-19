@@ -190,10 +190,10 @@ class Selection {
  }
  LRESULT handle(UINT msg,WPARAM w,LPARAM l){switch(msg){
   case WM_CREATE:{dark_=CreateSolidBrush(RGB(10,14,28));heading_=CreateFontW(-27,0,0,0,FW_BOLD,0,0,0,DEFAULT_CHARSET,0,0,CLEARTYPE_QUALITY,DEFAULT_PITCH,L"Arial Black");font_=CreateFontW(-17,0,0,0,FW_BOLD,0,0,0,DEFAULT_CHARSET,0,0,CLEARTYPE_QUALITY,DEFAULT_PITCH,L"Arial");
-   HWND title=CreateWindowW(L"STATIC",L"MARVEL: CROSSOVER LEGACY  |  ARCADE SELECT",WS_CHILD|WS_VISIBLE,24,16,1050,50,wnd_,nullptr,nullptr,nullptr);SendMessageW(title,WM_SETFONT,(WPARAM)heading,TRUE);
-   info_=CreateWindowW(L"STATIC",L"",WS_CHILD|WS_VISIBLE,24,73,1030,25,wnd_,(HMENU)STATUS_ID,nullptr,nullptr);SendMessageW(info_,WM_SETFONT,(WPARAM)font,TRUE);
+   HWND title=CreateWindowW(L"STATIC",L"MARVEL: CROSSOVER LEGACY  |  ARCADE SELECT",WS_CHILD|WS_VISIBLE,24,16,1050,50,wnd_,nullptr,nullptr,nullptr);SendMessageW(title,WM_SETFONT,(WPARAM)heading_,TRUE);
+   info_=CreateWindowW(L"STATIC",L"",WS_CHILD|WS_VISIBLE,24,73,1030,25,wnd_,(HMENU)STATUS_ID,nullptr,nullptr);SendMessageW(info_,WM_SETFONT,(WPARAM)font_,TRUE);
    loadCardImages();
-   for(int i=0;i<6;++i){cards_[i]=CreateWindowW(L"BUTTON",L"",WS_CHILD|WS_VISIBLE|BS_BITMAP,0,0,140,140,wnd_,(HMENU)(CARD_BASE+i),nullptr,nullptr);SendMessageW(cards_[i],WM_SETFONT,(WPARAM)font,TRUE);}
+   for(int i=0;i<6;++i){cards_[i]=CreateWindowW(L"BUTTON",L"",WS_CHILD|WS_VISIBLE|BS_BITMAP,0,0,140,140,wnd_,(HMENU)(CARD_BASE+i),nullptr,nullptr);SendMessageW(cards_[i],WM_SETFONT,(WPARAM)font_,TRUE);}
    switch_=CreateWindowW(L"BUTTON",L"CHEAT EX (LOCKED)",WS_CHILD|WS_VISIBLE,24,575,220,36,wnd_,(HMENU)SWITCH_ID,nullptr,nullptr);
    launch_=CreateWindowW(L"BUTTON",L"LAUNCH CPS-2 GAME",WS_CHILD|WS_VISIBLE,255,575,245,36,wnd_,(HMENU)LAUNCH_ID,nullptr,nullptr);
    HWND back=CreateWindowW(L"BUTTON",L"RETURN TO FEATURES",WS_CHILD|WS_VISIBLE,510,575,210,36,wnd_,(HMENU)BACK_ID,nullptr,nullptr);
@@ -204,8 +204,8 @@ class Selection {
    SendMessageW(pausePreview,WM_SETFONT,(WPARAM)font_,TRUE);
    mamePauseKey_=CreateWindowW(L"BUTTON",L"SEND MAME PAUSE KEY (F5)",WS_CHILD|WS_VISIBLE,620,615,288,32,wnd_,(HMENU)MAME_PAUSE_KEY_ID,nullptr,nullptr);
    SendMessageW(mamePauseKey_,WM_SETFONT,(WPARAM)font_,TRUE);
-   SendMessageW(audit_,WM_SETFONT,(WPARAM)font,TRUE);
-   SendMessageW(romCheck_,WM_SETFONT,(WPARAM)font,TRUE);SendMessageW(exCheats_,WM_SETFONT,(WPARAM)font,TRUE);SendMessageW(switch_,WM_SETFONT,(WPARAM)font,TRUE);SendMessageW(launch_,WM_SETFONT,(WPARAM)font,TRUE);SendMessageW(back,WM_SETFONT,(WPARAM)font,TRUE);
+   SendMessageW(audit_,WM_SETFONT,(WPARAM)font_,TRUE);
+   SendMessageW(romCheck_,WM_SETFONT,(WPARAM)font_,TRUE);SendMessageW(exCheats_,WM_SETFONT,(WPARAM)font_,TRUE);SendMessageW(switch_,WM_SETFONT,(WPARAM)font_,TRUE);SendMessageW(launch_,WM_SETFONT,(WPARAM)font_,TRUE);SendMessageW(back,WM_SETFONT,(WPARAM)font_,TRUE);
    {
     auto emulatorFile=mcl::readMameExecutable(assets_/"mame_executable.txt");
     emulator_=std::make_unique<mcl::MameBackend>(emulatorFile);
@@ -304,7 +304,7 @@ public:
   HWND h=CreateWindowExW(0,wc.lpszClassName,L"Marvel: Crossover Legacy - Arcade Select",WS_OVERLAPPEDWINDOW,CW_USEDEFAULT,CW_USEDEFAULT,1135,680,owner,nullptr,inst,this);
   if(!h){if(com)CoUninitialize();return 1;}
   if(owner)EnableWindow(owner,FALSE);ShowWindow(h,SW_SHOW);UpdateWindow(h);
-  MSG m{};while(IsWindow(h)&&GetMessageW(&m,nullptr,0)>0){if(m.message==WM_QUIT){PostQuitMessage((int)m.wParam);break;}TranslateMessage(&m);DispatchMessageW(&m);}
+  MSG m{};while(IsWindow(h)&&GetMessageW(&m,nullptr,0,0)>0){if(m.message==WM_QUIT){PostQuitMessage((int)m.wParam);break;}TranslateMessage(&m);DispatchMessageW(&m);}
   if(owner&&IsWindow(owner)){EnableWindow(owner,TRUE);SetForegroundWindow(owner);}
   if(com)CoUninitialize();return 0;
  }
