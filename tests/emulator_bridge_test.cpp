@@ -8,7 +8,7 @@ class MockBackend:public mcl::EmulatorBackend {
 public:
  bool enabled=false,failStart=false,failStop=false,failPause=false;
  bool available(const std::string&)const override{return enabled;}
- bool start(const std::string&,const fs::path&) override{return !failStart;}
+ bool start(const std::string&,const mcl::RomSearchPath&) override{return !failStart;}
  bool stop() override{return !failStop;}
  bool pause(bool)override{return !failPause;}
 };

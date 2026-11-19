@@ -7,7 +7,7 @@ struct AuditResult { AuditStatus status; unsigned long exitCode; std::string mes
 // No emulator execution in this function. Validates a known game and creates a
 // shell-free MAME command specification for -verifyroms.
 bool createMameAuditSpec(const std::filesystem::path& emulator,
- const std::filesystem::path& romDirectory,const std::string& game,
+ const RomSearchPath& roms,const std::string& game,
  MameLaunchSpec& output,std::string& reason);
 AuditResult interpretMameAuditExit(unsigned long exitCode);
 #ifdef _WIN32

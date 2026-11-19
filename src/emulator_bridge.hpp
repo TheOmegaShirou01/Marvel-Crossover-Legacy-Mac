@@ -12,21 +12,21 @@ class EmulatorBackend {
 public:
  virtual ~EmulatorBackend()=default;
  virtual bool available(const std::string& gameId) const=0;
- virtual bool start(const std::string& gameId,const std::filesystem::path& romDirectory)=0;
+ virtual bool start(const std::string& gameId,const RomSearchPath& roms)=0;
  virtual bool stop()=0;
  virtual bool pause(bool paused)=0;
 };
 class EmulatorBridge {
  Collection& model_;
  EmulatorBackend& backend_;
- std::filesystem::path romDirectory_;
+ RomSearchPath roms_;
  std::string game_;
  RuntimeState state_=RuntimeState::Idle;
  bool cheats_=false;
  bool continued_=false;
 public:
- EmulatorBridge(Collection& model,EmulatorBackend& backend,std::filesystem::path romDirectory)
-  :model_(model),backend_(backend),romDirectory_(std::move(romDirectory)){}
+ EmulatorBridge(Collection& model,EmulatorBackend& backend,RomSearchPath roms)
+  :model_(model),backend_(backend),roms_(std::move(roms)){}
  RuntimeState state() const {return state_;}
  const std::string& game()const{return game_;}
  RuntimeResult prepare(const std::string& gameId);

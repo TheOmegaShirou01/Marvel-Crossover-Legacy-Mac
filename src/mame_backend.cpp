@@ -1,17 +1,14 @@
 #include "mame_backend.hpp"
+#include "mame_sets.hpp"
 #include <algorithm>
 #include <fstream>
 #include <system_error>
 #include <utility>
 #ifdef _WIN32
-#define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 #endif
 namespace mcl {
 namespace fs=std::filesystem;
-static bool cps2Game(const std::string& id){
- return id=="xmcota"||id=="msh"||id=="xmvsf"||id=="mshvsf"||id=="mvsc";
-}
 fs::path readMameExecutable(const fs::path& configFile){
  std::ifstream f(configFile,std::ios::binary);
  std::string s;
@@ -22,46 +19,45 @@ fs::path readMameExecutable(const fs::path& configFile){
  if(p.is_relative())p=configFile.parent_path()/p;
  return p.lexically_normal();
 }
-bool createCps2LaunchSpec(const fs::path& emulator,const fs::path& romDirectory,
- const std::string& game,MameLaunchSpec& output,std::string& reason){
- output={};
- if(!cps2Game(game)){reason="Not a supported CPS-2 title";return false;}
- std::error_code ec;
+static std::wstring widen(const std::string& ascii){return std::wstring(ascii.begin(),ascii.end());}
+// Shared checks + argument construction. Presence only: not a correct revision,
+// key or successful boot (MAME -verifyroms is the real check).
+static bool buildSpec(const fs::path& emulator,const RomSearchPath& roms,const std::string& game,
+ MameLaunchSpec& output,std::string& reason,const char* missingSet,const char* missingBios){
+ output={};std::error_code ec;
+ const auto* set=findMameSet(game);
+ if(!set){reason="Unknown game";return false;}
  if(emulator.empty()||!fs::is_regular_file(emulator,ec)){reason="MAME executable not found";return false;}
- if(romDirectory.empty()||!fs::is_directory(romDirectory,ec)){reason="ROM directory not found";return false;}
- // This verifies presence only, not a correct revision, BIOS, key or successful boot.
- if(!fs::is_regular_file(romDirectory/(game+".zip"),ec)){
-  reason="Selected ROM ZIP is missing";return false;
- }
+ if(roms.empty()||!roms.anyDirectoryExists()){reason="ROM directory not found";return false;}
+ if(!roms.hasSet(set->set)){reason=missingSet;return false;}
+ if(*set->parent&&!roms.hasSet(set->parent)){reason=std::string("Parent ROM ZIP missing: ")+set->parent+".zip";return false;}
+ if(*set->bios&&!roms.hasSet(set->bios)){reason=missingBios;return false;}
  output.executable=fs::absolute(emulator);
- output.romDirectory=fs::absolute(romDirectory);
+ output.roms=roms;
  output.game=game;
- output.arguments={std::wstring(game.begin(),game.end()),L"-rompath",output.romDirectory.wstring()};
+ output.mameSet=set->set;
+ output.arguments={widen(set->set),L"-rompath",roms.mameRompath()};
  reason.clear();return true;
 }
-bool createNaomiLaunchSpec(const fs::path& emulator,const fs::path& romDirectory,
- MameLaunchSpec& output,std::string& reason){
- output={};std::error_code ec;
- if(emulator.empty()||!fs::is_regular_file(emulator,ec)){reason="MAME executable not found";return false;}
- if(romDirectory.empty()||!fs::is_directory(romDirectory,ec)){reason="ROM directory not found";return false;}
- if(!fs::is_regular_file(romDirectory/"mvsc2.zip",ec)){reason="MVC2 ROM ZIP missing";return false;}
- if(!fs::is_regular_file(romDirectory/"naomi.zip",ec)){reason="NAOMI BIOS ZIP missing";return false;}
- output.executable=fs::absolute(emulator);output.romDirectory=fs::absolute(romDirectory);
- output.game="mvsc2";output.arguments={L"mvsc2",L"-rompath",output.romDirectory.wstring()};
- reason.clear();return true;
-}
-bool createExLaunchSpec(const fs::path& emulator,const fs::path& romDirectory,
+bool createCps2LaunchSpec(const fs::path& emulator,const RomSearchPath& roms,
  const std::string& game,MameLaunchSpec& output,std::string& reason){
- output={};std::error_code ec;
- if(game!="sfexp"&&game!="sfex2p"){reason="Not a supported CHEAT EX arcade title";return false;}
- if(emulator.empty()||!fs::is_regular_file(emulator,ec)){reason="MAME executable not found";return false;}
- if(romDirectory.empty()||!fs::is_directory(romDirectory,ec)){reason="ROM directory not found";return false;}
- const auto bios=game=="sfexp"?"coh1000c.zip":"coh3002c.zip";
- if(!fs::is_regular_file(romDirectory/(game+".zip"),ec)){reason="Selected EX ROM ZIP missing";return false;}
- if(!fs::is_regular_file(romDirectory/bios,ec)){reason="EX hardware BIOS ZIP missing";return false;}
- output.executable=fs::absolute(emulator);output.romDirectory=fs::absolute(romDirectory);
- output.game=game;output.arguments={std::wstring(game.begin(),game.end()),L"-rompath",output.romDirectory.wstring()};
- reason.clear();return true;
+ if(!isCps2Game(game)){output={};reason="Not a supported CPS-2 title";return false;}
+ return buildSpec(emulator,roms,game,output,reason,"Selected ROM ZIP is missing","");
+}
+bool createNaomiLaunchSpec(const fs::path& emulator,const RomSearchPath& roms,
+ MameLaunchSpec& output,std::string& reason){
+ return buildSpec(emulator,roms,"mvsc2",output,reason,"MVC2 ROM ZIP missing","NAOMI BIOS ZIP missing");
+}
+bool createExLaunchSpec(const fs::path& emulator,const RomSearchPath& roms,
+ const std::string& game,MameLaunchSpec& output,std::string& reason){
+ if(game!="sfexp"&&game!="sfex2p"){output={};reason="Not a supported CHEAT EX arcade title";return false;}
+ return buildSpec(emulator,roms,game,output,reason,"Selected EX ROM ZIP missing","EX hardware BIOS ZIP missing");
+}
+bool createLaunchSpec(const fs::path& emulator,const RomSearchPath& roms,
+ const std::string& game,MameLaunchSpec& output,std::string& reason){
+ if(game=="mvsc2")return createNaomiLaunchSpec(emulator,roms,output,reason);
+ if(game=="sfexp"||game=="sfex2p")return createExLaunchSpec(emulator,roms,game,output,reason);
+ return createCps2LaunchSpec(emulator,roms,game,output,reason);
 }
 #ifdef _WIN32
 struct MameBackend::Private {
@@ -85,25 +81,25 @@ MameBackend::MameBackend(fs::path e):p_(new Private(std::move(e))){}
 MameBackend::~MameBackend(){delete p_;}
 bool MameBackend::available(const std::string& game)const{
  std::error_code ec;
- return (cps2Game(game)||game=="mvsc2"||game=="sfexp"||game=="sfex2p")&&fs::is_regular_file(p_->executable,ec)&&!running();
+ return findMameSet(game)&&fs::is_regular_file(p_->executable,ec)&&!running();
 }
 bool MameBackend::running()const{
  return p_->process&&WaitForSingleObject(p_->process,0)==WAIT_TIMEOUT;
 }
-bool MameBackend::start(const std::string& id,const fs::path& roms){
+bool MameBackend::start(const std::string& id,const RomSearchPath& roms){
  if(running())return false;
  if(p_->process){CloseHandle(p_->process);p_->process=nullptr;p_->pid=0;}
  MameLaunchSpec spec;std::string reason;
- if(id=="mvsc2") {if(!createNaomiLaunchSpec(p_->executable,roms,spec,reason))return false;}
- else if(id=="sfexp"||id=="sfex2p"){if(!createExLaunchSpec(p_->executable,roms,id,spec,reason))return false;}
- else if(!createCps2LaunchSpec(p_->executable,roms,id,spec,reason))return false;
+ if(!createLaunchSpec(p_->executable,roms,id,spec,reason))return false;
  std::wstring cmd=quote(spec.executable.wstring());
  for(const auto& arg:spec.arguments){cmd+=L" ";cmd+=quote(arg);}
  std::vector<wchar_t> mutableCommand(cmd.begin(),cmd.end());mutableCommand.push_back(L'\0');
  STARTUPINFOW startup{};startup.cb=sizeof(startup);
  PROCESS_INFORMATION proc{};
  std::wstring workingDir=spec.executable.parent_path().wstring();
- if(!CreateProcessW(spec.executable.c_str(),mutableCommand.data(),nullptr,nullptr,FALSE,0,nullptr,
+ // CREATE_NO_WINDOW: console builds of MAME (mame64.exe) otherwise open an extra
+ // black console window beside the game window. The game window is unaffected.
+ if(!CreateProcessW(spec.executable.c_str(),mutableCommand.data(),nullptr,nullptr,FALSE,CREATE_NO_WINDOW,nullptr,
         workingDir.c_str(),&startup,&proc))return false;
  p_->process=proc.hProcess;p_->pid=proc.dwProcessId;CloseHandle(proc.hThread);
  return true;

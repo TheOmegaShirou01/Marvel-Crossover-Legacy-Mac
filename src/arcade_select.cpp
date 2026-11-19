@@ -209,7 +209,7 @@ class Selection {
    {
     auto emulatorFile=mcl::readMameExecutable(assets_/"mame_executable.txt");
     emulator_=std::make_unique<mcl::MameBackend>(emulatorFile);
-    session_=std::make_unique<mcl::EmulatorBridge>(model_,*emulator_,mcl::resolveRuntimeRomDirectory(assets_));
+    session_=std::make_unique<mcl::EmulatorBridge>(model_,*emulator_,mcl::resolveRuntimeRomSearchPath(assets_));
    }
    rebuild();RECT r{};GetClientRect(wnd_,&r);globe_.open(wnd_,assets_/"earth_background.mp4",r,true);SetTimer(wnd_,TIMER_ID+1,150,nullptr);return 0;}
   case WM_CTLCOLORSTATIC:{SetTextColor((HDC)w,RGB(250,217,89));SetBkColor((HDC)w,RGB(10,14,28));return (INT_PTR)dark_;}
@@ -249,7 +249,7 @@ class Selection {
     std::string gid(wid.begin(),wid.end());
     mcl::MameLaunchSpec spec;std::string reason;
     auto executable=mcl::readMameExecutable(assets_/"mame_executable.txt");
-    if(!mcl::createMameAuditSpec(executable,mcl::resolveRuntimeRomDirectory(assets_),gid,spec,reason)){
+    if(!mcl::createMameAuditSpec(executable,mcl::resolveRuntimeRomSearchPath(assets_),gid,spec,reason)){
      std::wstring why(reason.begin(),reason.end());
      MessageBoxW(wnd_,why.c_str(),L"Cannot audit ROM",MB_ICONWARNING);return 0;
     }
@@ -263,10 +263,10 @@ class Selection {
    if(id==EX_ROM_CHECK_ID){
     if(!exUnlocked_||!exMode_||selected_<0||selected_>=2)return 0;
     const char* game=selected_==0?"sfexp":"sfex2p";
-    auto folder=mcl::resolveRuntimeRomDirectory(assets_);
-    auto result=mcl::checkExternalRomFiles(folder,game);
-    std::wstring report=L"External ROM folder: ";
-    report+=folder.empty()?L"NOT CONFIGURED":folder.wstring();
+    auto roms=mcl::resolveRuntimeRomSearchPath(assets_);
+    auto result=mcl::checkExternalRomFiles(roms,game);
+    std::wstring report=L"External ROM folder(s): ";
+    report+=roms.empty()?L"NOT CONFIGURED":roms.mameRompath();
     report+=L"\n\n";
     for(const auto& entry:result.files){
      report+=std::wstring(entry.filename.begin(),entry.filename.end());

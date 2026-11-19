@@ -1,27 +1,26 @@
 #include "emulator_bridge.hpp"
+#include "mame_sets.hpp"
 #include <algorithm>
 #include <system_error>
 namespace mcl {
 RuntimeResult EmulatorBridge::prepare(const std::string& id){
  if(state_!=RuntimeState::Idle)return {false,"Stop current session first"};
  if(std::none_of(model_.games().begin(),model_.games().end(),[&](const Game& g){return g.id==id;}))return {false,"Unknown game"};
- std::error_code ec;
- if(romDirectory_.empty()||!std::filesystem::is_directory(romDirectory_,ec))return {false,"External ROM directory not configured"};
+ if(roms_.empty()||!roms_.anyDirectoryExists())return {false,"External ROM directory not configured"};
  if(!backend_.available(id))return {false,"No compatible emulator backend connected"};
  // Presence is necessary but not sufficient. Backends must validate real sets and BIOS.
  if(id=="sfexp"||id=="sfex2p"){
-  if(!checkExternalRomFiles(romDirectory_,id).readyForFileLevelCheck())return {false,"Missing EX game ROM or BIOS"};
+  if(!checkExternalRomFiles(roms_,id).readyForFileLevelCheck())return {false,"Missing EX game ROM or BIOS"};
  } else {
-  const auto f=romDirectory_/(id+".zip");
-  if(!std::filesystem::is_regular_file(f,ec))return {false,"Game ROM archive missing"};
-  if(id=="mvsc2"&&!std::filesystem::is_regular_file(romDirectory_/"naomi.zip",ec))return {false,"NAOMI BIOS missing"};
+  const auto missing=missingRomFor(roms_,id);
+  if(!missing.empty())return {false,missing};
  }
  game_=id;cheats_=false;continued_=false;state_=RuntimeState::Prepared;
  return {true,"Prepared for backend launch; content not yet validated"};
 }
 RuntimeResult EmulatorBridge::start(){
  if(state_!=RuntimeState::Prepared)return {false,"Game not prepared"};
- if(!backend_.start(game_,romDirectory_))return {false,"Backend declined launch"};
+ if(!backend_.start(game_,roms_))return {false,"Backend declined launch"};
  state_=RuntimeState::Running;return {true,"Backend running"};
 }
 RuntimeResult EmulatorBridge::pause(){

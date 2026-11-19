@@ -8,19 +8,13 @@
 #endif
 namespace mcl {
 namespace fs=std::filesystem;
-bool createMameAuditSpec(const fs::path& exe,const fs::path& roms,
+bool createMameAuditSpec(const fs::path& exe,const RomSearchPath& roms,
  const std::string& game,MameLaunchSpec& out,std::string& reason){
  out={};
  MameLaunchSpec launch;
- if(game=="mvsc2"){
-  if(!createNaomiLaunchSpec(exe,roms,launch,reason))return false;
- }else if(game=="sfexp"||game=="sfex2p"){
-  if(!createExLaunchSpec(exe,roms,game,launch,reason))return false;
- }else{
-  if(!createCps2LaunchSpec(exe,roms,game,launch,reason))return false;
- }
+ if(!createLaunchSpec(exe,roms,game,launch,reason))return false;
  out=launch;
- out.arguments={L"-verifyroms",std::wstring(game.begin(),game.end()),L"-rompath",out.romDirectory.wstring()};
+ out.arguments={L"-verifyroms",std::wstring(out.mameSet.begin(),out.mameSet.end()),L"-rompath",roms.mameRompath()};
  reason.clear();return true;
 }
 AuditResult interpretMameAuditExit(unsigned long code){

@@ -9,7 +9,8 @@ int main(){
  fs::remove_all(root);fs::create_directories(root/"ROM archive");
  auto rom=root/"ROM archive", exe=root/"mame.exe";
  {std::ofstream f(exe);f<<"fake executable for spec testing";}
- for(auto name:{"xmcota.zip","msh.zip","xmvsf.zip","mshvsf.zip","mvsc.zip","mvsc2.zip","naomi.zip","sfexp.zip","coh1000c.zip","sfex2p.zip","coh3002c.zip"}){
+ for(auto name:{"xmcota.zip","msh.zip","xmvsf.zip","mshvsf.zip","mvsc.zip","mvsc2.zip","naomi.zip","sfexp.zip","coh1000c.zip","sfex2p.zip","coh3002c.zip",
+                 "xmcotau.zip","mshud.zip","xmvsfur2.zip","mshvsfu1d.zip","mvscu.zip"}){
   std::ofstream f(rom/name);f<<"fake file for presence testing";
  }
  for(auto game:{"xmcota","msh","xmvsf","mshvsf","mvsc","mvsc2","sfexp","sfex2p"}){
@@ -17,6 +18,7 @@ int main(){
   assert(mcl::createMameAuditSpec(exe,rom,game,spec,why));
   assert(spec.game==game && spec.arguments.size()==4);
   assert(spec.arguments[0]==L"-verifyroms" && spec.arguments[2]==L"-rompath");
+  assert(spec.arguments[1]==std::wstring(spec.mameSet.begin(),spec.mameSet.end()));
   assert(spec.arguments[3].find(L"ROM archive")!=std::wstring::npos);
  }
  for(auto game:{"sfex3","invalid","mvsc; del *",""}){
@@ -28,6 +30,9 @@ int main(){
   mcl::MameLaunchSpec spec;std::string why;
   assert(!mcl::createMameAuditSpec(exe,rom,"mvsc2",spec,why));
  }
+ {mcl::MameLaunchSpec spec;std::string why;
+  assert(mcl::createMameAuditSpec(exe,rom,"xmcota",spec,why) && spec.arguments[1]==L"xmcotau");
+  assert(mcl::createMameAuditSpec(exe,rom,"mvsc",spec,why) && spec.arguments[1]==L"mvscu");}
  assert(mcl::interpretMameAuditExit(0).status==mcl::AuditStatus::Pass);
  assert(mcl::interpretMameAuditExit(2).status==mcl::AuditStatus::Failed);
  fs::remove_all(root);std::cout<<"PASS: eight-game audit specs, BIOS gate, unsupported IDs, exit interpretation\n";
