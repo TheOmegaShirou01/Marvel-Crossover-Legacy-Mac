@@ -9,6 +9,7 @@
 #include "core.hpp"
 #include "arcade_select.hpp"
 #include "title_screen.hpp"
+#include "game_launcher.hpp"
 #pragma comment(lib,"comctl32.lib")
 #pragma comment(lib,"shell32.lib")
 namespace {
@@ -122,8 +123,9 @@ int WINAPI wWinMain(HINSTANCE inst,HINSTANCE,LPWSTR,int){
  const std::filesystem::path appDir=std::filesystem::path(exe).parent_path();
  model=std::make_unique<mcl::Collection>(appDir/"MCL_UserData");
  INITCOMMONCONTROLSEX ic{sizeof(ic),ICC_STANDARD_CLASSES};InitCommonControlsEx(&ic);
+ mcl::GameLauncher launcher(appDir,*model);
  mcl_title::Callbacks cb;
- cb.arcade=[&](HWND owner,bool exUnlocked,bool startInEx,bool cheatsOn){cheatExUnlocked=exUnlocked;mcl_select::show(owner,appDir,exUnlocked,*model,startInEx,cheatsOn);};
+ cb.launcher=&launcher;
  cb.options=[](HWND owner,bool exUnlocked){showFeatureWindow(owner,exUnlocked);};
  return mcl_title::run(inst,appDir,cb);
 }

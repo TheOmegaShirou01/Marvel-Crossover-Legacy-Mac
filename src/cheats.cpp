@@ -54,6 +54,21 @@ const std::map<std::string,std::vector<CheatDef>>& table(){
    {"p1_onslaught","Play as Onslaught P1 (Vs.)",V{b(0xFF40B1,0x22),b(0xFF40B3,0x22),b(0xFF3003,0x01),b(0xFF3803,0x01),b(0xFF415E,0x22),b(0xFF415F,0x22)}},
    {"p2_onslaught","Play as Onslaught P2 (Vs.)",V{b(0xFF40B5,0x22),b(0xFF40B7,0x22),b(0xFF3403,0x01),b(0xFF3C03,0x01),b(0xFF415E,0x22),b(0xFF415F,0x22)}},
   }},
+  // CHEAT EX games (ZN-1 / ZN-2, PlayStation-based RAM addresses).
+  {"sfexp",{ // set sfexp (USA 970407)
+   {"time","Infinite Time",V{b(0x31D5CC,0x63)}},
+   {"p1_energy","Infinite Health P1",V{b(0x3249E4,0xC8)}},
+   {"p2_energy","Infinite Health P2",V{b(0x325E58,0xC8)}},
+   {"p1_power","Max Special P1",V{b(0x3249E5,0x96)}},
+   {"p2_power","Max Special P2",V{b(0x325E59,0x96)}},
+  }},
+  {"sfex2p",{ // set sfex2p
+   {"time","Infinite Time",V{b(0x2AE5BC,0x63)}},
+   {"p1_energy","Infinite Health P1",V{b(0x2B68A8,0xC8)}},
+   {"p2_energy","Infinite Health P2",V{b(0x2B80AC,0xC8)}},
+   {"p1_power","Max Special P1",V{b(0x2B68A9,0x96)}},
+   {"p2_power","Max Special P2",V{b(0x2B80AD,0x8D)}},
+  }},
  };
  return t;
 }
@@ -64,6 +79,9 @@ const std::vector<CheatDef>& cheatsFor(const std::string& game){
 }
 const std::vector<std::string>& marvelCheatGames(){
  static const std::vector<std::string> g{"xmcota","msh","xmvsf","mshvsf","mvsc"};return g;
+}
+const std::vector<std::string>& exCheatGames(){
+ static const std::vector<std::string> g{"sfexp","sfex2p"};return g;
 }
 bool CheatSettings::load(){
  on_.clear();std::ifstream in(file_);if(!in)return false;

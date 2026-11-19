@@ -21,6 +21,8 @@ struct CheatDef {
 const std::vector<CheatDef>& cheatsFor(const std::string& game);
 // The five Marvel CPS-2 games that have cheats on the CHEATS screen, in menu order.
 const std::vector<std::string>& marvelCheatGames();
+// The two CHEAT EX games (their cheats live in the same CheatSettings file).
+const std::vector<std::string>& exCheatGames();
 
 // Which cheats are switched on, per game. Plain text file, one "game cheat_id" per line.
 class CheatSettings {

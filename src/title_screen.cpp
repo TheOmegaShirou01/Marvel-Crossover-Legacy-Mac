@@ -4,6 +4,8 @@
 #include "lightning.hpp"
 #include "menu_model.hpp"
 #include "cheats.hpp"
+#include "game_launcher.hpp"
+#include <map>
 #include <memory>
 #include <d2d1_1.h>
 #include <dwrite.h>
@@ -30,7 +32,22 @@ using mcl::MenuItem;
 using MK=mcl::MainMenuModel::Kind;
 
 constexpr float kLogoW=1600.f,kLogoH=760.f;
-enum class Screen { Title, Menu, Credits, Cheats };
+enum class Screen { Title, Menu, Credits, Cheats, Select };
+
+// Arcade Select cards: collection id, full title, credit line.
+struct CardInfo { const char* id; const wchar_t* title; const wchar_t* sub; };
+const CardInfo kMarvelCards[]={
+ {"xmcota",L"X-MEN: CHILDREN OF THE ATOM",L"CAPCOM   •   1994   •   CPS-2"},
+ {"msh",L"MARVEL SUPER HEROES",L"CAPCOM   •   1995   •   CPS-2"},
+ {"xmvsf",L"X-MEN VS. STREET FIGHTER",L"CAPCOM   •   1996   •   CPS-2"},
+ {"mshvsf",L"MARVEL SUPER HEROES VS. STREET FIGHTER",L"CAPCOM   •   1997   •   CPS-2"},
+ {"mvsc",L"MARVEL VS. CAPCOM: CLASH OF SUPER HEROES",L"CAPCOM   •   1998   •   CPS-2"},
+ {"mvsc2",L"MARVEL VS. CAPCOM 2: NEW AGE OF HEROES",L"CAPCOM   •   2000   •   NAOMI"},
+};
+const CardInfo kExCards[]={
+ {"sfexp",L"STREET FIGHTER EX PLUS",L"ARIKA / CAPCOM   •   1997   •   ZN-1"},
+ {"sfex2p",L"STREET FIGHTER EX2 PLUS",L"ARIKA / CAPCOM   •   1999   •   ZN-2"},
+};
 
 const wchar_t* const kCredits[]={
  L"#MARVEL: CROSSOVER LEGACY",
@@ -71,8 +88,17 @@ struct App {
  mcl::LightningField logoBolts{20261119u};
  mcl::LightningField itemBolts{77u,{0,0,100,30},[]{mcl::LightningConfig c;c.strikes=false;c.frontBolts=false;c.minArcs=1;c.maxArcs=3;c.arcChance=0.22f;return c;}()};
  mcl::MainMenuModel menu;
- std::unique_ptr<mcl::CheatSettings> cheats; // MCL_UserData\marvel_cheats.txt
+ std::unique_ptr<mcl::CheatSettings> cheats; // MCL_UserData\marvel_cheats.txt (Marvel + EX)
  int cheatGame=0,cheatRow=0;
+ std::vector<std::string> cheatGames;Screen cheatsReturn=Screen::Menu;const wchar_t* cheatsTitle=L"MARVEL CHEATS";
+ // Arcade Select
+ bool exMode=false;int selCard=0;double selSince=0;
+ std::map<std::string,ComPtr<ID2D1Bitmap>> cards;
+ mcl::EarthVideo preview;std::string previewId;std::string previewReady;
+ ComPtr<ID2D1Bitmap> previewBmp;std::vector<std::uint32_t> previewPixels;std::uint32_t pw=0,ph=0;std::uint64_t previewSerial=0;
+ mcl::LightningField cardBolts{4242u,{0,0,100,60},[]{mcl::LightningConfig c;c.strikes=false;c.frontBolts=false;c.minArcs=2;c.maxArcs=4;c.arcChance=0.3f;return c;}()};
+ bool gameRunning=false;
+ std::wstring overlay; // modal message panel (failed launch etc.)
  Screen screen=Screen::Title;double screenSince=0;
  double layoutFrom=0,layoutTo=0,layoutStart=-1e9; // 0 = title layout, 1 = menu layout
  std::wstring banner;double bannerUntil=0;float bannerFlash=0;
@@ -129,6 +155,10 @@ bool ensureTarget(){
  g->rt.As(&g->dc);
  g->rt->CreateSolidColorBrush(rgba(1,1,1),&g->brush);
  g->logo=loadPng(g->dir/"Logos"/"mcl_logo.png");
+ g->cards.clear();
+ for(const auto& c:kMarvelCards)g->cards[c.id]=loadPng(g->dir/"Logos"/"Cards"/(std::string(c.id)+".png"));
+ for(const auto& c:kExCards)g->cards[c.id]=loadPng(g->dir/"Logos"/"Cards"/(std::string(c.id)+".png"));
+ g->previewBmp.Reset();g->previewSerial=0;g->previewReady.clear();
  g->videoBmp.Reset();g->videoSerial=0;
  makeSizeDependent();
  return true;
@@ -191,11 +221,15 @@ float layoutT(double now){
  return static_cast<float>(g->layoutFrom+(g->layoutTo-g->layoutFrom)*t);
 }
 void goLayout(double to,double now){g->layoutFrom=layoutT(now);g->layoutTo=to;g->layoutStart=now;}
+// Layout 0 = title (big logo), 1 = menu, 2 = Arcade Select (small logo at the top).
 D2D1_RECT_F logoRect(double now){
  const float W=g->W(),H=g->H(),t=layoutT(now);
- const float wTitle=std::min(W*0.80f,H*0.66f*kLogoW/kLogoH),cyTitle=H*0.40f;
- const float wMenu=std::min(W*0.50f,H*0.40f*kLogoW/kLogoH),cyMenu=H*0.22f;
- const float w=wTitle+(wMenu-wTitle)*t,cy=cyTitle+(cyMenu-cyTitle)*t,h=w*kLogoH/kLogoW;
+ struct L{float w,cy;};
+ const L title{std::min(W*0.80f,H*0.66f*kLogoW/kLogoH),H*0.40f};
+ const L menu{std::min(W*0.50f,H*0.40f*kLogoW/kLogoH),H*0.22f};
+ const L sel{std::min(W*0.34f,H*0.30f*kLogoW/kLogoH),H*0.165f};
+ const L& a=t<=1.f?title:menu;const L& b=t<=1.f?menu:sel;const float k=t<=1.f?t:t-1.f;
+ const float w=a.w+(b.w-a.w)*k,cy=a.cy+(b.cy-a.cy)*k,h=w*kLogoH/kLogoW;
  return D2D1::RectF(W/2-w/2,cy-h/2,W/2+w/2,cy+h/2);
 }
 float menuTop(){return g->H()*0.46f;}
@@ -219,19 +253,61 @@ void setScreen(Screen s){g->screen=s;g->screenSince=g->now();}
 void showBanner(const std::wstring& s){g->banner=s;g->bannerUntil=g->now()+2200;g->bannerFlash=1.f;g->itemBolts.clear();}
 // Background video is paused while another window (Arcade Select, Options, MAME) is in front.
 struct VideoPause{VideoPause(){g->video.setPaused(true);}~VideoPause(){g->video.setPaused(false);}};
+// ---------- Arcade Select helpers ----------
+const CardInfo* selCards(int& n){
+ if(g->exMode){n=static_cast<int>(sizeof(kExCards)/sizeof(kExCards[0]));return kExCards;}
+ n=static_cast<int>(sizeof(kMarvelCards)/sizeof(kMarvelCards[0]));return kMarvelCards;
+}
+const CardInfo& selected(){int n=0;const CardInfo* c=selCards(n);return c[std::clamp(g->selCard,0,n-1)];}
+void enterSelect(bool ex){
+ g->exMode=ex;g->selCard=0;g->selSince=g->now();g->cardBolts.clear();
+ g->overlay.clear();setScreen(Screen::Select);goLayout(2,g->now());
+}
+void openCheats(const std::vector<std::string>& games,int start,Screen back,const wchar_t* title){
+ if(!g->cheats)g->cheats=std::make_unique<mcl::CheatSettings>(g->dir/"MCL_UserData"/"marvel_cheats.txt");
+ g->cheats->load();
+ g->cheatGames=games;g->cheatGame=std::clamp(start,0,static_cast<int>(games.size())-1);g->cheatRow=0;
+ g->cheatsReturn=back;g->cheatsTitle=title;setScreen(Screen::Cheats);
+}
+void selectCheats(){
+ const std::string id=selected().id;
+ const bool ex=g->exMode;
+ if(ex?!g->menu.cheatExUnlocked()&&!g->exMode:!g->menu.cheatsUnlocked()){showBanner(L"ENTER THE CHEAT CODE FIRST");return;}
+ const auto& list=ex?mcl::exCheatGames():mcl::marvelCheatGames();
+ const auto it=std::find(list.begin(),list.end(),id);
+ if(it==list.end()){showBanner(L"NO CHEATS FOR THIS GAME YET");return;}
+ openCheats(list,static_cast<int>(it-list.begin()),Screen::Select,ex?L"CHEAT EX":L"MARVEL CHEATS");
+}
+void launchSelected(){
+ if(!g->cb.launcher){g->overlay=L"COULD NOT START THE GAME\n\nNo launcher is connected.";return;}
+ g->preview.stop();g->previewId.clear();g->previewReady.clear();
+ const auto r=g->cb.launcher->launch(selected().id,g->menu.cheatsUnlocked(),g->menu.cheatExUnlocked()||g->exMode);
+ if(!r.ok){g->overlay=L"COULD NOT START THE GAME\n\n"+r.message;return;}
+ g->gameRunning=true;g->video.setPaused(true);
+}
+void moveCard(Pad p){
+ int n=0;selCards(n);
+ const int cols=g->exMode?2:3;
+ int s=g->selCard;
+ if(p==Pad::Left)s=(s+n-1)%n;
+ else if(p==Pad::Right)s=(s+1)%n;
+ else if(p==Pad::Up||p==Pad::Down){if(n>cols)s=(s+cols)%n;}
+ if(s!=g->selCard){g->selCard=s;g->selSince=g->now();g->cardBolts.clear();}
+}
 void activate(MenuItem item){
- if(item==MenuItem::Arcade||item==MenuItem::Options||item==MenuItem::CheatEx){
+ if(item==MenuItem::Options){
   VideoPause pause;
-  if(item==MenuItem::Options){if(g->cb.options)g->cb.options(g->hwnd,g->menu.cheatExUnlocked());}
-  else if(g->cb.arcade)g->cb.arcade(g->hwnd,item==MenuItem::CheatEx||g->menu.cheatExUnlocked(),item==MenuItem::CheatEx,g->menu.cheatsUnlocked());
+  if(g->cb.options)g->cb.options(g->hwnd,g->menu.cheatExUnlocked());
   return;
  }
+ if(item==MenuItem::Arcade||item==MenuItem::CheatEx){enterSelect(item==MenuItem::CheatEx);return;}
  switch(item){
   case MenuItem::Arcade: break; // handled above
   case MenuItem::Options: break; // handled above
-  case MenuItem::Cheats:
-   if(!g->cheats)g->cheats=std::make_unique<mcl::CheatSettings>(g->dir/"MCL_UserData"/"marvel_cheats.txt");
-   g->cheats->load();g->cheatRow=0;setScreen(Screen::Cheats);break;
+  case MenuItem::Cheats:{
+   std::vector<std::string> list=mcl::marvelCheatGames();
+   if(g->menu.cheatExUnlocked())for(const auto& e:mcl::exCheatGames())list.push_back(e);
+   openCheats(list,0,Screen::Menu,L"CHEATS");break;}
   case MenuItem::CheatEx: break; // handled above
   case MenuItem::Credits: setScreen(Screen::Credits);break;
   case MenuItem::Exit: DestroyWindow(g->hwnd);break;
@@ -240,9 +316,18 @@ void activate(MenuItem item){
 void onPad(Pad p){
  // Ignore input while another window (Arcade Select, Options, a game) is in front:
  // their modal loops still dispatch messages to this window.
- if(!IsWindowEnabled(g->hwnd))return;
+ if(!IsWindowEnabled(g->hwnd)||g->gameRunning)return;
+ if(!g->overlay.empty()){if(p==Pad::Cross||p==Pad::Circle||p==Pad::Start)g->overlay.clear();return;}
  const double now=g->now();
  switch(g->screen){
+  case Screen::Select:
+   switch(p){
+    case Pad::Left: case Pad::Right: case Pad::Up: case Pad::Down: moveCard(p);break;
+    case Pad::Cross: case Pad::Start: launchSelected();break;
+    case Pad::Circle: g->preview.stop();g->previewId.clear();g->previewReady.clear();setScreen(Screen::Menu);goLayout(1,now);break;
+    case Pad::Select: selectCheats();break;
+   }
+   break;
   case Screen::Title:{
    // Cheat codes work on the title screen too (classic arcade style).
    const auto r=g->menu.pressOnTitle(p);
@@ -268,7 +353,8 @@ void onPad(Pad p){
    if(p==Pad::Circle||p==Pad::Cross||p==Pad::Start)setScreen(Screen::Menu);
    break;
   case Screen::Cheats:{
-   const auto& games=mcl::marvelCheatGames();
+   const auto& games=g->cheatGames;
+   if(games.empty()){setScreen(g->cheatsReturn);break;}
    const int ng=static_cast<int>(games.size());
    const auto& list=mcl::cheatsFor(games[static_cast<size_t>(g->cheatGame)]);
    const int nr=static_cast<int>(list.size());
@@ -285,7 +371,7 @@ void onPad(Pad p){
       g->cheats->save();
      }
      break;
-    case Pad::Circle: setScreen(Screen::Menu);break;
+    case Pad::Circle: setScreen(g->cheatsReturn);if(g->cheatsReturn==Screen::Select)g->selSince=g->now();break;
     default: break;
    }
    break;}
@@ -299,8 +385,10 @@ void startMenu(){
 }
 // Enter: confirm on every screen; does not touch cheat-code progress on title/menu.
 void onConfirm(){
- if(!IsWindowEnabled(g->hwnd))return;
+ if(!IsWindowEnabled(g->hwnd)||g->gameRunning)return;
+ if(!g->overlay.empty()){g->overlay.clear();return;}
  switch(g->screen){
+  case Screen::Select: launchSelected();break;
   case Screen::Title: startMenu();break;
   case Screen::Menu: g->menu.resetCodes();activate(g->menu.selected());break;
   case Screen::Cheats: onPad(Pad::Cross);break;   // toggle the highlighted cheat
@@ -309,11 +397,14 @@ void onConfirm(){
 }
 // Esc: back on every screen.
 void onBack(){
- if(!IsWindowEnabled(g->hwnd))return;
+ if(!IsWindowEnabled(g->hwnd)||g->gameRunning)return;
+ if(!g->overlay.empty()){g->overlay.clear();return;}
  switch(g->screen){
   case Screen::Title: break;
   case Screen::Menu: g->menu.resetCodes();setScreen(Screen::Title);goLayout(0,g->now());break;
-  case Screen::Cheats: case Screen::Credits: setScreen(Screen::Menu);break;
+  case Screen::Cheats: onPad(Pad::Circle);break;
+  case Screen::Credits: setScreen(Screen::Menu);break;
+  case Screen::Select: onPad(Pad::Circle);break;
  }
 }
 // X / C / Backspace / Space: cheat-code buttons. On the title screen and main menu they only
@@ -328,6 +419,7 @@ void onCodeKey(Pad p){
  }
  if(p==Pad::Cross||p==Pad::Start)onConfirm();
  else if(p==Pad::Circle)onBack();
+ else if(p==Pad::Select&&g->screen==Screen::Select)onPad(Pad::Select);
 }
 void drawBackground(){
  const float W=g->W(),H=g->H();
@@ -412,15 +504,17 @@ const wchar_t* cheatGameTitle(const std::string& id){
  if(id=="xmvsf")return L"X-MEN VS. STREET FIGHTER";
  if(id=="mshvsf")return L"MARVEL SUPER HEROES VS. STREET FIGHTER";
  if(id=="mvsc")return L"MARVEL VS. CAPCOM";
+ if(id=="sfexp")return L"STREET FIGHTER EX PLUS";
+ if(id=="sfex2p")return L"STREET FIGHTER EX2 PLUS";
  return L"";
 }
 void drawCheats(double now){
  const float W=g->W(),H=g->H();
  g->brush->SetColor(rgba(0,0,0.02f));g->brush->SetOpacity(0.72f);
  g->rt->FillRectangle(D2D1::RectF(W*0.12f,H*0.38f,W*0.88f,H*0.93f),g->brush.Get());g->brush->SetOpacity(1);
- text(L"MARVEL CHEATS",g->fHead.Get(),D2D1::RectF(0,H*0.39f,W,H*0.45f),rgba(1.f,0.45f,0.25f),H*0.004f);
- const auto& games=mcl::marvelCheatGames();
- const std::string& game=games[static_cast<size_t>(g->cheatGame)];
+ text(g->cheatsTitle,g->fHead.Get(),D2D1::RectF(0,H*0.39f,W,H*0.45f),rgba(1.f,0.45f,0.25f),H*0.004f);
+ if(g->cheatGames.empty())return;
+ const std::string& game=g->cheatGames[static_cast<size_t>(g->cheatGame)];
  const bool blink=std::fmod(now,1000.0)<650.0;
  text(std::wstring(blink?L"◀   ":L"    ")+cheatGameTitle(game)+(blink?L"   ▶":L"    "),g->fBody.Get(),
       D2D1::RectF(0,H*0.455f,W,H*0.505f),rgba(1.f,0.84f,0.25f),2);
@@ -444,6 +538,98 @@ void drawCheats(double now){
       g->fSmall.Get(),D2D1::RectF(0,H*0.895f,W,H*0.93f),rgba(0.65f,0.72f,0.85f),2);
  text(L"←→ GAME      ↑↓ CHEAT      ENTER / ✕ ON-OFF      ESC / ○ BACK",g->fSmall.Get(),D2D1::RectF(0,H*0.94f,W,H*0.98f),rgba(0.6f,0.66f,0.8f),2);
 }
+// Draws `bmp` covering `r` (cropping the source to r's aspect), squeezed horizontally by sx.
+// zoom > 1 crops further into the centre (preview clips have built-in side bars).
+void drawCover(ID2D1Bitmap* bmp,D2D1_RECT_F r,float sx,float opacity,float zoom=1.f){
+ if(!bmp)return;
+ const auto s=bmp->GetSize();
+ const float rw=r.right-r.left,rh=r.bottom-r.top;if(rw<=1||rh<=1)return;
+ float cw=s.width,ch=s.width*rh/rw;if(ch>s.height){ch=s.height;cw=s.height*rw/rh;}
+ cw/=zoom;ch/=zoom;
+ const D2D1_RECT_F src=D2D1::RectF((s.width-cw)/2,(s.height-ch)/2,(s.width+cw)/2,(s.height+ch)/2);
+ const float cx=(r.left+r.right)/2,hw=rw/2*sx;
+ const D2D1_RECT_F dst=D2D1::RectF(cx-hw,r.top,cx+hw,r.bottom);
+ if(g->dc)g->dc->DrawBitmap(bmp,&dst,opacity,D2D1_INTERPOLATION_MODE_HIGH_QUALITY_CUBIC,&src);
+ else g->rt->DrawBitmap(bmp,dst,opacity,D2D1_BITMAP_INTERPOLATION_MODE_LINEAR,src);
+}
+void updatePreview(double now){
+ const std::string id=selected().id;
+ // Start decoding the selected card's clip once the selection has rested briefly.
+ if(g->previewId!=id&&now-g->selSince>250){
+  g->preview.stop();g->previewReady.clear();g->previewSerial=0;
+  g->preview.start(g->dir/"Previews"/(id+".mp4"),640,360);
+  g->previewId=id;
+ }
+ if(g->previewId==id&&g->preview.latest(g->previewPixels,g->pw,g->ph,g->previewSerial)){
+  if(!g->previewBmp||g->previewBmp->GetPixelSize().width!=g->pw||g->previewBmp->GetPixelSize().height!=g->ph){
+   g->previewBmp.Reset();
+   g->rt->CreateBitmap(D2D1::SizeU(g->pw,g->ph),D2D1::BitmapProperties(D2D1::PixelFormat(DXGI_FORMAT_B8G8R8A8_UNORM,D2D1_ALPHA_MODE_IGNORE)),&g->previewBmp);
+  }
+  if(g->previewBmp){g->previewBmp->CopyFromMemory(nullptr,g->previewPixels.data(),g->pw*4);g->previewReady=id;}
+ }
+}
+void drawSelect(double now){
+ const float W=g->W(),H=g->H();
+ int n=0;const CardInfo* cards=selCards(n);
+ const int cols=g->exMode?2:3,rows=(n+cols-1)/cols;
+ updatePreview(now);
+ text(g->exMode?L"CHEAT EX  •  SECRET FIGHTERS":L"SELECT YOUR GAME",g->fHead.Get(),D2D1::RectF(0,H*0.325f,W,H*0.385f),
+      g->exMode?rgba(1.f,0.45f,0.25f):rgba(1.f,0.84f,0.25f),H*0.004f);
+ const float gap=H*0.035f;
+ float ch=H*0.19f,cw=ch*320.f/175.f;
+ const float maxW=(W*0.86f-gap*(cols-1))/cols;if(cw>maxW){cw=maxW;ch=cw*175.f/320.f;}
+ const float gridW=cw*cols+gap*(cols-1),gridH=ch*rows+gap*(rows-1);
+ const float x0=(W-gridW)/2,y0=H*0.40f+(H*0.43f-gridH)/2;
+ const std::string selId=selected().id;
+ // Flip: 700 ms after the selection settles (and once the clip has a frame), 300 ms animation.
+ const double rest=now-g->selSince;
+ const bool clip=g->previewReady==selId&&g->previewBmp;
+ float flip=0;if(clip&&rest>700)flip=static_cast<float>(std::min(1.0,(rest-700)/300.0));
+ D2D1_RECT_F selRect{};
+ for(int i=0;i<n;++i){
+  const int r=i/cols,c=i%cols;
+  const int inRow=std::min(cols,n-r*cols);
+  const float rowX=x0+(gridW-(cw*inRow+gap*(inRow-1)))/2;
+  D2D1_RECT_F rc=D2D1::RectF(rowX+c*(cw+gap),y0+r*(ch+gap),rowX+c*(cw+gap)+cw,y0+r*(ch+gap)+ch);
+  const bool sel=i==g->selCard;
+  if(sel){const float gx=cw*0.04f,gy=ch*0.04f;rc=D2D1::RectF(rc.left-gx,rc.top-gy,rc.right+gx,rc.bottom+gy);selRect=rc;continue;}
+  g->brush->SetColor(rgba(0.03f,0.05f,0.12f));g->rt->FillRectangle(rc,g->brush.Get());
+  drawCover(g->cards[cards[i].id].Get(),rc,1.f,0.55f);
+  g->brush->SetColor(rgba(0.75f,0.82f,0.95f));g->brush->SetOpacity(0.5f);g->rt->DrawRectangle(rc,g->brush.Get(),2.f);g->brush->SetOpacity(1);
+ }
+ // Selected card last: lightning ring, flip between logo and live preview, gold frame.
+ if(selRect.right>selRect.left){
+  const float cx=(selRect.left+selRect.right)/2,cy=(selRect.top+selRect.bottom)/2;
+  const float sw=selRect.right-selRect.left,sh=selRect.bottom-selRect.top;
+  g->cardBolts.setRing({cx,cy,sw*0.60f,sh*0.68f});
+  g->cardBolts.update(now);
+  drawCrackle(g->cardBolts,now,1,0,0,0.45f,6.f);
+  drawBolts(g->cardBolts,now,false,1,0,0,0.42f);
+  g->brush->SetColor(rgba(0.02f,0.03f,0.08f));g->rt->FillRectangle(selRect,g->brush.Get());
+  if(flip<0.5f)drawCover(g->cards[selId].Get(),selRect,1.f-flip*2.f,1.f);
+  else drawCover(g->previewBmp.Get(),selRect,flip*2.f-1.f,1.f,1.16f);
+  g->brush->SetColor(rgba(1.f,0.84f,0.25f));g->rt->DrawRectangle(selRect,g->brush.Get(),std::max(3.f,H*0.004f));
+ }
+ const auto& info=selected();
+ text(info.title,g->fHead.Get(),D2D1::RectF(0,H*0.845f,W,H*0.895f),rgba(1,1,1),H*0.0035f);
+ text(info.sub,g->fSmall.Get(),D2D1::RectF(0,H*0.895f,W,H*0.925f),rgba(0.75f,0.82f,0.95f),2);
+ text(L"←↑→↓ CHOOSE      ENTER  PLAY      BACKSPACE  CHEATS      ESC  BACK",g->fSmall.Get(),D2D1::RectF(0,H*0.94f,W,H*0.98f),rgba(0.6f,0.66f,0.8f),2,0.85f);
+}
+void drawOverlay(){
+ const float W=g->W(),H=g->H();
+ g->brush->SetColor(rgba(0,0,0));g->brush->SetOpacity(0.6f);g->rt->FillRectangle(D2D1::RectF(0,0,W,H),g->brush.Get());
+ const D2D1_RECT_F panel=D2D1::RectF(W*0.14f,H*0.26f,W*0.86f,H*0.80f);
+ g->brush->SetColor(rgba(0.03f,0.05f,0.13f));g->brush->SetOpacity(0.96f);g->rt->FillRectangle(panel,g->brush.Get());g->brush->SetOpacity(1);
+ g->brush->SetColor(rgba(1.f,0.45f,0.25f));g->rt->DrawRectangle(panel,g->brush.Get(),3.f);
+ ComPtr<IDWriteTextLayout> l;
+ const float pad=W*0.03f;
+ g->dw->CreateTextLayout(g->overlay.c_str(),static_cast<UINT32>(g->overlay.size()),g->fSmall.Get(),panel.right-panel.left-2*pad,panel.bottom-panel.top-2*pad-H*0.05f,&l);
+ if(l){
+  l->SetWordWrapping(DWRITE_WORD_WRAPPING_WRAP);l->SetTextAlignment(DWRITE_TEXT_ALIGNMENT_LEADING);l->SetParagraphAlignment(DWRITE_PARAGRAPH_ALIGNMENT_NEAR);
+  g->brush->SetColor(rgba(0.93f,0.95f,1.f));g->rt->DrawTextLayout(D2D1::Point2F(panel.left+pad,panel.top+pad),l.Get(),g->brush.Get());
+ }
+ text(L"ENTER / ESC  OK",g->fSmall.Get(),D2D1::RectF(panel.left,panel.bottom-H*0.05f,panel.right,panel.bottom-H*0.01f),rgba(1.f,0.84f,0.25f),2);
+}
 void render(){
  if(!ensureTarget())return;
  const double now=g->now();
@@ -457,15 +643,18 @@ void render(){
   case Screen::Menu: drawMenu(now);break;
   case Screen::Credits: drawCredits(now);break;
   case Screen::Cheats: drawCheats(now);break;
+  case Screen::Select: drawSelect(now);break;
  }
+ if(!g->overlay.empty())drawOverlay();
  if(now<g->bannerUntil){
   const float k=static_cast<float>((g->bannerUntil-now)/2200.0);
   text(g->banner,g->fBanner.Get(),D2D1::RectF(0,H*0.35f,W,H*0.5f),rgba(1.f,0.84f,0.25f),H*0.006f,std::min(1.f,k*3));
  }
- const float flash=std::max(g->logoBolts.flash(),g->bannerFlash);
+ // Calmer flashes behind the cards so the previews stay watchable.
+ const float flash=std::max(g->logoBolts.flash()*(g->screen==Screen::Select?0.35f:1.f),g->bannerFlash);
  if(flash>0.01f){g->brush->SetColor(rgba(0.75f,0.92f,1.f));g->brush->SetOpacity(flash*0.35f);g->rt->FillRectangle(D2D1::RectF(0,0,W,H),g->brush.Get());g->brush->SetOpacity(1);}
  g->bannerFlash=std::max(0.f,g->bannerFlash-0.06f);
- if(g->rt->EndDraw()==D2DERR_RECREATE_TARGET){g->rt.Reset();g->dc.Reset();g->brush.Reset();g->logo.Reset();g->videoBmp.Reset();}
+ if(g->rt->EndDraw()==D2DERR_RECREATE_TARGET){g->rt.Reset();g->dc.Reset();g->brush.Reset();g->logo.Reset();g->videoBmp.Reset();g->previewBmp.Reset();g->cards.clear();}
 }
 
 // ---------- input ----------
@@ -529,6 +718,7 @@ LRESULT CALLBACK proc(HWND h,UINT m,WPARAM w,LPARAM l){
     case VK_SPACE: if(!repeat)onCodeKey(Pad::Start);return 0;
     case VK_RETURN: if(!repeat)onConfirm();return 0;
     case VK_ESCAPE: if(!repeat)onBack();return 0;
+    case VK_TAB: if(!repeat&&g&&g->screen==Screen::Select)onPad(Pad::Select);return 0;
    }
    break;}
   case WM_LBUTTONDOWN:
@@ -566,12 +756,22 @@ int mcl_title::run(HINSTANCE inst,const fs::path& appDir,const Callbacks& cb){
    TranslateMessage(&msg);DispatchMessageW(&msg);
   }
   if(quit||!IsWindow(app.hwnd))break;
+  if(app.gameRunning){
+   // A game is running: draw nothing, keep the background video paused, wait for it to end.
+   std::wstring failure;
+   if(app.cb.launcher&&app.cb.launcher->pollEnded(failure)){
+    app.gameRunning=false;app.video.setPaused(false);
+    ShowWindow(app.hwnd,SW_SHOW);SetForegroundWindow(app.hwnd);
+    app.selSince=app.now();app.padPrev=0xFFFF; // ignore buttons still held from the game
+    if(!failure.empty())app.overlay=L"THE GAME COULD NOT START\n\n"+failure;
+   }else{Sleep(100);continue;}
+  }
   if(IsIconic(app.hwnd)||!IsWindowEnabled(app.hwnd)){app.video.setPaused(true);WaitMessage();continue;}
   app.video.setPaused(false);
   pollPad();
   if(IsWindow(app.hwnd))render();
  }
- app.video.stop();
+ app.video.stop();app.preview.stop();
  mciSendStringW(L"close mcl_voice",nullptr,0,nullptr);
  app.rt.Reset();app.dc.Reset();
  g=nullptr;
