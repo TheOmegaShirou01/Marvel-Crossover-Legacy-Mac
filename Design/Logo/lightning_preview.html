@@ -1,0 +1,119 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width">
+<title>MCL Lightning Preview</title>
+<style>
+ html,body{margin:0;height:100%;background:#05070f;overflow:hidden}
+ canvas{display:block;width:100vw;height:100vh}
+</style></head>
+<body><canvas id="c"></canvas>
+<script>
+// Animated lightning around the title logo.
+// Reference implementation for the app (same algorithm will be ported to C++/GDI+):
+//  - Bolts spawn on a ring (ellipse) around the logo and crawl a short arc of it,
+//    jagged by midpoint displacement; some branch outward; some strike inward.
+//  - Each bolt lives 70-260 ms and flickers. Drawn as 4 passes: wide faint glow -> white core.
+//  - Every few seconds a big strike flashes the whole screen briefly.
+const LOGO_W=1600, LOGO_H=760;            // logo artwork size
+const RING={cx:800, cy:392, rx:770, ry:340}; // lightning ring in logo coordinates
+const c=document.getElementById('c'), g=c.getContext('2d');
+const logo=new Image(); logo.src='mcl_logo.svg?'+Date.now();
+let scale=1, ox=0, oy=0;
+function fit(){
+  c.width=innerWidth*devicePixelRatio; c.height=innerHeight*devicePixelRatio;
+  scale=Math.min(c.width/(LOGO_W*1.12), c.height/(LOGO_H*1.25));
+  ox=(c.width-LOGO_W*scale)/2; oy=(c.height-LOGO_H*scale)/2;
+}
+addEventListener('resize',fit); fit();
+const rnd=(a,b)=>a+Math.random()*(b-a);
+const ring=(t,wob=0)=>({x:RING.cx+(RING.rx+wob)*Math.cos(t), y:RING.cy+(RING.ry+wob*0.45)*Math.sin(t)});
+
+// Midpoint displacement between two points -> jagged polyline.
+function jag(a,b,rough,depth){
+  let pts=[a,b];
+  for(let d=0; d<depth; d++){
+    const out=[pts[0]];
+    for(let i=1;i<pts.length;i++){
+      const p=pts[i-1], q=pts[i];
+      const dx=q.x-p.x, dy=q.y-p.y, len=Math.hypot(dx,dy)||1;
+      const off=rnd(-1,1)*rough*len;
+      out.push({x:(p.x+q.x)/2 - dy/len*off, y:(p.y+q.y)/2 + dx/len*off}, q);
+    }
+    pts=out;
+  }
+  return pts;
+}
+let bolts=[], flash=0, nextStrike=performance.now()+1500;
+function spawnArc(now){
+  const t=rnd(0,Math.PI*2), span=rnd(0.45,1.1)*(Math.random()<0.5?-1:1);
+  // follow the ring with several anchor points so the bolt hugs the curve
+  const anchors=[], n=7;
+  for(let i=0;i<=n;i++) anchors.push(ring(t+span*i/n, rnd(-28,28)));
+  let pts=[anchors[0]];
+  for(let i=1;i<anchors.length;i++) pts=pts.concat(jag(anchors[i-1],anchors[i],0.32,4).slice(1));
+  const branches=[];
+  const nb=Math.random()<0.7?Math.floor(rnd(1,4)):0;
+  for(let k=0;k<nb;k++){
+    const s=pts[Math.floor(rnd(2,pts.length-2))];
+    const ang=Math.atan2((s.y-RING.cy)/RING.ry,(s.x-RING.cx)/RING.rx)+rnd(-0.6,0.6);
+    const L=rnd(40,140);
+    branches.push(jag(s,{x:s.x+Math.cos(ang)*L*1.4,y:s.y+Math.sin(ang)*L},0.35,3));
+  }
+  bolts.push({pts,branches,born:now,life:rnd(120,380),w:rnd(1.1,1.7)});
+}
+function spawnStrike(now){
+  // big bolt from the ring into the starburst behind the lettering
+  const t=rnd(0,Math.PI*2), a=ring(t,rnd(30,90));
+  const b={x:RING.cx+Math.cos(t)*rnd(380,520), y:RING.cy+Math.sin(t)*rnd(110,170)};
+  const pts=jag(a,b,0.28,6), branches=[];
+  for(let k=0;k<4;k++){const s=pts[Math.floor(rnd(4,pts.length-4))];
+    branches.push(jag(s,{x:s.x+rnd(-160,160),y:s.y+rnd(-110,110)},0.35,4));}
+  bolts.push({pts,branches,born:now,life:rnd(160,320),w:1.7});
+  flash=1;
+}
+function stroke(pts,w,color,alpha){
+  g.globalAlpha=alpha; g.strokeStyle=color; g.lineWidth=w*scale;
+  g.beginPath(); g.moveTo(ox+pts[0].x*scale, oy+pts[0].y*scale);
+  for(let i=1;i<pts.length;i++) g.lineTo(ox+pts[i].x*scale, oy+pts[i].y*scale);
+  g.stroke();
+}
+function drawBolt(b,now){
+  const age=(now-b.born)/b.life; if(age>1) return false;
+  const flick=(Math.random()<0.18?0.25:1)*(1-age*0.6);
+  g.lineCap='round'; g.lineJoin='round'; g.globalCompositeOperation='lighter';
+  for(const path of [b.pts,...b.branches]){
+    const m=path===b.pts?1:0.55;
+    stroke(path,34*b.w*m,'#1e6bff',0.12*flick);
+    stroke(path,16*b.w*m,'#36b8ff',0.32*flick);
+    stroke(path,7*b.w*m,'#9fe8ff',0.8*flick);
+    stroke(path,2.8*b.w*m,'#ffffff',1.0*flick);
+  }
+  g.globalCompositeOperation='source-over'; g.globalAlpha=1;
+  return true;
+}
+function frame(now){
+  g.clearRect(0,0,c.width,c.height);
+  // faint ambient electric haze around the ring
+  const haze=g.createRadialGradient(ox+RING.cx*scale,oy+RING.cy*scale,RING.ry*scale*0.4,ox+RING.cx*scale,oy+RING.cy*scale,RING.rx*scale*1.1);
+  haze.addColorStop(0,'rgba(40,120,255,0)'); haze.addColorStop(0.75,'rgba(40,120,255,'+(0.06+Math.random()*0.03)+')'); haze.addColorStop(1,'rgba(40,120,255,0)');
+  g.fillStyle=haze; g.fillRect(0,0,c.width,c.height);
+  // constant faint crackle hugging the whole ring (re-jagged every frame)
+  {const segs=24, base=now/900; let ring_pts=[];
+   for(let i=0;i<=segs;i++){const t=base+i*Math.PI*2/segs; ring_pts.push(ring(t,rnd(-14,14)));}
+   let crackle=[ring_pts[0]]; for(let i=1;i<ring_pts.length;i++) crackle=crackle.concat(jag(ring_pts[i-1],ring_pts[i],0.22,2).slice(1));
+   g.lineCap='round';g.lineJoin='round';g.globalCompositeOperation='lighter';
+   stroke(crackle,18,'#1e6bff',0.10);stroke(crackle,6,'#4cc4ff',0.22);stroke(crackle,1.6,'#d8f6ff',0.45);
+   g.globalCompositeOperation='source-over';g.globalAlpha=1;}
+  // bolts behind the logo
+  // keep the ring busy: always 4-7 live arcs so the title is constantly surrounded
+  const live=bolts.length; if(live<4||Math.random()<0.45) spawnArc(now); if(live<7&&Math.random()<0.35) spawnArc(now);
+  if(now>nextStrike){spawnStrike(now); nextStrike=now+rnd(1800,3500);}
+  bolts=bolts.filter(b=>drawBolt(b,now));
+  if(logo.complete) g.drawImage(logo,ox,oy,LOGO_W*scale,LOGO_H*scale);
+  // a few sparks in FRONT of the logo so it feels surrounded
+  for(const b of bolts) if(b.front===undefined) b.front=Math.random()<0.3;
+  bolts.filter(b=>b.front).forEach(b=>drawBolt(b,now));
+  if(flash>0){g.fillStyle='rgba(190,235,255,'+(flash*0.35)+')';g.fillRect(0,0,c.width,c.height);flash-=0.12;}
+  requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+</script></body></html>
