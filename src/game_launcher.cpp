@@ -40,9 +40,11 @@ GameLauncher::Result GameLauncher::launch(const std::string& game,bool cheatsUnl
  // MAME games always get the in-game pause menu script, plus cheats when enabled.
  const fs::path script=dir_/"MCL_UserData"/"game_script.lua";
  const fs::path signal=dir_/"MCL_UserData"/"game_signal.txt";
- {std::error_code ec;fs::create_directories(script.parent_path(),ec);fs::remove(signal,ec);}
+ const fs::path ready=dir_/"MCL_UserData"/"game_ready.txt";
+ {std::error_code ec;fs::create_directories(script.parent_path(),ec);fs::remove(signal,ec);fs::remove(ready,ec);}
+ needsReadySignal_=!usesFlycast(game);
  if(!usesFlycast(game)){
-  std::string lua=buildPauseMenuLua(signal.u8string());
+  std::string lua=buildPauseMenuLua(signal.u8string(),ready.u8string());
   if(!pokes.empty())lua+="\n"+buildCheatLua(game,pokes);
   std::ofstream out(script,std::ios::trunc);out<<lua;
   emulator_->setCheatScript(out?script:fs::path{});
@@ -66,6 +68,11 @@ bool GameLauncher::takeExitSignal(){
  return word=="exit";
 }
 bool GameLauncher::requestClose(){return running()&&emulator_->requestClose();}
+bool GameLauncher::gameReady() const{
+ if(!needsReadySignal_)return true;
+ std::error_code ec;return fs::is_regular_file(dir_/"MCL_UserData"/"game_ready.txt",ec);
+}
+void GameLauncher::bringToFront(){if(emulator_)emulator_->bringToFront();}
 bool GameLauncher::pollEnded(std::wstring& failure){
  failure.clear();
  if(!session_||session_->state()!=RuntimeState::Running||!emulator_||emulator_->running())return false;

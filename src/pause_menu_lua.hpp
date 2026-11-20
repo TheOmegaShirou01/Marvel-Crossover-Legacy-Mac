@@ -8,5 +8,7 @@ namespace mcl {
 //   YES -> white flash, writes "exit" to signalFile, MAME quits back to the frontend
 // Inputs use MAME's own mapping, so keyboard (1 + 5) and any mapped controller work.
 // Testing hook: if a global MCL_TEST_PRESSED(token, frame) exists it replaces real input.
-std::string buildPauseMenuLua(const std::string& signalFileUtf8);
+// readyFile (optional) is written on the first emulated frame, i.e. once ROM loading is
+// done, so the frontend can cover MAME's "Loading Machine" box until then.
+std::string buildPauseMenuLua(const std::string& signalFileUtf8,const std::string& readyFileUtf8={});
 }

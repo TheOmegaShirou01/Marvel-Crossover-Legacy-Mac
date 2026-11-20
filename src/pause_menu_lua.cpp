@@ -46,6 +46,10 @@ end
 
 emu.register_frame_done(function()
   frame = frame + 1
+  if frame == 1 and MCL_READY_FILE ~= "" then
+    local rf = io.open(MCL_READY_FILE, "w")
+    if rf then rf:write("ready\n"); rf:close() end
+  end
   -- read every edge each frame so "held" stays current
   local eu, el = edge("P1_JOYSTICK_UP"), edge("P1_JOYSTICK_LEFT")
   local ed, er = edge("P1_JOYSTICK_DOWN"), edge("P1_JOYSTICK_RIGHT")
@@ -99,7 +103,7 @@ emu.register_frame_done(function()
 end)
 )LUA";
 }
-std::string buildPauseMenuLua(const std::string& signalFileUtf8){
- return "MCL_SIGNAL_FILE = "+longString(signalFileUtf8)+"\n"+kBody;
+std::string buildPauseMenuLua(const std::string& signalFileUtf8,const std::string& readyFileUtf8){
+ return "MCL_SIGNAL_FILE = "+longString(signalFileUtf8)+"\nMCL_READY_FILE = "+longString(readyFileUtf8)+"\n"+kBody;
 }
 }

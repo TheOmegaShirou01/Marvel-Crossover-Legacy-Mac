@@ -60,6 +60,8 @@ public:
  // Ask the emulator window to close (like clicking X) without waiting; the process
  // then ends normally and the frontend notices it through running()/lastExit().
  bool requestClose();
+ // Put the emulator's main window in front (after the frontend's loading cover).
+ bool bringToFront();
  bool pause(bool paused) override;
  bool running()const;
  // Best-effort default MAME F5 UI pause key. This does not confirm paused state.

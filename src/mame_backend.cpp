@@ -185,6 +185,7 @@ bool MameBackend::start(const std::string& id,const RomSearchPath& roms){
  if(logHandle!=INVALID_HANDLE_VALUE)CloseHandle(logHandle);
  if(!ok){p_->lastError=flycast?"Windows could not start Flycast":"Windows could not start MAME";return false;}
  p_->process=proc.hProcess;p_->pid=proc.dwProcessId;CloseHandle(proc.hThread);
+ AllowSetForegroundWindow(proc.dwProcessId);
  p_->startedAt=GetTickCount64();
  return true;
 }
@@ -234,6 +235,15 @@ static BOOL CALLBACK findPauseWindow(HWND h,LPARAM arg){
   t.window=h;return FALSE;
  }
  return TRUE;
+}
+bool MameBackend::bringToFront(){
+ if(!running())return false;
+ PauseWindowLookup lookup{p_->pid,nullptr};
+ EnumWindows(findPauseWindow,reinterpret_cast<LPARAM>(&lookup));
+ if(!lookup.window)return false;
+ ShowWindow(lookup.window,SW_SHOW);
+ SetForegroundWindow(lookup.window);
+ return true;
 }
 bool MameBackend::requestPauseHotkey(){
  if(!running())return false;

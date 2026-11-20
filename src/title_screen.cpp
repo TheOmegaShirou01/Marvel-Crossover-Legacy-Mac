@@ -103,6 +103,7 @@ struct App {
  ComPtr<ID2D1Bitmap> previewBmp;std::vector<std::uint32_t> previewPixels;std::uint32_t pw=0,ph=0;std::uint64_t previewSerial=0;
  mcl::LightningField cardBolts{4242u,{0,0,100,60},[]{mcl::LightningConfig c;c.strikes=false;c.frontBolts=false;c.minArcs=2;c.maxArcs=4;c.arcChance=0.3f;return c;}()};
  bool gameRunning=false;
+ bool gameLoading=false;double loadingSince=0; // our NOW LOADING cover is on top of MAME
  mcl::AppSettings settings;int optRow=0; // OPTIONS screen (MCL_UserData\settings.txt)
  std::wstring overlay; // modal message panel (failed launch etc.)
  // Menu music
@@ -317,8 +318,11 @@ void launchSelected(){
  g->cb.launcher->setGamesWindowed(!g->settings.gamesFullscreen);
  const auto r=g->cb.launcher->launch(selected().id,g->menu.cheatsUnlocked(),g->menu.cheatExUnlocked()||g->exMode);
  if(!r.ok){g->overlay=L"COULD NOT START THE GAME\n\n"+r.message;return;}
- g->gameRunning=true;g->video.setPaused(true);
- g->music.stop();g->track=nullptr;g->fadeStart=-1;
+ g->gameRunning=true;g->music.stop();g->track=nullptr;g->fadeStart=-1;
+ // Stay on top with our own loading screen until MAME has finished loading its ROMs,
+ // so its plain "Loading Machine (xx%)" box is never seen.
+ g->gameLoading=true;g->loadingSince=g->now();
+ SetWindowPos(g->hwnd,HWND_TOPMOST,0,0,0,0,SWP_NOMOVE|SWP_NOSIZE);
 }
 void moveCard(Pad p){
  int n=0;selCards(n);
@@ -652,6 +656,24 @@ void drawSelect(double now){
  text(info.sub,g->fSmall.Get(),D2D1::RectF(0,H*0.895f,W,H*0.925f),rgba(0.75f,0.82f,0.95f),2);
  text(L"←↑→↓ CHOOSE      ENTER  PLAY      BACKSPACE  CHEATS      ESC  BACK",g->fSmall.Get(),D2D1::RectF(0,H*0.94f,W,H*0.98f),rgba(0.6f,0.66f,0.8f),2,0.85f);
 }
+void drawLoading(double now){
+ const float W=g->W(),H=g->H();
+ g->brush->SetColor(rgba(0,0,0.02f));g->brush->SetOpacity(0.86f);g->rt->FillRectangle(D2D1::RectF(0,0,W,H),g->brush.Get());g->brush->SetOpacity(1);
+ const auto& info=selected();
+ const float cw=std::min(W*0.42f,H*0.42f*320.f/175.f),ch=cw*175.f/320.f;
+ const D2D1_RECT_F r=D2D1::RectF(W/2-cw/2,H*0.44f-ch/2,W/2+cw/2,H*0.44f+ch/2);
+ g->cardBolts.setRing({W/2,H*0.44f,cw*0.62f,ch*0.70f});
+ g->cardBolts.update(now);
+ drawCrackle(g->cardBolts,now,1,0,0,0.6f,8.f);
+ drawBolts(g->cardBolts,now,false,1,0,0,0.55f);
+ g->brush->SetColor(rgba(0.02f,0.03f,0.08f));g->rt->FillRectangle(r,g->brush.Get());
+ drawCover(g->cards[info.id].Get(),r,1.f,1.f);
+ g->brush->SetColor(rgba(1.f,0.84f,0.25f));g->rt->DrawRectangle(r,g->brush.Get(),std::max(3.f,H*0.004f));
+ text(info.title,g->fHead.Get(),D2D1::RectF(0,H*0.70f,W,H*0.76f),rgba(1,1,1),H*0.0035f);
+ const int dots=static_cast<int>(now/350.0)%4;
+ std::wstring t=L"NOW LOADING";for(int i=0;i<dots;++i)t+=L'.';
+ text(t,g->fPress.Get(),D2D1::RectF(0,H*0.78f,W,H*0.88f),rgba(1.f,0.84f,0.25f),H*0.005f);
+}
 void drawOverlay(){
  const float W=g->W(),H=g->H();
  g->brush->SetColor(rgba(0,0,0));g->brush->SetOpacity(0.6f);g->rt->FillRectangle(D2D1::RectF(0,0,W,H),g->brush.Get());
@@ -716,7 +738,9 @@ void startNextTrack(const std::string& pool,double now){
 }
 void updateMusic(double now){
  if(g->library.empty())return;
- if(g->settings.musicVolume<=0){if(g->track){g->music.stop();g->track=nullptr;}return;}
+ // Silent from the moment a game is chosen until it has closed (covers controller launches,
+ // which happen inside the same frame as this update).
+ if(g->gameRunning||g->settings.musicVolume<=0){if(g->track){g->music.stop();g->track=nullptr;g->fadeStart=-1;}return;}
  const std::string want=wantedPool();
  if(!g->track){startNextTrack(want,now);return;}
  if(g->fadeStart<0){
@@ -865,6 +889,7 @@ void render(){
   case Screen::Controls: drawControls();break;
  }
  drawNowPlaying(now);
+ if(g->gameLoading)drawLoading(now);
  if(!g->overlay.empty())drawOverlay();
  if(now<g->bannerUntil){
   const float k=static_cast<float>((g->bannerUntil-now)/2200.0);
@@ -1000,6 +1025,7 @@ int mcl_title::run(HINSTANCE inst,const fs::path& appDir,const Callbacks& cb){
    }
    std::wstring failure;
    if(app.cb.launcher&&app.cb.launcher->pollEnded(failure)){
+    if(app.gameLoading){app.gameLoading=false;SetWindowPos(app.hwnd,HWND_NOTOPMOST,0,0,0,0,SWP_NOMOVE|SWP_NOSIZE);}
     app.gameRunning=false;app.video.setPaused(false);
     ShowWindow(app.hwnd,SW_SHOW);SetForegroundWindow(app.hwnd);
     app.selSince=app.now();app.padPrev=0xFFFF; // ignore buttons still held from the game
@@ -1014,6 +1040,13 @@ int mcl_title::run(HINSTANCE inst,const fs::path& appDir,const Callbacks& cb){
      setScreen(Screen::Title);goLayout(0,app.now());
     }
     if(!failure.empty())app.overlay=L"THE GAME COULD NOT START\n\n"+failure;
+   }else if(app.gameLoading){
+    // MAME is loading behind our cover: keep drawing NOW LOADING until it's ready (or 25 s).
+    if(app.cb.launcher->gameReady()||app.now()-app.loadingSince>25000){
+     app.gameLoading=false;app.video.setPaused(true);
+     SetWindowPos(app.hwnd,HWND_NOTOPMOST,0,0,0,0,SWP_NOMOVE|SWP_NOSIZE|SWP_NOACTIVATE);
+     app.cb.launcher->bringToFront();
+    }else{render();continue;}
    }else{Sleep(100);continue;}
   }
   if(IsIconic(app.hwnd)||!IsWindowEnabled(app.hwnd)){app.video.setPaused(true);WaitMessage();continue;}

@@ -28,6 +28,9 @@ public:
  bool takeExitSignal();
  // Close the running game (used by the controller quick-exit combo).
  bool requestClose();
+ // True once MAME has finished loading (first frame); Flycast games are ready at once.
+ bool gameReady() const;
+ void bringToFront();
  // OPTIONS > GAMES START IN: window instead of fullscreen.
  void setGamesWindowed(bool windowed){gamesWindowed_=windowed;}
 private:
@@ -36,6 +39,7 @@ private:
  std::unique_ptr<MameBackend> emulator_;
  std::unique_ptr<EmulatorBridge> session_;
  bool gamesWindowed_=false;
+ bool needsReadySignal_=false;
 };
 }
 #endif
