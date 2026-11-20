@@ -36,7 +36,7 @@ using mcl::MenuItem;
 using MK=mcl::MainMenuModel::Kind;
 
 constexpr float kLogoW=1600.f,kLogoH=760.f;
-enum class Screen { Intro, Title, Menu, Credits, Cheats, Select, Options, Controls };
+enum class Screen { Intro, Title, Menu, Credits, Cheats, Select, Options, Controls, Achievements };
 enum OptRow { OptMusic, OptVoice, OptDisplay, OptGames, OptVideo, OptCaption, OptControls, OptDevTools, OptBack, OptCount };
 
 // Arcade Select cards: collection id, full title, credit line.
@@ -104,6 +104,8 @@ struct App {
  mcl::LightningField cardBolts{4242u,{0,0,100,60},[]{mcl::LightningConfig c;c.strikes=false;c.frontBolts=false;c.minArcs=2;c.maxArcs=4;c.arcChance=0.3f;return c;}()};
  bool gameRunning=false;
  bool gameLoading=false;double loadingSince=0; // our NOW LOADING cover is on top of MAME
+ int achGroup=0,achRow=0;                 // ACHIEVEMENTS screen
+ std::vector<std::string> achQueue;double achShowSince=-1; // "ACHIEVEMENT UNLOCKED!" popups
  mcl::AppSettings settings;int optRow=0; // OPTIONS screen (MCL_UserData\settings.txt)
  std::wstring overlay; // modal message panel (failed launch etc.)
  // Menu music
@@ -250,7 +252,7 @@ D2D1_RECT_F logoRect(double now){
  return D2D1::RectF(W/2-w/2,cy-h/2,W/2+w/2,cy+h/2);
 }
 float menuTop(){return g->H()*0.46f;}
-float menuStep(){return g->H()*0.078f;}
+float menuStep(){const float n=static_cast<float>(g->menu.items().size());return g->H()*std::min(0.078f,0.42f/std::max(1.f,n-1));}
 
 // ---------- audio ----------
 void playVoice(){
@@ -275,10 +277,15 @@ float layoutT(double now);
 void setScreen(Screen s){
  g->screen=s;g->screenSince=g->now();
  // OPTIONS / CONTROLS use the small top logo like Arcade Select; the menu uses the medium one.
- if((s==Screen::Options||s==Screen::Controls)&&g->layoutTo!=2)goLayout(2,g->now());
+ if((s==Screen::Options||s==Screen::Controls||s==Screen::Achievements)&&g->layoutTo!=2)goLayout(2,g->now());
  else if(s==Screen::Menu&&g->layoutTo==2)goLayout(1,g->now());
 }
 void showBanner(const std::wstring& s){g->banner=s;g->bannerUntil=g->now()+2200;g->bannerFlash=1.f;g->itemBolts.clear();}
+// Master code entered: banner + "The Secret Code" achievement.
+void masterCodeEntered(){showBanner(L"CHEATS UNLOCKED!");if(g->cb.launcher)g->cb.launcher->awardMasterCode();}
+void achievementsPad(Pad p);
+void drawAchievements(double now);
+void drawAchievementPopup(double now);
 // Background video is paused while another window (Arcade Select, Options, MAME) is in front.
 struct VideoPause{VideoPause(){g->video.setPaused(true);}~VideoPause(){g->video.setPaused(false);}};
 // OPTIONS screen handlers (defined further down).
@@ -348,6 +355,7 @@ void activate(MenuItem item){
    openCheats(list,0,Screen::Menu,L"CHEATS");break;}
   case MenuItem::CheatEx: break; // handled above
   case MenuItem::Credits: setScreen(Screen::Credits);break;
+  case MenuItem::Achievements: g->achRow=0;setScreen(Screen::Achievements);break;
   case MenuItem::Exit: DestroyWindow(g->hwnd);break;
  }
 }
@@ -360,6 +368,7 @@ void onPad(Pad p){
  const double now=g->now();
  switch(g->screen){
   case Screen::Options: optionsPad(p);break;
+  case Screen::Achievements: achievementsPad(p);break;
   case Screen::Controls: if(p==Pad::Circle||p==Pad::Cross||p==Pad::Start)setScreen(Screen::Options);break;
   case Screen::Select:
    switch(p){
@@ -373,7 +382,7 @@ void onPad(Pad p){
    // Cheat codes work on the title screen too (classic arcade style).
    const auto r=g->menu.pressOnTitle(p);
    if(r.kind==MK::CheatExUnlocked)showBanner(L"CHEAT EX UNLOCKED!");
-   else if(r.kind==MK::CheatsUnlocked)showBanner(L"CHEATS UNLOCKED!");
+   else if(r.kind==MK::CheatsUnlocked)masterCodeEntered();
    else if(r.kind==MK::Activate){
     playVoice();g->bannerFlash=1.f;g->menu.resetCodes();
     setScreen(Screen::Menu);goLayout(1,now);g->itemBolts.clear();
@@ -386,7 +395,7 @@ void onPad(Pad p){
     case MK::Activate: activate(r.item);break;
     case MK::Back: setScreen(Screen::Title);goLayout(0,now);break;
     case MK::CheatExUnlocked: showBanner(L"CHEAT EX UNLOCKED!");break;
-    case MK::CheatsUnlocked: showBanner(L"CHEATS UNLOCKED!");break;
+    case MK::CheatsUnlocked: masterCodeEntered();break;
     default: break;
    }
    break;}
@@ -433,6 +442,7 @@ void onConfirm(){
   case Screen::Select: launchSelected();break;
   case Screen::Options: changeOption(0);break;
   case Screen::Controls: setScreen(Screen::Options);break;
+  case Screen::Achievements: break;
   case Screen::Intro: endIntro();break;
   case Screen::Title: startMenu();break;
   case Screen::Menu: g->menu.resetCodes();activate(g->menu.selected());break;
@@ -454,6 +464,7 @@ void onBack(){
   case Screen::Select: onPad(Pad::Circle);break;
   case Screen::Options: setScreen(Screen::Menu);break;
   case Screen::Controls: setScreen(Screen::Options);break;
+  case Screen::Achievements: setScreen(Screen::Menu);break;
  }
 }
 // X / C / Backspace / Space: cheat-code buttons. On the title screen and main menu they only
@@ -463,7 +474,7 @@ void onCodeKey(Pad p){
  if(g->screen==Screen::Title||g->screen==Screen::Menu){
   const auto c=g->menu.feedCodes(p);
   if(c.unlocked==MK::CheatExUnlocked)showBanner(L"CHEAT EX UNLOCKED!");
-  else if(c.unlocked==MK::CheatsUnlocked)showBanner(L"CHEATS UNLOCKED!");
+  else if(c.unlocked==MK::CheatsUnlocked)masterCodeEntered();
   return;
  }
  if(p==Pad::Cross||p==Pad::Start)onConfirm();
@@ -887,6 +898,126 @@ void drawOptions(double now){
  }
  text(L"↑↓ CHOOSE      ←→ CHANGE      ENTER  OPEN / TOGGLE      ESC  BACK      (SAVED AUTOMATICALLY)",g->fSmall.Get(),D2D1::RectF(0,H*0.94f,W,H*0.98f),rgba(0.6f,0.66f,0.8f),2,0.85f);
 }
+// ---------- ACHIEVEMENTS ----------
+// One page per game (12 each) plus the collection page. Unlocks come from real play: the
+// in-game detector reports wins, perfects, streaks, bosses and clears (achievement_lua.cpp).
+std::vector<std::string> achGroups(){
+ std::vector<std::string> v;
+ if(g->cb.launcher)for(const auto& gm:g->cb.launcher->collection().games())v.push_back(gm.id);
+ v.push_back("collection");
+ return v;
+}
+std::vector<const mcl::Achievement*> achList(const std::string& group){
+ std::vector<const mcl::Achievement*> v;
+ if(g->cb.launcher)for(const auto& a:g->cb.launcher->collection().achievements())if(a.game==group)v.push_back(&a);
+ return v;
+}
+std::wstring wide(const std::string& s){return std::wstring(s.begin(),s.end());}
+// Unlock times are stored in UTC ("2026-11-19T21:05:00Z"); show the player's local date.
+std::wstring localDate(const std::string& utc){
+ std::tm t{};
+ if(sscanf_s(utc.c_str(),"%d-%d-%dT%d:%d:%d",&t.tm_year,&t.tm_mon,&t.tm_mday,&t.tm_hour,&t.tm_min,&t.tm_sec)!=6)return wide(utc.substr(0,10));
+ t.tm_year-=1900;t.tm_mon-=1;
+ const std::time_t when=_mkgmtime(&t);
+ std::tm local{};
+ if(when==-1||localtime_s(&local,&when)!=0)return wide(utc.substr(0,10));
+ wchar_t b[16];std::wcsftime(b,16,L"%Y-%m-%d",&local);return b;
+}
+std::wstring upper(std::wstring s){for(auto& c:s)c=static_cast<wchar_t>(towupper(c));return s;}
+std::wstring groupTitle(const std::string& id){
+ if(id=="collection")return L"COLLECTION";
+ if(g->cb.launcher)for(const auto& gm:g->cb.launcher->collection().games())if(gm.id==id)return upper(wide(gm.title));
+ return upper(wide(id));
+}
+void achievementsPad(Pad p){
+ const auto groups=achGroups();
+ const int ng=static_cast<int>(groups.size());
+ g->achGroup=std::clamp(g->achGroup,0,ng-1);
+ const int nr=static_cast<int>(achList(groups[static_cast<size_t>(g->achGroup)]).size());
+ switch(p){
+  case Pad::Left: g->achGroup=(g->achGroup+ng-1)%ng;g->achRow=0;break;
+  case Pad::Right: g->achGroup=(g->achGroup+1)%ng;g->achRow=0;break;
+  case Pad::Up: if(nr)g->achRow=(g->achRow+nr-1)%nr;break;
+  case Pad::Down: if(nr)g->achRow=(g->achRow+1)%nr;break;
+  case Pad::Circle: setScreen(Screen::Menu);break;
+  default: break;
+ }
+}
+D2D1_COLOR_F tierColor(const std::string& t){
+ if(t=="Platinum")return rgba(0.75f,0.95f,1.f);
+ if(t=="Gold")return rgba(1.f,0.84f,0.25f);
+ if(t=="Silver")return rgba(0.8f,0.84f,0.9f);
+ return rgba(0.86f,0.58f,0.36f);
+}
+void leftText(const std::wstring& t,IDWriteTextFormat* f,float x0,float y,float w,float h,D2D1_COLOR_F c,DWRITE_TEXT_ALIGNMENT al=DWRITE_TEXT_ALIGNMENT_LEADING){
+ ComPtr<IDWriteTextLayout> l;
+ g->dw->CreateTextLayout(t.c_str(),static_cast<UINT32>(t.size()),f,w,h,&l);
+ if(!l)return;
+ l->SetTextAlignment(al);
+ DWRITE_TRIMMING trim{DWRITE_TRIMMING_GRANULARITY_CHARACTER,0,0};l->SetTrimming(&trim,nullptr);
+ g->brush->SetColor(c);g->rt->DrawTextLayout(D2D1::Point2F(x0,y),l.Get(),g->brush.Get());
+}
+void drawAchievements(double now){
+ const float W=g->W(),H=g->H();
+ g->brush->SetColor(rgba(0,0,0.02f));g->brush->SetOpacity(0.82f);
+ g->rt->FillRectangle(D2D1::RectF(W*0.06f,H*0.33f,W*0.94f,H*0.93f),g->brush.Get());g->brush->SetOpacity(1);
+ if(!g->cb.launcher){text(L"ACHIEVEMENTS UNAVAILABLE",g->fHead.Get(),D2D1::RectF(0,H*0.5f,W,H*0.56f),rgba(1,1,1),2);return;}
+ const auto& col=g->cb.launcher->collection();
+ int total=0,got=0;
+ for(const auto& a:col.achievements()){++total;if(col.progress(a.id).unlocked)++got;}
+ text(L"ACHIEVEMENTS",g->fHead.Get(),D2D1::RectF(0,H*0.335f,W,H*0.385f),rgba(1.f,0.84f,0.25f),H*0.004f);
+ const auto groups=achGroups();
+ g->achGroup=std::clamp(g->achGroup,0,static_cast<int>(groups.size())-1);
+ const auto& group=groups[static_cast<size_t>(g->achGroup)];
+ const auto list=achList(group);
+ int gGot=0;for(auto* a:list)if(col.progress(a->id).unlocked)++gGot;
+ const bool blink=std::fmod(now,900.0)<600.0;
+ const std::wstring head=(blink?L"◀   ":L"    ")+groupTitle(group)+L"   "+std::to_wstring(gGot)+L" / "+std::to_wstring(list.size())+(blink?L"   ▶":L"    ");
+ text(head,g->fBody.Get(),D2D1::RectF(0,H*0.385f,W,H*0.425f),rgba(1,1,1),2);
+ leftText(std::to_wstring(got)+L" / "+std::to_wstring(total)+L" UNLOCKED",g->fSmall.Get(),W*0.66f,H*0.345f,W*0.26f,H*0.03f,rgba(0.65f,0.75f,0.95f),DWRITE_TEXT_ALIGNMENT_TRAILING);
+ const float top=H*0.435f,step=H*0.037f;
+ g->achRow=std::clamp(g->achRow,0,std::max(0,static_cast<int>(list.size())-1));
+ for(size_t i=0;i<list.size();++i){
+  const auto* a=list[i];
+  const auto pr=col.progress(a->id);
+  const float y=top+step*static_cast<float>(i);
+  const bool sel=static_cast<int>(i)==g->achRow;
+  if(sel){g->brush->SetColor(rgba(0.12f,0.42f,1.f));g->brush->SetOpacity(0.35f);g->rt->FillRectangle(D2D1::RectF(W*0.08f,y,W*0.92f,y+step),g->brush.Get());g->brush->SetOpacity(1);}
+  const D2D1_COLOR_F main=pr.unlocked?rgba(1.f,0.9f,0.45f):rgba(0.55f,0.6f,0.72f);
+  leftText(pr.unlocked?L"★":L"☆",g->fSmall.Get(),W*0.09f,y,W*0.03f,step,pr.unlocked?tierColor(a->tier):rgba(0.4f,0.45f,0.55f));
+  leftText(upper(wide(a->title)),g->fSmall.Get(),W*0.12f,y,W*0.30f,step,sel?rgba(1,1,1):main);
+  leftText(wide(a->condition),g->fSmall.Get(),W*0.43f,y,W*0.33f,step,sel?rgba(0.92f,0.95f,1.f):rgba(0.6f,0.66f,0.78f));
+  const std::wstring right=pr.unlocked?localDate(pr.timestamp):upper(wide(a->tier));
+  leftText(right,g->fSmall.Get(),W*0.77f,y,W*0.14f,step,pr.unlocked?rgba(0.65f,0.9f,0.65f):tierColor(a->tier),DWRITE_TEXT_ALIGNMENT_TRAILING);
+ }
+ const std::wstring note=group=="mvsc2"?L"MvC2 RUNS IN FLYCAST: ITS RESULTS CAN'T BE READ YET, SO ONLY LAUNCH-BASED TROPHIES COUNT":
+                         L"EARNED IN ARCADE MODE  •  PERFECTS, STREAKS AND BOSSES DON'T COUNT WITH CHEATS ON  •  A CONTINUE BLOCKS 'CLEAR WITHOUT A CONTINUE'";
+ text(note,g->fSmall.Get(),D2D1::RectF(0,H*0.885f,W,H*0.92f),rgba(0.55f,0.62f,0.78f),1.5f,0.9f);
+ text(L"←→ GAME      ↑↓ CHOOSE      ESC  BACK",g->fSmall.Get(),D2D1::RectF(0,H*0.94f,W,H*0.98f),rgba(0.6f,0.66f,0.8f),2,0.85f);
+}
+// Unlock popup, bottom right, one at a time (4 s each). Unlocks found when a game ends
+// show as soon as the front end is back.
+void drawAchievementPopup(double now){
+ if(!g->cb.launcher)return;
+ if(!g->gameRunning){for(auto& id:g->cb.launcher->takeAchievementNotices())g->achQueue.push_back(id);}
+ if(g->achQueue.empty())return;
+ if(g->achShowSince<0)g->achShowSince=now;
+ const double t=now-g->achShowSince;
+ if(t>4000){g->achQueue.erase(g->achQueue.begin());g->achShowSince=g->achQueue.empty()?-1:now;return;}
+ const mcl::Achievement* a=nullptr;
+ for(const auto& x:g->cb.launcher->collection().achievements())if(x.id==g->achQueue.front())a=&x;
+ if(!a){g->achQueue.erase(g->achQueue.begin());g->achShowSince=-1;return;}
+ const float W=g->W(),H=g->H();
+ const float slide=ease(static_cast<float>(std::min(t,600.0)/600.0))*(t>3600?ease(static_cast<float>((4000-t)/400.0)):1.f);
+ const float pw=W*0.30f,ph=H*0.115f;
+ const float x=W-(pw+W*0.02f)*slide,y=H*0.83f-ph;
+ g->brush->SetColor(rgba(0.02f,0.04f,0.12f));g->brush->SetOpacity(0.93f);
+ g->rt->FillRectangle(D2D1::RectF(x,y,x+pw,y+ph),g->brush.Get());g->brush->SetOpacity(1);
+ g->brush->SetColor(tierColor(a->tier));g->rt->DrawRectangle(D2D1::RectF(x,y,x+pw,y+ph),g->brush.Get(),H*0.003f);
+ leftText(L"★ ACHIEVEMENT UNLOCKED!",g->fSmall.Get(),x+W*0.012f,y+ph*0.06f,pw-W*0.024f,ph*0.3f,rgba(1.f,0.84f,0.25f));
+ leftText(upper(wide(a->title)),g->fBody.Get(),x+W*0.012f,y+ph*0.34f,pw-W*0.024f,ph*0.34f,rgba(1,1,1));
+ leftText(groupTitle(a->game)+L"  •  "+upper(wide(a->tier)),g->fSmall.Get(),x+W*0.012f,y+ph*0.68f,pw-W*0.024f,ph*0.28f,tierColor(a->tier));
+}
 void drawControls(){
  const float W=g->W(),H=g->H();
  g->brush->SetColor(rgba(0,0,0.02f));g->brush->SetOpacity(0.82f);
@@ -938,6 +1069,7 @@ void render(){
   case Screen::Select: drawSelect(now);break;
   case Screen::Options: drawOptions(now);break;
   case Screen::Controls: drawControls();break;
+  case Screen::Achievements: drawAchievements(now);break;
  }
  drawNowPlaying(now);
  if(g->gameLoading)drawLoading(now);
@@ -946,6 +1078,7 @@ void render(){
   const float k=static_cast<float>((g->bannerUntil-now)/2200.0);
   text(g->banner,g->fBanner.Get(),D2D1::RectF(0,H*0.35f,W,H*0.5f),rgba(1.f,0.84f,0.25f),H*0.006f,std::min(1.f,k*3));
  }
+ drawAchievementPopup(now);
  // Calmer flashes behind the cards so the previews stay watchable.
  {const double wf=(now-g->whiteFlashStart)/700.0;
   if(wf>=0&&wf<1){g->brush->SetColor(rgba(1,1,1));g->brush->SetOpacity(static_cast<float>(1.0-wf));g->rt->FillRectangle(D2D1::RectF(0,0,W,H),g->brush.Get());g->brush->SetOpacity(1);}}
@@ -1004,7 +1137,7 @@ LRESULT CALLBACK proc(HWND h,UINT m,WPARAM w,LPARAM l){
    //   X = Cross, C = Circle, Backspace = Select, Space = Start: cheat-code buttons only on the
    //   title screen and main menu, so a mistyped code can never open a menu item.
    const bool repeat=(l&(1<<30))!=0;
-   const bool lists=g&&(g->screen==Screen::Cheats||g->screen==Screen::Options); // auto-repeat only in lists
+   const bool lists=g&&(g->screen==Screen::Cheats||g->screen==Screen::Options||g->screen==Screen::Achievements); // auto-repeat only in lists
    switch(w){
     case VK_UP: if(!repeat||lists)onPad(Pad::Up);return 0;
     case VK_DOWN: if(!repeat||lists)onPad(Pad::Down);return 0;

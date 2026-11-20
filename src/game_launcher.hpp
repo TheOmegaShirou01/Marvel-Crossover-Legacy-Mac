@@ -4,6 +4,7 @@
 #include <filesystem>
 #include <memory>
 #include <string>
+#include <vector>
 namespace mcl {
 class MameBackend;
 class EmulatorBridge;
@@ -31,6 +32,11 @@ public:
  // True once MAME has finished loading (first frame); Flycast games are ready at once.
  bool gameReady() const;
  void bringToFront();
+ // The master cheat code was entered in the front end (The Secret Code achievement).
+ void awardMasterCode();
+ const Collection& collection() const {return model_;}
+ // Achievements unlocked since the last call (ids), for the front end's popup.
+ std::vector<std::string> takeAchievementNotices();
  // OPTIONS > GAMES START IN: window instead of fullscreen.
  void setGamesWindowed(bool windowed){gamesWindowed_=windowed;}
 private:
@@ -40,6 +46,7 @@ private:
  std::unique_ptr<EmulatorBridge> session_;
  bool gamesWindowed_=false;
  bool needsReadySignal_=false;
+ void ingestDetectedEvents();
 };
 }
 #endif

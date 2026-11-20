@@ -93,11 +93,32 @@ bool Collection::processVerifiedEvent(const VerifiedEvent& e){
  // The actual emulator must establish origin/authenticity. This method rejects
  // impossible/unknown event types and does not synthesize boss/combo events.
  if(e.count!=1)return false;
+ // The master cheat code is entered in the front end, not in a game.
+ if(e.type=="master_code"){if(unlockAchievement("collection_05"))achievementNotices_.push_back("collection_05");return true;}
  if(std::none_of(games_.begin(),games_.end(),[&](const Game& g){return g.id==e.game;}))return false;
+ const bool mastery=e.type=="perfect_round"||e.type=="perfect_match"||e.type=="win_streak"||e.type=="boss_defeated";
  if(e.type!="coin"&&e.type!="launch"&&e.type!="match_win"&&e.type!="match_loss"&&
-    e.type!="arcade_clear"&&e.type!="two_player_match")return false;
- if((e.type=="match_win"||e.type=="match_loss"||e.type=="arcade_clear")&&
+    e.type!="arcade_clear"&&e.type!="two_player_match"&&!mastery)return false;
+ if((e.type=="match_win"||e.type=="match_loss"||e.type=="arcade_clear"||mastery)&&
     (!e.arcadeMode||!e.humanControlled))return false; // reject attract-mode/demo results
+ if(mastery&&e.cheatsEnabled)return false; // no mastery trophies with cheats on
+ if(mastery){
+  const auto give=[&](const char* id){if(unlockAchievement(id))achievementNotices_.push_back(id);};
+  if(e.type=="perfect_round"){if(e.game=="xmcota")give("xmcota_04");if(e.game=="sfexp")give("sfexp_05");if(e.game=="sfex2p")give("sfex2p_07");}
+  if(e.type=="perfect_match"){if(e.game=="xmvsf")give("xmvsf_08");if(e.game=="mshvsf")give("mshvsf_05");if(e.game=="mvsc")give("mvsc_06");if(e.game=="mvsc2")give("mvsc2_08");}
+  if(e.type=="boss_defeated"){
+   static const struct {const char* game;const char* boss;const char* id;} kBosses[]={
+    {"xmcota","juggernaut","xmcota_06"},{"xmcota","magneto","xmcota_07"},{"msh","thanos","msh_11"},
+    {"xmvsf","apocalypse","xmvsf_10"},{"mshvsf","apocalypse","mshvsf_10"},{"mshvsf","cyber_akuma","mshvsf_11"},
+    {"mvsc","onslaught","mvsc_10"},{"sfexp","garuda","sfexp_11"},{"sfex2p","shadow_geist","sfex2p_10"},
+    {"sfex2p","bison2","sfex2p_11"},{"mvsc2","abyss","mvsc2_11"}};
+   bool known=false;
+   for(const auto& b:kBosses)if(e.game==b.game&&e.detail==b.boss){give(b.id);known=true;}
+   return known;
+  }
+  if(e.type=="win_streak"){if(e.game=="xmcota")give("xmcota_05");if(e.game=="mshvsf")give("mshvsf_06");if(e.game=="sfexp")give("sfexp_06");}
+  return true;
+ }
  std::string raw;
  if(e.type=="coin")raw="coin";
  else if(e.type=="launch")raw="launch";

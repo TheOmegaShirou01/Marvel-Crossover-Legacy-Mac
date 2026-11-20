@@ -18,7 +18,10 @@ struct AchievementProgress {bool unlocked=false; std::string timestamp;};
 // For a win, arcadeMode and humanControlled must be true to count arcade trophies.
 struct VerifiedEvent {
     std::string game;
-    std::string type; // coin, launch, match_win, match_loss, arcade_clear, two_player_match, master_code
+    // coin, launch, match_win, match_loss, arcade_clear, two_player_match, master_code,
+    // perfect_round (round won with no damage), perfect_match (match won with no damage),
+    // win_streak (fifth consecutive match win in one run)
+    std::string type; // boss_defeated: detail = boss id
     bool arcadeMode=false;
     bool humanControlled=false;
     bool cheatsEnabled=false;
@@ -27,6 +30,7 @@ struct VerifiedEvent {
     bool allMarvelTeam=false;
     bool allCapcomTeam=false;
     int count=1;
+    std::string detail;
 };
 class Collection {
 public:

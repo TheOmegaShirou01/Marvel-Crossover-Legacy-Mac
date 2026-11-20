@@ -1,5 +1,6 @@
 #ifdef _WIN32
 #include "game_launcher.hpp"
+#include "achievement_lua.hpp"
 #include "cheats.hpp"
 #include "emulator_bridge.hpp"
 #include "external_roms.hpp"
@@ -41,11 +42,13 @@ GameLauncher::Result GameLauncher::launch(const std::string& game,bool cheatsUnl
  const fs::path script=dir_/"MCL_UserData"/"game_script.lua";
  const fs::path signal=dir_/"MCL_UserData"/"game_signal.txt";
  const fs::path ready=dir_/"MCL_UserData"/"game_ready.txt";
- {std::error_code ec;fs::create_directories(script.parent_path(),ec);fs::remove(signal,ec);fs::remove(ready,ec);}
+ const fs::path events=dir_/"MCL_UserData"/"game_events.txt";
+ {std::error_code ec;fs::create_directories(script.parent_path(),ec);fs::remove(signal,ec);fs::remove(ready,ec);fs::remove(events,ec);}
  needsReadySignal_=!usesFlycast(game);
  if(!usesFlycast(game)){
   std::string lua=buildPauseMenuLua(signal.u8string(),ready.u8string());
   if(!pokes.empty())lua+="\n"+buildCheatLua(game,pokes);
+  lua+="\n"+buildAchievementLua(game,events.u8string()); // read-only result detector
   std::ofstream out(script,std::ios::trunc);out<<lua;
   emulator_->setCheatScript(out?script:fs::path{});
  }else emulator_->setCheatScript({});
@@ -59,6 +62,7 @@ GameLauncher::Result GameLauncher::launch(const std::string& game,bool cheatsUnl
   return r;
  }
  if(!pokes.empty()){session_->onCheatApplicationStatus(true);r.cheats=true;}
+ {VerifiedEvent e;e.game=game;e.type="launch";session_->onVerifiedGameplayEvent(e);}
  r.ok=true;return r;
 }
 bool GameLauncher::takeExitSignal(){
@@ -73,6 +77,24 @@ bool GameLauncher::gameReady() const{
  std::error_code ec;return fs::is_regular_file(dir_/"MCL_UserData"/"game_ready.txt",ec);
 }
 void GameLauncher::bringToFront(){if(emulator_)emulator_->bringToFront();}
+void GameLauncher::awardMasterCode(){VerifiedEvent e;e.type="master_code";model_.processVerifiedEvent(e);}
+std::vector<std::string> GameLauncher::takeAchievementNotices(){return model_.consumeAchievementNotices();}
+// Results reported by the in-game detector (achievement_lua.cpp) go through the session,
+// which adds the run's real cheat state, so a script line can never clear that flag.
+void GameLauncher::ingestDetectedEvents(){
+ const fs::path events=dir_/"MCL_UserData"/"game_events.txt";
+ std::string text;
+ {std::ifstream in(events,std::ios::binary);if(!in)return;text.assign(std::istreambuf_iterator<char>(in),std::istreambuf_iterator<char>());}
+ std::error_code ec;fs::remove(events,ec);
+ const std::string game=session_->game();
+ for(const auto& d:parseDetectedEvents(text)){
+  if(d.type=="start"||d.type=="continue")continue;
+  VerifiedEvent e;e.game=game;e.type=d.type;e.detail=d.detail;
+  e.arcadeMode=d.type!="two_player_match";e.humanControlled=true;
+  e.continued=d.continued;e.allCharactersAlive=d.allAlive;
+  session_->onVerifiedGameplayEvent(e);
+ }
+}
 bool GameLauncher::pollEnded(std::wstring& failure){
  failure.clear();
  if(!session_||session_->state()!=RuntimeState::Running||!emulator_||emulator_->running())return false;
@@ -81,6 +103,7 @@ bool GameLauncher::pollEnded(std::wstring& failure){
  const std::string game=session_->game();
  std::string log;
  {std::ifstream in(emulator_->logFile(),std::ios::binary);log.assign(std::istreambuf_iterator<char>(in),std::istreambuf_iterator<char>());}
+ ingestDetectedEvents(); // before stop(): the session still knows the game and cheat state
  session_->stop();
  if(known&&(code!=0||logShowsFailedStart(log))){
   const bool fly=usesFlycast(game);
