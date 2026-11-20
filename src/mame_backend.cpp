@@ -203,6 +203,11 @@ static BOOL CALLBACK closeWindow(HWND h,LPARAM user){
  }
  return TRUE;
 }
+bool MameBackend::requestClose(){
+ if(!running())return false;
+ CloseTarget target{p_->pid,false};EnumWindows(closeWindow,reinterpret_cast<LPARAM>(&target));
+ return target.sent;
+}
 bool MameBackend::stop(){
  if(!p_->process)return false;
  if(running()){

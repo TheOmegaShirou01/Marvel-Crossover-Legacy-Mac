@@ -57,6 +57,9 @@ public:
  bool available(const std::string& gameId) const override;
  bool start(const std::string& gameId,const RomSearchPath& roms) override;
  bool stop() override;
+ // Ask the emulator window to close (like clicking X) without waiting; the process
+ // then ends normally and the frontend notices it through running()/lastExit().
+ bool requestClose();
  bool pause(bool paused) override;
  bool running()const;
  // Best-effort default MAME F5 UI pause key. This does not confirm paused state.

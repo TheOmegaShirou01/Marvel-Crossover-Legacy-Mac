@@ -5,6 +5,7 @@
 #include "external_roms.hpp"
 #include "mame_backend.hpp"
 #include "mame_sets.hpp"
+#include "pause_menu_lua.hpp"
 #include <fstream>
 #include <iterator>
 namespace mcl {
@@ -34,13 +35,17 @@ GameLauncher::Result GameLauncher::launch(const std::string& game,bool cheatsUnl
   CheatSettings s(dir_/"MCL_UserData"/"marvel_cheats.txt");s.load();
   pokes=s.activePokes(game);
  }
- if(usesFlycast(game))pokes.clear(); // Flycast has no Lua cheat hook
- const fs::path script=dir_/"MCL_UserData"/"cheats_active.lua";
- if(!pokes.empty()){
-  std::error_code ec;fs::create_directories(script.parent_path(),ec);
-  std::ofstream out(script,std::ios::trunc);out<<buildCheatLua(game,pokes);
+ if(usesFlycast(game))pokes.clear(); // Flycast has no Lua hook (no cheats, no custom pause menu)
+ // MAME games always get the in-game pause menu script, plus cheats when enabled.
+ const fs::path script=dir_/"MCL_UserData"/"game_script.lua";
+ const fs::path signal=dir_/"MCL_UserData"/"game_signal.txt";
+ {std::error_code ec;fs::create_directories(script.parent_path(),ec);fs::remove(signal,ec);}
+ if(!usesFlycast(game)){
+  std::string lua=buildPauseMenuLua(signal.u8string());
+  if(!pokes.empty())lua+="\n"+buildCheatLua(game,pokes);
+  std::ofstream out(script,std::ios::trunc);out<<lua;
   emulator_->setCheatScript(out?script:fs::path{});
- }
+ }else emulator_->setCheatScript({});
  const auto prepared=session_->prepare(game);
  if(!prepared.ok){r.message=widen(prepared.message);return r;}
  const auto started=session_->start();
@@ -53,6 +58,13 @@ GameLauncher::Result GameLauncher::launch(const std::string& game,bool cheatsUnl
  if(!pokes.empty()){session_->onCheatApplicationStatus(true);r.cheats=true;}
  r.ok=true;return r;
 }
+bool GameLauncher::takeExitSignal(){
+ const fs::path signal=dir_/"MCL_UserData"/"game_signal.txt";
+ std::ifstream in(signal);std::string word;in>>word;in.close();
+ std::error_code ec;fs::remove(signal,ec);
+ return word=="exit";
+}
+bool GameLauncher::requestClose(){return running()&&emulator_->requestClose();}
 bool GameLauncher::pollEnded(std::wstring& failure){
  failure.clear();
  if(!session_||session_->state()!=RuntimeState::Running||!emulator_||emulator_->running())return false;

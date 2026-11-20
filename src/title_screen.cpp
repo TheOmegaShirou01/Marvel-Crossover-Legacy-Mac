@@ -108,6 +108,8 @@ struct App {
  mcl::MusicPlayer music;const mcl::Track* track=nullptr;std::string musicPool;
  double fadeStart=-1;std::string pendingPick;bool characterSelectPlayed=false;
  std::wstring nowPlaying;double nowPlayingSince=-1e9;
+ double whiteFlashStart=-1e9;          // EXIT GAME > YES: white flash on return
+ double quickExitSince=-1;bool quickExit=false; // L1+R1+R2+SELECT+START held 3 s
  Screen screen=Screen::Title;double screenSince=0;
  double layoutFrom=0,layoutTo=0,layoutStart=-1e9; // 0 = title layout, 1 = menu layout
  std::wstring banner;double bannerUntil=0;float bannerFlash=0;
@@ -744,6 +746,8 @@ void render(){
   text(g->banner,g->fBanner.Get(),D2D1::RectF(0,H*0.35f,W,H*0.5f),rgba(1.f,0.84f,0.25f),H*0.006f,std::min(1.f,k*3));
  }
  // Calmer flashes behind the cards so the previews stay watchable.
+ {const double wf=(now-g->whiteFlashStart)/700.0;
+  if(wf>=0&&wf<1){g->brush->SetColor(rgba(1,1,1));g->brush->SetOpacity(static_cast<float>(1.0-wf));g->rt->FillRectangle(D2D1::RectF(0,0,W,H),g->brush.Get());g->brush->SetOpacity(1);}}
  const float flash=std::max(g->logoBolts.flash()*(g->screen==Screen::Select?0.35f:1.f),g->bannerFlash);
  if(flash>0.01f){g->brush->SetColor(rgba(0.75f,0.92f,1.f));g->brush->SetOpacity(flash*0.35f);g->rt->FillRectangle(D2D1::RectF(0,0,W,H),g->brush.Get());g->brush->SetOpacity(1);}
  g->bannerFlash=std::max(0.f,g->bannerFlash-0.06f);
@@ -852,11 +856,34 @@ int mcl_title::run(HINSTANCE inst,const fs::path& appDir,const Callbacks& cb){
   if(quit||!IsWindow(app.hwnd))break;
   if(app.gameRunning){
    // A game is running: draw nothing, keep the background video paused, wait for it to end.
+   // Quick exit (Xbox-style pads): L1 + R1 + R2 + SELECT + START held for 3 seconds.
+   {
+    XINPUT_STATE st{};bool combo=false;
+    for(DWORD i=0;i<XUSER_MAX_COUNT&&!combo;++i){
+     ZeroMemory(&st,sizeof st);
+     if(XInputGetState(i,&st)!=ERROR_SUCCESS)continue;
+     const WORD need=XINPUT_GAMEPAD_LEFT_SHOULDER|XINPUT_GAMEPAD_RIGHT_SHOULDER|XINPUT_GAMEPAD_BACK|XINPUT_GAMEPAD_START;
+     combo=(st.Gamepad.wButtons&need)==need&&st.Gamepad.bRightTrigger>200;
+    }
+    if(!combo)app.quickExitSince=-1;
+    else if(app.quickExitSince<0)app.quickExitSince=app.now();
+    else if(!app.quickExit&&app.now()-app.quickExitSince>=3000&&app.cb.launcher){app.quickExit=app.cb.launcher->requestClose();}
+   }
    std::wstring failure;
    if(app.cb.launcher&&app.cb.launcher->pollEnded(failure)){
     app.gameRunning=false;app.video.setPaused(false);
     ShowWindow(app.hwnd,SW_SHOW);SetForegroundWindow(app.hwnd);
     app.selSince=app.now();app.padPrev=0xFFFF; // ignore buttons still held from the game
+    if(app.cb.launcher->takeExitSignal()){
+     // EXIT GAME > YES in the pause menu: white flash + "Let's Go Crazy!" back on Arcade Select.
+     app.whiteFlashStart=app.now();playVoice();
+    }
+    if(app.quickExit){
+     // Quick exit goes all the way back to the title screen.
+     app.quickExit=false;app.quickExitSince=-1;
+     app.preview.stop();app.previewId.clear();app.previewReady.clear();
+     setScreen(Screen::Title);goLayout(0,app.now());
+    }
     if(!failure.empty())app.overlay=L"THE GAME COULD NOT START\n\n"+failure;
    }else{Sleep(100);continue;}
   }

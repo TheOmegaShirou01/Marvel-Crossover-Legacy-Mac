@@ -24,6 +24,10 @@ public:
  // Call regularly while a game runs. Returns true once, when the game has ended;
  // failureMessage is filled when the emulator could not run it.
  bool pollEnded(std::wstring& failureMessage);
+ // True once after a game ended through the pause menu's EXIT GAME > YES.
+ bool takeExitSignal();
+ // Close the running game (used by the controller quick-exit combo).
+ bool requestClose();
 private:
  std::filesystem::path dir_;
  Collection& model_;
