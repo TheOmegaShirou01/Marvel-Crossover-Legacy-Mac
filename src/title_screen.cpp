@@ -7,6 +7,7 @@
 #include "game_launcher.hpp"
 #include "music.hpp"
 #include "music_player.hpp"
+#include "app_settings.hpp"
 #include <map>
 #include <fstream>
 #include <memory>
@@ -35,7 +36,8 @@ using mcl::MenuItem;
 using MK=mcl::MainMenuModel::Kind;
 
 constexpr float kLogoW=1600.f,kLogoH=760.f;
-enum class Screen { Title, Menu, Credits, Cheats, Select };
+enum class Screen { Title, Menu, Credits, Cheats, Select, Options, Controls };
+enum OptRow { OptMusic, OptVoice, OptDisplay, OptGames, OptVideo, OptCaption, OptControls, OptDevTools, OptBack, OptCount };
 
 // Arcade Select cards: collection id, full title, credit line.
 struct CardInfo { const char* id; const wchar_t* title; const wchar_t* sub; };
@@ -101,6 +103,7 @@ struct App {
  ComPtr<ID2D1Bitmap> previewBmp;std::vector<std::uint32_t> previewPixels;std::uint32_t pw=0,ph=0;std::uint64_t previewSerial=0;
  mcl::LightningField cardBolts{4242u,{0,0,100,60},[]{mcl::LightningConfig c;c.strikes=false;c.frontBolts=false;c.minArcs=2;c.maxArcs=4;c.arcChance=0.3f;return c;}()};
  bool gameRunning=false;
+ mcl::AppSettings settings;int optRow=0; // OPTIONS screen (MCL_UserData\settings.txt)
  std::wstring overlay; // modal message panel (failed launch etc.)
  // Menu music
  fs::path musicDir;std::vector<mcl::Track> library;
@@ -253,17 +256,31 @@ void playVoice(){
  if(fs::is_regular_file(mp3,ec)){
   mciSendStringW(L"close mcl_voice",nullptr,0,nullptr);
   const std::wstring open=L"open \""+mp3.wstring()+L"\" type mpegvideo alias mcl_voice";
-  if(mciSendStringW(open.c_str(),nullptr,0,nullptr)==0)mciSendStringW(L"play mcl_voice from 0",nullptr,0,nullptr);
+  if(g->settings.voiceVolume<=0)return;
+  if(mciSendStringW(open.c_str(),nullptr,0,nullptr)==0){
+   mciSendStringW((L"setaudio mcl_voice volume to "+std::to_wstring(g->settings.voiceVolume*100)).c_str(),nullptr,0,nullptr);
+   mciSendStringW(L"play mcl_voice from 0",nullptr,0,nullptr);
+  }
  }else if(fs::is_regular_file(wav,ec)){
   PlaySoundW(wav.c_str(),nullptr,SND_FILENAME|SND_ASYNC|SND_NODEFAULT);
  }
 }
 
 // ---------- screens ----------
-void setScreen(Screen s){g->screen=s;g->screenSince=g->now();}
+void goLayout(double to,double now);
+float layoutT(double now);
+void setScreen(Screen s){
+ g->screen=s;g->screenSince=g->now();
+ // OPTIONS / CONTROLS use the small top logo like Arcade Select; the menu uses the medium one.
+ if((s==Screen::Options||s==Screen::Controls)&&g->layoutTo!=2)goLayout(2,g->now());
+ else if(s==Screen::Menu&&g->layoutTo==2)goLayout(1,g->now());
+}
 void showBanner(const std::wstring& s){g->banner=s;g->bannerUntil=g->now()+2200;g->bannerFlash=1.f;g->itemBolts.clear();}
 // Background video is paused while another window (Arcade Select, Options, MAME) is in front.
 struct VideoPause{VideoPause(){g->video.setPaused(true);}~VideoPause(){g->video.setPaused(false);}};
+// OPTIONS screen handlers (defined further down).
+void optionsPad(Pad p);
+void changeOption(int dir);
 // ---------- Arcade Select helpers ----------
 const CardInfo* selCards(int& n){
  if(g->exMode){n=static_cast<int>(sizeof(kExCards)/sizeof(kExCards[0]));return kExCards;}
@@ -297,6 +314,7 @@ void selectCheats(){
 void launchSelected(){
  if(!g->cb.launcher){g->overlay=L"COULD NOT START THE GAME\n\nNo launcher is connected.";return;}
  g->preview.stop();g->previewId.clear();g->previewReady.clear();
+ g->cb.launcher->setGamesWindowed(!g->settings.gamesFullscreen);
  const auto r=g->cb.launcher->launch(selected().id,g->menu.cheatsUnlocked(),g->menu.cheatExUnlocked()||g->exMode);
  if(!r.ok){g->overlay=L"COULD NOT START THE GAME\n\n"+r.message;return;}
  g->gameRunning=true;g->video.setPaused(true);
@@ -312,11 +330,7 @@ void moveCard(Pad p){
  if(s!=g->selCard){g->selCard=s;g->selSince=g->now();g->cardBolts.clear();}
 }
 void activate(MenuItem item){
- if(item==MenuItem::Options){
-  VideoPause pause;
-  if(g->cb.options)g->cb.options(g->hwnd,g->menu.cheatExUnlocked());
-  return;
- }
+ if(item==MenuItem::Options){g->optRow=0;setScreen(Screen::Options);return;}
  if(item==MenuItem::Arcade||item==MenuItem::CheatEx){enterSelect(item==MenuItem::CheatEx);return;}
  switch(item){
   case MenuItem::Arcade: break; // handled above
@@ -337,6 +351,8 @@ void onPad(Pad p){
  if(!g->overlay.empty()){if(p==Pad::Cross||p==Pad::Circle||p==Pad::Start)g->overlay.clear();return;}
  const double now=g->now();
  switch(g->screen){
+  case Screen::Options: optionsPad(p);break;
+  case Screen::Controls: if(p==Pad::Circle||p==Pad::Cross||p==Pad::Start)setScreen(Screen::Options);break;
   case Screen::Select:
    switch(p){
     case Pad::Left: case Pad::Right: case Pad::Up: case Pad::Down: moveCard(p);break;
@@ -406,6 +422,8 @@ void onConfirm(){
  if(!g->overlay.empty()){g->overlay.clear();return;}
  switch(g->screen){
   case Screen::Select: launchSelected();break;
+  case Screen::Options: changeOption(0);break;
+  case Screen::Controls: setScreen(Screen::Options);break;
   case Screen::Title: startMenu();break;
   case Screen::Menu: g->menu.resetCodes();activate(g->menu.selected());break;
   case Screen::Cheats: onPad(Pad::Cross);break;   // toggle the highlighted cheat
@@ -422,6 +440,8 @@ void onBack(){
   case Screen::Cheats: onPad(Pad::Circle);break;
   case Screen::Credits: setScreen(Screen::Menu);break;
   case Screen::Select: onPad(Pad::Circle);break;
+  case Screen::Options: setScreen(Screen::Menu);break;
+  case Screen::Controls: setScreen(Screen::Options);break;
  }
 }
 // X / C / Backspace / Space: cheat-code buttons. On the title screen and main menu they only
@@ -648,7 +668,7 @@ void drawOverlay(){
  text(L"ENTER / ESC  OK",g->fSmall.Get(),D2D1::RectF(panel.left,panel.bottom-H*0.05f,panel.right,panel.bottom-H*0.01f),rgba(1.f,0.84f,0.25f),2);
 }
 // ---------- menu music ----------
-constexpr int kMusicVolume=750;
+int musicVolume(){return g->settings.musicVolume*100;} // 0..1000
 constexpr double kFadeMs=1500,kMaxPieceMs=180000;
 const wchar_t* musicGameTitle(const std::string& id){
  if(id=="xmcota")return L"X-MEN: CHILDREN OF THE ATOM";if(id=="msh")return L"MARVEL SUPER HEROES";
@@ -678,7 +698,7 @@ void startNextTrack(const std::string& pool,double now){
   const mcl::Track* t=nullptr;
   if(pool=="marvel"&&!g->pendingPick.empty()){t=rot->pick(g->pendingPick);g->pendingPick.clear();}
   if(!t)t=rot->next();
-  if(t&&g->music.play(g->musicDir/fs::u8path(t->path),t->startMs,t->endMs,kMusicVolume))g->track=t;
+  if(t&&g->music.play(g->musicDir/fs::u8path(t->path),t->startMs,t->endMs,musicVolume()))g->track=t;
  }
  if(g->track){
   const std::string cap=mcl::trackCaption(*g->track);
@@ -696,6 +716,7 @@ void startNextTrack(const std::string& pool,double now){
 }
 void updateMusic(double now){
  if(g->library.empty())return;
+ if(g->settings.musicVolume<=0){if(g->track){g->music.stop();g->track=nullptr;}return;}
  const std::string want=wantedPool();
  if(!g->track){startNextTrack(want,now);return;}
  if(g->fadeStart<0){
@@ -707,12 +728,12 @@ void updateMusic(double now){
  if(g->fadeStart>=0){
   const double k=(now-g->fadeStart)/kFadeMs;
   if(k>=1.0){startNextTrack(want,now);return;}
-  g->music.setVolume(static_cast<int>(kMusicVolume*(1.0-k)));
+  g->music.setVolume(static_cast<int>(musicVolume()*(1.0-k)));
  }
 }
 void drawNowPlaying(double now){
  const double age=now-g->nowPlayingSince;
- if(g->nowPlaying.empty()||age>5000)return;
+ if(!g->settings.nowPlaying||g->nowPlaying.empty()||age>5000)return;
  const float a=static_cast<float>(std::min({1.0,age/400.0,(5000-age)/600.0}));
  const float W=g->W(),H=g->H();
  ComPtr<IDWriteTextLayout> l;
@@ -723,6 +744,108 @@ void drawNowPlaying(double now){
  for(int i=0;i<8;++i){const float ang=i*0.785398f;g->rt->DrawTextLayout(D2D1::Point2F(W*0.02f+std::cos(ang)*2,H*0.02f+std::sin(ang)*2),l.Get(),g->brush.Get());}
  g->brush->SetColor(rgba(1.f,0.84f,0.25f));g->rt->DrawTextLayout(D2D1::Point2F(W*0.02f,H*0.02f),l.Get(),g->brush.Get());
  g->brush->SetOpacity(1);
+}
+// ---------- OPTIONS ----------
+void saveSettings(){g->settings.save(g->dir/"MCL_UserData"/"settings.txt");}
+void applyVideoSetting(){
+ if(g->settings.backgroundVideo)g->video.start(g->dir/"earth_background.mp4",1280,720);
+ else{g->video.stop();g->videoBmp.Reset();g->videoSerial=0;}
+}
+void setFullscreen(bool on);
+// dir: -1 = left, +1 = right, 0 = Enter
+void changeOption(int dir){
+ auto& s=g->settings;
+ switch(g->optRow){
+  case OptMusic: if(dir){s.musicVolume=std::clamp(s.musicVolume+dir,0,10);if(g->track&&g->fadeStart<0)g->music.setVolume(musicVolume());}break;
+  case OptVoice: if(dir){s.voiceVolume=std::clamp(s.voiceVolume+dir,0,10);playVoice();}break; // preview at the new volume
+  case OptDisplay: s.fullscreen=!s.fullscreen;setFullscreen(s.fullscreen);break;
+  case OptGames: s.gamesFullscreen=!s.gamesFullscreen;break;
+  case OptVideo: s.backgroundVideo=!s.backgroundVideo;applyVideoSetting();break;
+  case OptCaption: s.nowPlaying=!s.nowPlaying;if(s.nowPlaying)g->nowPlayingSince=g->now();break;
+  case OptControls: if(!dir)setScreen(Screen::Controls);return;
+  case OptDevTools: if(!dir){VideoPause pause;if(g->cb.options)g->cb.options(g->hwnd,g->menu.cheatExUnlocked());}return;
+  case OptBack: if(!dir)setScreen(Screen::Menu);return;
+ }
+ saveSettings();
+}
+void optionsPad(Pad p){
+ switch(p){
+  case Pad::Up: g->optRow=(g->optRow+OptCount-1)%OptCount;break;
+  case Pad::Down: g->optRow=(g->optRow+1)%OptCount;break;
+  case Pad::Left: changeOption(-1);break;
+  case Pad::Right: changeOption(+1);break;
+  case Pad::Cross: case Pad::Start: changeOption(0);break;
+  case Pad::Circle: setScreen(Screen::Menu);break;
+  default: break;
+ }
+}
+std::wstring volumeBar(int v){std::wstring s;for(int i=0;i<10;++i)s+=i<v?L'■':L'□';return s+L"  "+std::to_wstring(v);}
+void drawOptions(double now){
+ const float W=g->W(),H=g->H();
+ const auto& s=g->settings;
+ g->brush->SetColor(rgba(0,0,0.02f));g->brush->SetOpacity(0.74f);
+ g->rt->FillRectangle(D2D1::RectF(W*0.14f,H*0.37f,W*0.86f,H*0.93f),g->brush.Get());g->brush->SetOpacity(1);
+ text(L"OPTIONS",g->fHead.Get(),D2D1::RectF(0,H*0.38f,W,H*0.44f),rgba(1.f,0.84f,0.25f),H*0.004f);
+ struct Row{const wchar_t* label;std::wstring value;};
+ const Row rows[OptCount]={
+  {L"MUSIC VOLUME",s.musicVolume?volumeBar(s.musicVolume):L"OFF"},
+  {L"VOICE VOLUME",s.voiceVolume?volumeBar(s.voiceVolume):L"OFF"},
+  {L"DISPLAY",s.fullscreen?L"FULLSCREEN":L"WINDOW"},
+  {L"GAMES START IN",s.gamesFullscreen?L"FULLSCREEN":L"WINDOW"},
+  {L"BACKGROUND VIDEO",s.backgroundVideo?L"ON":L"OFF"},
+  {L"NOW-PLAYING CAPTION",s.nowPlaying?L"ON":L"OFF"},
+  {L"CONTROLS",L"▶"},
+  {L"DEVELOPER TOOLS",L"▶"},
+  {L"BACK",L""},
+ };
+ const float top=H*0.46f,step=H*0.047f;
+ const bool blink=std::fmod(now,900.0)<600.0;
+ for(int i=0;i<OptCount;++i){
+  const bool sel=i==g->optRow;
+  const float y=top+step*static_cast<float>(i);
+  if(sel){g->brush->SetColor(rgba(0.12f,0.42f,1.f));g->brush->SetOpacity(0.35f);g->rt->FillRectangle(D2D1::RectF(W*0.18f,y,W*0.82f,y+step),g->brush.Get());g->brush->SetOpacity(1);}
+  const auto drawLeft=[&](const std::wstring& t,float x0,float x1,D2D1_COLOR_F c){
+   ComPtr<IDWriteTextLayout> l;
+   g->dw->CreateTextLayout(t.c_str(),static_cast<UINT32>(t.size()),g->fBody.Get(),x1-x0,step,&l);
+   if(l){l->SetTextAlignment(DWRITE_TEXT_ALIGNMENT_LEADING);g->brush->SetColor(c);g->rt->DrawTextLayout(D2D1::Point2F(x0,y),l.Get(),g->brush.Get());}
+  };
+  drawLeft(rows[i].label,W*0.21f,W*0.55f,sel?rgba(1,1,1):rgba(0.82f,0.87f,0.97f));
+  std::wstring v=rows[i].value;
+  const bool adjustable=i<=OptCaption;
+  if(sel&&adjustable)v=(blink?L"◀  ":L"   ")+v+(blink?L"  ▶":L"   ");
+  drawLeft(v,W*0.55f,W*0.82f,sel?rgba(1.f,0.84f,0.25f):rgba(0.65f,0.75f,0.95f));
+ }
+ text(L"↑↓ CHOOSE      ←→ CHANGE      ENTER  OPEN / TOGGLE      ESC  BACK      (SAVED AUTOMATICALLY)",g->fSmall.Get(),D2D1::RectF(0,H*0.94f,W,H*0.98f),rgba(0.6f,0.66f,0.8f),2,0.85f);
+}
+void drawControls(){
+ const float W=g->W(),H=g->H();
+ g->brush->SetColor(rgba(0,0,0.02f));g->brush->SetOpacity(0.82f);
+ g->rt->FillRectangle(D2D1::RectF(W*0.06f,H*0.33f,W*0.94f,H*0.93f),g->brush.Get());g->brush->SetOpacity(1);
+ text(L"CONTROLS",g->fHead.Get(),D2D1::RectF(0,H*0.335f,W,H*0.39f),rgba(1.f,0.84f,0.25f),H*0.004f);
+ static const wchar_t* const lines[][2]={
+  {L"MENUS",L"Arrows move   •   Enter select   •   Esc back   •   Alt+Enter window / fullscreen"},
+  {L"",L"Xbox pad: D-pad move   •   A select   •   B back"},
+  {L"ARCADE SELECT",L"Enter play   •   Backspace or Tab: cheats for that game"},
+  {L"CHEAT CODES",L"On the title screen or main menu:"},
+  {L"",L"CHEAT EX:   ↓ → ↓ ←  X  C  Space"},
+  {L"",L"MASTER CHEATS:   ↑ ↓ ← →  X  C  X  C  Backspace  Space"},
+  {L"",L"(X = ✕   C = ○   Backspace = Select   Space = Start;  pad: A / B / Back / Start)"},
+  {L"IN GAME (MAME)",L"5 coin   •   1 start   •   Arrows move   •   Ctrl / Alt / Space punch   •   Shift / Z / X kick"},
+  {L"PAUSE MENU",L"Hold Start + Select (1 + 5)   •   Up/Down choose   •   Button 1 or Start: OK   •   Button 2: resume"},
+  {L"QUICK EXIT",L"Pad: hold L1 + R1 + R2 + Select + Start for 3 s → title screen   •   Keyboard: Esc quits the game"},
+  {L"MvC2 (FLYCAST)",L"Tab opens Flycast's own menu (controls, quit)"},
+ };
+ const float top=H*0.40f,step=H*0.043f;
+ for(size_t i=0;i<sizeof(lines)/sizeof(lines[0]);++i){
+  const float y=top+step*static_cast<float>(i);
+  ComPtr<IDWriteTextLayout> a,b;
+  const std::wstring h=lines[i][0],t=lines[i][1];
+  if(!h.empty()){g->dw->CreateTextLayout(h.c_str(),static_cast<UINT32>(h.size()),g->fSmall.Get(),W*0.17f,step,&a);
+   if(a){a->SetTextAlignment(DWRITE_TEXT_ALIGNMENT_LEADING);g->brush->SetColor(rgba(1.f,0.84f,0.25f));g->rt->DrawTextLayout(D2D1::Point2F(W*0.08f,y),a.Get(),g->brush.Get());}}
+  g->dw->CreateTextLayout(t.c_str(),static_cast<UINT32>(t.size()),g->fSmall.Get(),W*0.68f,step,&b);
+  if(b){b->SetTextAlignment(DWRITE_TEXT_ALIGNMENT_LEADING);g->brush->SetColor(rgba(0.92f,0.95f,1.f));g->rt->DrawTextLayout(D2D1::Point2F(W*0.25f,y),b.Get(),g->brush.Get());}
+ }
+ text(L"ESC  BACK",g->fSmall.Get(),D2D1::RectF(0,H*0.94f,W,H*0.98f),rgba(0.6f,0.66f,0.8f),2,0.85f);
 }
 void render(){
  if(!ensureTarget())return;
@@ -738,6 +861,8 @@ void render(){
   case Screen::Credits: drawCredits(now);break;
   case Screen::Cheats: drawCheats(now);break;
   case Screen::Select: drawSelect(now);break;
+  case Screen::Options: drawOptions(now);break;
+  case Screen::Controls: drawControls();break;
  }
  drawNowPlaying(now);
  if(!g->overlay.empty())drawOverlay();
@@ -794,7 +919,7 @@ LRESULT CALLBACK proc(HWND h,UINT m,WPARAM w,LPARAM l){
    if(g&&g->fullscreen&&LOWORD(l)==HTCLIENT){SetCursor(nullptr);return TRUE;}
    break;
   case WM_SYSKEYDOWN:
-   if(w==VK_RETURN&&(HIWORD(l)&KF_ALTDOWN)){setFullscreen(!g->fullscreen);return 0;}
+   if(w==VK_RETURN&&(HIWORD(l)&KF_ALTDOWN)){setFullscreen(!g->fullscreen);g->settings.fullscreen=g->fullscreen;saveSettings();return 0;}
    break;
   case WM_KEYDOWN:{
    // Keyboard layout:
@@ -803,7 +928,7 @@ LRESULT CALLBACK proc(HWND h,UINT m,WPARAM w,LPARAM l){
    //   X = Cross, C = Circle, Backspace = Select, Space = Start: cheat-code buttons only on the
    //   title screen and main menu, so a mistyped code can never open a menu item.
    const bool repeat=(l&(1<<30))!=0;
-   const bool lists=g&&g->screen==Screen::Cheats; // auto-repeat is handy only in the cheat list
+   const bool lists=g&&(g->screen==Screen::Cheats||g->screen==Screen::Options); // auto-repeat only in lists
    switch(w){
     case VK_UP: if(!repeat||lists)onPad(Pad::Up);return 0;
     case VK_DOWN: if(!repeat||lists)onPad(Pad::Down);return 0;
@@ -840,12 +965,16 @@ int mcl_title::run(HINSTANCE inst,const fs::path& appDir,const Callbacks& cb){
 
  WNDCLASSEXW wc{sizeof wc};wc.lpfnWndProc=proc;wc.hInstance=inst;wc.hCursor=LoadCursor(nullptr,IDC_ARROW);
  wc.hbrBackground=static_cast<HBRUSH>(GetStockObject(BLACK_BRUSH));wc.lpszClassName=L"MCLTitleScreen";
- wc.hIcon=LoadIcon(nullptr,IDI_APPLICATION);
+ // App icon embedded from src/app.rc (resource id 1).
+ wc.hIcon=LoadIconW(inst,MAKEINTRESOURCEW(1));
+ wc.hIconSm=static_cast<HICON>(LoadImageW(inst,MAKEINTRESOURCEW(1),IMAGE_ICON,GetSystemMetrics(SM_CXSMICON),GetSystemMetrics(SM_CYSMICON),0));
+ if(!wc.hIcon)wc.hIcon=LoadIcon(nullptr,IDI_APPLICATION);
  RegisterClassExW(&wc);
  app.hwnd=CreateWindowExW(0,wc.lpszClassName,L"Marvel: Crossover Legacy",WS_POPUP,0,0,1280,720,nullptr,nullptr,inst,nullptr);
  if(!app.hwnd){g=nullptr;if(SUCCEEDED(co))CoUninitialize();return 2;}
- setFullscreen(true);
- app.video.start(appDir/"earth_background.mp4",1280,720);
+ app.settings.load(appDir/"MCL_UserData"/"settings.txt");
+ setFullscreen(app.settings.fullscreen);
+ if(app.settings.backgroundVideo)app.video.start(appDir/"earth_background.mp4",1280,720);
  loadMusic();
  MSG msg{};bool quit=false;
  while(!quit){

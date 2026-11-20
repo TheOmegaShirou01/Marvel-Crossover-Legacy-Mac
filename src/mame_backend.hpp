@@ -72,6 +72,8 @@ public:
  // Lua cheat script passed to MAME as -autoboot_script on the next start (empty = none).
  // Ignored for Flycast games.
  void setCheatScript(std::filesystem::path file);
+ // Start games in a window instead of fullscreen (OPTIONS > GAMES START IN).
+ void setWindowed(bool windowed);
  // Why the last start() returned false (missing files, emulator not found...).
  std::string lastStartError() const;
  std::filesystem::path logFile() const;

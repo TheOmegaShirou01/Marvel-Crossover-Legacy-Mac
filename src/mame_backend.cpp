@@ -110,6 +110,7 @@ struct MameBackend::Private {
  fs::path flycast;      // Flycast executable
  fs::path activeLog;    // log of the current/last launch (MAME capture or flycast.log)
  fs::path cheatScript;  // -autoboot_script for the next MAME launch
+ bool windowed=false;   // OPTIONS: games in a window
  std::string lastError;
  ULONGLONG startedAt=0;
  explicit Private(fs::path e):executable(std::move(e)){}
@@ -144,6 +145,10 @@ bool MameBackend::start(const std::string& id,const RomSearchPath& roms){
                          :createLaunchSpec(p_->executable,roms,id,spec,reason);
  p_->lastError=reason;
  if(!built)return false;
+ if(p_->windowed){
+  if(flycast){for(auto& a:spec.arguments)if(a==L"window:fullscreen=yes")a=L"window:fullscreen=no";}
+  else spec.arguments.push_back(L"-window");
+ }
  if(flycast){
   // Flycast writes its own flycast.log next to the exe; clear the previous one first.
   p_->activeLog=spec.executable.parent_path()/"flycast.log";
@@ -187,6 +192,7 @@ void MameBackend::setLogFile(fs::path file){p_->log=std::move(file);}
 fs::path MameBackend::logFile() const {return p_->activeLog.empty()?p_->log:p_->activeLog;}
 void MameBackend::setFlycastExecutable(fs::path file){p_->flycast=std::move(file);}
 void MameBackend::setCheatScript(fs::path file){p_->cheatScript=std::move(file);}
+void MameBackend::setWindowed(bool w){p_->windowed=w;}
 std::string MameBackend::lastStartError() const {return p_->lastError;}
 bool MameBackend::lastExit(unsigned long& code,double& seconds) const{
  if(!p_->process||WaitForSingleObject(p_->process,0)!=WAIT_OBJECT_0)return false;

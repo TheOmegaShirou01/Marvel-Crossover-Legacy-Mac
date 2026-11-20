@@ -27,6 +27,7 @@ GameLauncher::Result GameLauncher::launch(const std::string& game,bool cheatsUnl
  emulator_=std::make_unique<MameBackend>(readMameExecutable(dir_/"mame_executable.txt"));
  emulator_->setFlycastExecutable(readMameExecutable(dir_/"flycast_executable.txt"));
  emulator_->setLogFile(dir_/"Logs"/"mame_last_launch.log");
+ emulator_->setWindowed(gamesWindowed_);
  session_=std::make_unique<EmulatorBridge>(model_,*emulator_,resolveRuntimeRomSearchPath(dir_));
  // Cheats: Marvel ones need the master code, EX ones need CHEAT EX, this session.
  std::vector<Poke> pokes;

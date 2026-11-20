@@ -28,11 +28,14 @@ public:
  bool takeExitSignal();
  // Close the running game (used by the controller quick-exit combo).
  bool requestClose();
+ // OPTIONS > GAMES START IN: window instead of fullscreen.
+ void setGamesWindowed(bool windowed){gamesWindowed_=windowed;}
 private:
  std::filesystem::path dir_;
  Collection& model_;
  std::unique_ptr<MameBackend> emulator_;
  std::unique_ptr<EmulatorBridge> session_;
+ bool gamesWindowed_=false;
 };
 }
 #endif
