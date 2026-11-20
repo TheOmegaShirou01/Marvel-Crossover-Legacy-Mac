@@ -36,7 +36,7 @@ using mcl::MenuItem;
 using MK=mcl::MainMenuModel::Kind;
 
 constexpr float kLogoW=1600.f,kLogoH=760.f;
-enum class Screen { Intro, Title, Menu, Credits, Cheats, Select, Options, Controls, Achievements };
+enum class Screen { Intro, Title, Menu, Credits, Cheats, Select, Options, Controls, Achievements, Gallery, Jukebox };
 enum OptRow { OptMusic, OptVoice, OptDisplay, OptGames, OptVideo, OptCaption, OptControls, OptDevTools, OptBack, OptCount };
 
 // Arcade Select cards: collection id, full title, credit line.
@@ -104,6 +104,13 @@ struct App {
  mcl::LightningField cardBolts{4242u,{0,0,100,60},[]{mcl::LightningConfig c;c.strikes=false;c.frontBolts=false;c.minArcs=2;c.maxArcs=4;c.arcChance=0.3f;return c;}()};
  bool gameRunning=false;
  bool gameLoading=false;double loadingSince=0; // our NOW LOADING cover is on top of MAME
+ // Arcade Jukebox: one page per Music\<game> folder; plays whole pieces back to back.
+ int jbGame=0,jbRow=0;std::vector<mcl::Track> jbTracks;std::map<std::string,std::string> trackTitles;
+ int jbPlaying=-1;std::string jbPlayingGame;std::vector<mcl::Track> jbPlayingList;
+ // GALLERY: 0 hub, 1 Arcade Museum, 2 Characters, 3 Artwork; images from Gallery\Art (PS1 rip)
+ int galMode=0,galHub=0,galGame=0,galRow=0,galArtIdx=0;
+ std::map<std::string,ComPtr<ID2D1Bitmap>> galArt;std::vector<std::string> galArtList;
+ double galleryBannerUntil=-1;
  int achGroup=0,achRow=0;                 // ACHIEVEMENTS screen
  std::vector<std::string> achQueue;double achShowSince=-1; // "ACHIEVEMENT UNLOCKED!" popups
  mcl::AppSettings settings;int optRow=0; // OPTIONS screen (MCL_UserData\settings.txt)
@@ -277,15 +284,22 @@ float layoutT(double now);
 void setScreen(Screen s){
  g->screen=s;g->screenSince=g->now();
  // OPTIONS / CONTROLS use the small top logo like Arcade Select; the menu uses the medium one.
- if((s==Screen::Options||s==Screen::Controls||s==Screen::Achievements)&&g->layoutTo!=2)goLayout(2,g->now());
+ if((s==Screen::Options||s==Screen::Controls||s==Screen::Achievements||s==Screen::Gallery||s==Screen::Jukebox)&&g->layoutTo!=2)goLayout(2,g->now());
  else if(s==Screen::Menu&&g->layoutTo==2)goLayout(1,g->now());
 }
 void showBanner(const std::wstring& s){g->banner=s;g->bannerUntil=g->now()+2200;g->bannerFlash=1.f;g->itemBolts.clear();}
 // Master code entered: banner + "The Secret Code" achievement.
 void masterCodeEntered(){showBanner(L"CHEATS UNLOCKED!");if(g->cb.launcher)g->cb.launcher->awardMasterCode();}
 void achievementsPad(Pad p);
+void jukeboxPad(Pad p);
+void enterJukebox();
+void leaveJukebox();
+void enterGallery();
+void galleryPad(Pad p);
+void galleryBack();
 void drawAchievements(double now);
 void drawAchievementPopup(double now);
+void drawGalleryUnlock(double now);
 // Background video is paused while another window (Arcade Select, Options, MAME) is in front.
 struct VideoPause{VideoPause(){g->video.setPaused(true);}~VideoPause(){g->video.setPaused(false);}};
 // OPTIONS screen handlers (defined further down).
@@ -356,6 +370,8 @@ void activate(MenuItem item){
   case MenuItem::CheatEx: break; // handled above
   case MenuItem::Credits: setScreen(Screen::Credits);break;
   case MenuItem::Achievements: g->achRow=0;setScreen(Screen::Achievements);break;
+  case MenuItem::Gallery: enterGallery();break;
+  case MenuItem::Jukebox: enterJukebox();break;
   case MenuItem::Exit: DestroyWindow(g->hwnd);break;
  }
 }
@@ -369,6 +385,8 @@ void onPad(Pad p){
  switch(g->screen){
   case Screen::Options: optionsPad(p);break;
   case Screen::Achievements: achievementsPad(p);break;
+  case Screen::Gallery: galleryPad(p);break;
+  case Screen::Jukebox: jukeboxPad(p);break;
   case Screen::Controls: if(p==Pad::Circle||p==Pad::Cross||p==Pad::Start)setScreen(Screen::Options);break;
   case Screen::Select:
    switch(p){
@@ -443,6 +461,8 @@ void onConfirm(){
   case Screen::Options: changeOption(0);break;
   case Screen::Controls: setScreen(Screen::Options);break;
   case Screen::Achievements: break;
+  case Screen::Gallery: galleryPad(Pad::Cross);break;
+  case Screen::Jukebox: jukeboxPad(Pad::Cross);break;
   case Screen::Intro: endIntro();break;
   case Screen::Title: startMenu();break;
   case Screen::Menu: g->menu.resetCodes();activate(g->menu.selected());break;
@@ -465,6 +485,8 @@ void onBack(){
   case Screen::Options: setScreen(Screen::Menu);break;
   case Screen::Controls: setScreen(Screen::Options);break;
   case Screen::Achievements: setScreen(Screen::Menu);break;
+  case Screen::Gallery: galleryBack();break;
+  case Screen::Jukebox: leaveJukebox();break;
  }
 }
 // X / C / Backspace / Space: cheat-code buttons. On the title screen and main menu they only
@@ -479,6 +501,7 @@ void onCodeKey(Pad p){
  }
  if(p==Pad::Cross||p==Pad::Start)onConfirm();
  else if(p==Pad::Circle)onBack();
+ else if(p==Pad::Select&&g->screen==Screen::Jukebox)onPad(Pad::Select); // Backspace: stop the jukebox
  else if(p==Pad::Select&&g->screen==Screen::Select)onPad(Pad::Select);
 }
 void drawBackground(){
@@ -716,12 +739,13 @@ const wchar_t* musicGameTitle(const std::string& id){
  if(id=="xmvsf")return L"X-MEN VS. STREET FIGHTER";if(id=="mshvsf")return L"MARVEL SUPER HEROES VS. STREET FIGHTER";
  if(id=="mvsc")return L"MARVEL VS. CAPCOM";if(id=="mvsc2")return L"MARVEL VS. CAPCOM 2";
  if(id=="sfexp")return L"STREET FIGHTER EX PLUS";if(id=="sfex2p")return L"STREET FIGHTER EX2 PLUS";
+ if(id=="sfex3")return L"STREET FIGHTER EX3";
  return L"";
 }
 void loadMusic(){
  for(const auto& d:{g->dir/"Music",g->dir.parent_path()/"Music"}){
   std::error_code ec;
-  if(fs::is_regular_file(d/"catalog.tsv",ec)){g->musicDir=d;g->library=mcl::loadMusicCatalog(d/"catalog.tsv");break;}
+  if(fs::is_regular_file(d/"catalog.tsv",ec)){g->musicDir=d;g->library=mcl::loadMusicCatalog(d/"catalog.tsv");g->trackTitles=mcl::loadTrackTitles(d/"track_titles.tsv");break;}
  }
  const auto seed=static_cast<std::uint32_t>(GetTickCount64());
  g->marvelMusic=std::make_unique<mcl::MusicRotation>(g->library,mcl::marvelMusicGames(),seed);
@@ -760,6 +784,15 @@ void updateMusic(double now){
  // Silent from the moment a game is chosen until it has closed (covers controller launches,
  // which happen inside the same frame as this update).
  if(g->screen==Screen::Intro)return;
+ if(g->screen==Screen::Jukebox&&!g->gameRunning){
+  // Jukebox: whole pieces back to back through the chosen soundtrack; no menu rotation.
+  if(g->jbPlaying>=0&&!g->music.playing()&&!g->jbPlayingList.empty()){
+   const int n=static_cast<int>(g->jbPlayingList.size());
+   const int next=(g->jbPlaying+1)%n;const auto& t=g->jbPlayingList[static_cast<size_t>(next)];
+   g->jbPlaying=g->music.play(g->musicDir/fs::u8path(t.path),t.startMs,t.endMs,musicVolume())?next:-1;
+  }
+  return;
+ }
  if(g->gameRunning||g->settings.musicVolume<=0){if(g->track){g->music.stop();g->track=nullptr;g->fadeStart=-1;}return;}
  const std::string want=wantedPool();
  if(!g->track){startNextTrack(want,now);return;}
@@ -1018,6 +1051,307 @@ void drawAchievementPopup(double now){
  leftText(upper(wide(a->title)),g->fBody.Get(),x+W*0.012f,y+ph*0.34f,pw-W*0.024f,ph*0.34f,rgba(1,1,1));
  leftText(groupTitle(a->game)+L"  •  "+upper(wide(a->tier)),g->fSmall.Get(),x+W*0.012f,y+ph*0.68f,pw-W*0.024f,ph*0.28f,tierColor(a->tier));
 }
+// ---------- ARCADE JUKEBOX ----------
+void jbLoadGame(){
+ const auto& games=mcl::jukeboxGames();
+ g->jbGame=(g->jbGame%static_cast<int>(games.size())+static_cast<int>(games.size()))%static_cast<int>(games.size());
+ g->jbTracks=mcl::jukeboxTracks(g->library,games[static_cast<size_t>(g->jbGame)]);
+ g->jbRow=0;
+}
+void enterJukebox(){
+ g->music.stop();g->track=nullptr;g->fadeStart=-1; // the menu rotation steps aside
+ g->jbPlaying=-1;g->jbPlayingList.clear();
+ jbLoadGame();setScreen(Screen::Jukebox);
+}
+void leaveJukebox(){
+ g->music.stop();g->jbPlaying=-1;g->jbPlayingList.clear(); // menu rotation resumes by itself
+ setScreen(Screen::Menu);
+}
+void jbPlay(int row){
+ if(row<0||row>=static_cast<int>(g->jbTracks.size()))return;
+ const auto& t=g->jbTracks[static_cast<size_t>(row)];
+ g->jbPlayingList=g->jbTracks;g->jbPlayingGame=mcl::jukeboxGames()[static_cast<size_t>(g->jbGame)];
+ g->jbPlaying=g->music.play(g->musicDir/fs::u8path(t.path),t.startMs,t.endMs,musicVolume())?row:-1;
+ if(g->jbPlaying<0)g->overlay=L"THIS TRACK COULD NOT BE PLAYED\n\n"+fs::u8path(t.path).wstring();
+}
+void jukeboxPad(Pad p){
+ const int n=static_cast<int>(g->jbTracks.size());
+ switch(p){
+  case Pad::Left: --g->jbGame;jbLoadGame();break;
+  case Pad::Right: ++g->jbGame;jbLoadGame();break;
+  case Pad::Up: if(n)g->jbRow=(g->jbRow+n-1)%n;break;
+  case Pad::Down: if(n)g->jbRow=(g->jbRow+1)%n;break;
+  case Pad::Cross: case Pad::Start: jbPlay(g->jbRow);break;
+  case Pad::Select: g->music.stop();g->jbPlaying=-1;g->jbPlayingList.clear();break; // stop
+  case Pad::Circle: leaveJukebox();break;
+ }
+}
+std::wstring mmss(int ms){ms=std::max(0,ms)/1000;wchar_t b[16];swprintf(b,16,L"%d:%02d",ms/60,ms%60);return b;}
+void drawJukebox(double now){
+ const float W=g->W(),H=g->H();
+ g->brush->SetColor(rgba(0,0,0.02f));g->brush->SetOpacity(0.84f);
+ g->rt->FillRectangle(D2D1::RectF(W*0.06f,H*0.33f,W*0.94f,H*0.93f),g->brush.Get());g->brush->SetOpacity(1);
+ text(L"ARCADE JUKEBOX",g->fHead.Get(),D2D1::RectF(0,H*0.335f,W,H*0.385f),rgba(1.f,0.84f,0.25f),H*0.004f);
+ const auto& games=mcl::jukeboxGames();
+ const float top=H*0.405f,step=H*0.040f;
+ // Soundtracks (left)
+ for(size_t i=0;i<games.size();++i){
+  const float y=top+step*static_cast<float>(i);
+  const bool sel=static_cast<int>(i)==g->jbGame;
+  if(sel){g->brush->SetColor(rgba(0.12f,0.42f,1.f));g->brush->SetOpacity(0.35f);g->rt->FillRectangle(D2D1::RectF(W*0.08f,y,W*0.37f,y+step),g->brush.Get());g->brush->SetOpacity(1);}
+  const int count=static_cast<int>(mcl::jukeboxTracks(g->library,games[i]).size());
+  std::wstring name=musicGameTitle(games[i]);if(games[i]=="mshvsf")name=L"MARVEL SUPER HEROES VS. SF";
+  leftText(name,g->fSmall.Get(),W*0.09f,y,W*0.23f,step,sel?rgba(1,1,1):rgba(0.7f,0.78f,0.95f));
+  leftText(std::to_wstring(count),g->fSmall.Get(),W*0.32f,y,W*0.045f,step,rgba(0.55f,0.62f,0.78f),DWRITE_TEXT_ALIGNMENT_TRAILING);
+ }
+ // Tracks (right), scrolled so the cursor stays visible
+ const int rows=10,n=static_cast<int>(g->jbTracks.size());
+ const int first=std::clamp(g->jbRow-rows/2,0,std::max(0,n-rows));
+ const std::string thisGame=games[static_cast<size_t>(g->jbGame)];
+ if(n==0)leftText(L"NO TRACKS IN Music\\"+wide(thisGame),g->fSmall.Get(),W*0.40f,top,W*0.5f,step,rgba(0.7f,0.7f,0.75f));
+ for(int i=first;i<std::min(n,first+rows);++i){
+  const float y=top+step*static_cast<float>(i-first);
+  const auto& t=g->jbTracks[static_cast<size_t>(i)];
+  const bool sel=i==g->jbRow,playing=g->jbPlaying==i&&g->jbPlayingGame==thisGame;
+  if(sel){g->brush->SetColor(rgba(0.12f,0.42f,1.f));g->brush->SetOpacity(0.35f);g->rt->FillRectangle(D2D1::RectF(W*0.39f,y,W*0.92f,y+step),g->brush.Get());g->brush->SetOpacity(1);}
+  const std::wstring label=upper(wide(mcl::jukeboxTitle(t,i+1,g->trackTitles)));
+  leftText(playing?L"♪":L"",g->fSmall.Get(),W*0.395f,y,W*0.02f,step,rgba(1.f,0.84f,0.25f));
+  leftText(label,g->fSmall.Get(),W*0.42f,y,W*0.40f,step,playing?rgba(1.f,0.84f,0.25f):(sel?rgba(1,1,1):rgba(0.78f,0.84f,0.97f)));
+  leftText(mmss(t.endMs-t.startMs),g->fSmall.Get(),W*0.83f,y,W*0.08f,step,rgba(0.55f,0.62f,0.78f),DWRITE_TEXT_ALIGNMENT_TRAILING);
+ }
+ if(n>rows)leftText(std::to_wstring(g->jbRow+1)+L" / "+std::to_wstring(n),g->fSmall.Get(),W*0.39f,top+step*rows,W*0.53f,step*0.9f,rgba(0.5f,0.56f,0.7f),DWRITE_TEXT_ALIGNMENT_TRAILING);
+ // Now playing + progress
+ const float by=H*0.888f;
+ if(g->jbPlaying>=0&&g->jbPlaying<static_cast<int>(g->jbPlayingList.size())){
+  const auto& t=g->jbPlayingList[static_cast<size_t>(g->jbPlaying)];
+  const int len=t.endMs-t.startMs,pos=std::clamp(g->music.positionMs()-t.startMs,0,len);
+  leftText(L"♪  "+upper(wide(mcl::jukeboxTitle(t,g->jbPlaying+1,g->trackTitles)))+L"   —   "+musicGameTitle(t.game),g->fSmall.Get(),W*0.09f,by-H*0.035f,W*0.70f,H*0.03f,rgba(1.f,0.84f,0.25f));
+  leftText(mmss(pos)+L" / "+mmss(len),g->fSmall.Get(),W*0.78f,by-H*0.035f,W*0.13f,H*0.03f,rgba(0.8f,0.85f,1.f),DWRITE_TEXT_ALIGNMENT_TRAILING);
+  g->brush->SetColor(rgba(0.2f,0.25f,0.4f));g->rt->FillRectangle(D2D1::RectF(W*0.09f,by,W*0.91f,by+H*0.008f),g->brush.Get());
+  g->brush->SetColor(rgba(1.f,0.84f,0.25f));g->rt->FillRectangle(D2D1::RectF(W*0.09f,by,W*0.09f+W*0.82f*(len?static_cast<float>(pos)/static_cast<float>(len):0.f),by+H*0.008f),g->brush.Get());
+ }else{
+  const std::wstring hint=g->settings.musicVolume<=0?L"MUSIC VOLUME IS OFF  —  TURN IT UP IN OPTIONS TO HEAR THE JUKEBOX":L"CHOOSE A TRACK AND PRESS ENTER";
+  text(hint,g->fSmall.Get(),D2D1::RectF(0,by-H*0.03f,W,by+H*0.01f),rgba(0.6f,0.66f,0.8f),1.5f,0.9f);
+ }
+ text(L"←→ SOUNDTRACK      ↑↓ CHOOSE      ENTER  PLAY      BACKSPACE  STOP      ESC  BACK",g->fSmall.Get(),D2D1::RectF(0,H*0.94f,W,H*0.98f),rgba(0.6f,0.66f,0.8f),2,0.85f);
+ (void)now;
+}
+// ---------- GALLERY: Arcade Museum & Character Encyclopedia ----------
+// Unlocks for good after the first verified arcade clear of any game (Collection rule).
+// Text comes from Gallery\arcade_gallery.mclgallery (tools/build_gallery.py); pictures are
+// the user's PS1 Marvel vs. Capcom gallery, installed to Gallery\Art by
+// tools/import_gallery_art.py. Characters without a picture show their text only.
+const wchar_t* const kGalHub[]={L"ARCADE MUSEUM",L"CHARACTERS",L"ARTWORK"};
+std::string artSlug(std::string name){
+ const auto paren=name.find(" (");if(paren!=std::string::npos)name=name.substr(0,paren); // Wolverine (Bone Claws) -> Wolverine
+ std::string out;for(unsigned char c:name)if(std::isalnum(c))out+=static_cast<char>(std::tolower(c));
+ return out;
+}
+ID2D1Bitmap* galImage(const std::string& slug,const char* file){
+ const std::string key=slug+"/"+file;
+ auto it=g->galArt.find(key);
+ if(it==g->galArt.end()){
+  std::error_code ec;const fs::path p=g->dir/"Gallery"/"Art"/slug/file;
+  it=g->galArt.emplace(key,fs::is_regular_file(p,ec)?loadPng(p):ComPtr<ID2D1Bitmap>()).first;
+ }
+ return it->second.Get();
+}
+bool galleryOpen(){return g->cb.launcher&&g->cb.launcher->collection().galleryUnlocked();}
+std::vector<const mcl::Character*> galRoster(const std::string& game){
+ std::vector<const mcl::Character*> v;
+ if(g->cb.launcher)for(const auto& c:g->cb.launcher->collection().characters())if(c.game==game)v.push_back(&c);
+ return v;
+}
+void scanGalleryArt(){
+ g->galArtList.clear();
+ std::error_code ec;const fs::path dir=g->dir/"Gallery"/"Art";
+ if(!fs::is_directory(dir,ec))return;
+ for(const auto& e:fs::directory_iterator(dir,ec))if(e.is_directory(ec)&&fs::is_regular_file(e.path()/"full.png",ec))g->galArtList.push_back(e.path().filename().string());
+ std::sort(g->galArtList.begin(),g->galArtList.end());
+ // group artwork last
+ const auto b=std::find(g->galArtList.begin(),g->galArtList.end(),"_bonus");
+ if(b!=g->galArtList.end()){g->galArtList.erase(b);g->galArtList.push_back("_bonus");}
+}
+std::wstring artTitle(const std::string& slug){
+ if(slug=="_bonus")return L"GROUP ARTWORK";
+ if(g->cb.launcher)for(const auto& c:g->cb.launcher->collection().characters())if(artSlug(c.name)==slug)return upper(wide(c.name));
+ return upper(wide(slug));
+}
+void enterGallery(){g->galMode=0;g->galHub=0;setScreen(Screen::Gallery);}
+void galleryBack(){if(galleryOpen()&&g->galMode!=0){g->galMode=0;return;}setScreen(Screen::Menu);}
+void galleryPad(Pad p){
+ if(p==Pad::Circle){galleryBack();return;}
+ if(!galleryOpen())return; // locked: only back works
+ const auto& games=g->cb.launcher->collection().galleryGames();
+ const int ng=static_cast<int>(games.size());
+ switch(g->galMode){
+  case 0:
+   if(p==Pad::Up)g->galHub=(g->galHub+2)%3;
+   else if(p==Pad::Down)g->galHub=(g->galHub+1)%3;
+   else if(p==Pad::Cross||p==Pad::Start){
+    g->galMode=g->galHub+1;g->galRow=0;
+    if(g->galMode==3){scanGalleryArt();g->galArtIdx=0;}
+   }
+   break;
+  case 1: // museum: one page per game
+   if(ng&&(p==Pad::Left||p==Pad::Up))g->galGame=(g->galGame+ng-1)%ng;
+   if(ng&&(p==Pad::Right||p==Pad::Down))g->galGame=(g->galGame+1)%ng;
+   break;
+  case 2:{ // characters: game tabs, list + profile
+   const int nr=ng?static_cast<int>(galRoster(games[static_cast<size_t>(g->galGame%ng)].id).size()):0;
+   if(ng&&p==Pad::Left){g->galGame=(g->galGame+ng-1)%ng;g->galRow=0;}
+   if(ng&&p==Pad::Right){g->galGame=(g->galGame+1)%ng;g->galRow=0;}
+   if(nr&&p==Pad::Up)g->galRow=(g->galRow+nr-1)%nr;
+   if(nr&&p==Pad::Down)g->galRow=(g->galRow+1)%nr;
+   break;}
+  case 3:{ // artwork viewer
+   const int na=static_cast<int>(g->galArtList.size());
+   if(na&&(p==Pad::Left||p==Pad::Up))g->galArtIdx=(g->galArtIdx+na-1)%na;
+   if(na&&(p==Pad::Right||p==Pad::Down))g->galArtIdx=(g->galArtIdx+1)%na;
+   break;}
+ }
+}
+// Wrapped paragraph; returns the height used.
+float paragraph(const std::wstring& t,IDWriteTextFormat* f,float x,float y,float w,float maxH,D2D1_COLOR_F c){
+ ComPtr<IDWriteTextLayout> l;
+ g->dw->CreateTextLayout(t.c_str(),static_cast<UINT32>(t.size()),f,w,maxH,&l);
+ if(!l)return 0;
+ l->SetTextAlignment(DWRITE_TEXT_ALIGNMENT_LEADING);l->SetParagraphAlignment(DWRITE_PARAGRAPH_ALIGNMENT_NEAR);
+ l->SetWordWrapping(DWRITE_WORD_WRAPPING_WRAP);
+ DWRITE_TRIMMING trim{DWRITE_TRIMMING_GRANULARITY_WORD,0,0};l->SetTrimming(&trim,nullptr);
+ g->brush->SetColor(c);g->rt->DrawTextLayout(D2D1::Point2F(x,y),l.Get(),g->brush.Get());
+ DWRITE_TEXT_METRICS m{};l->GetMetrics(&m);return std::min(m.height,maxH);
+}
+void drawFitted(ID2D1Bitmap* b,D2D1_RECT_F box,float alpha=1.f){
+ if(!b)return;
+ const auto sz=b->GetSize();
+ const float s=std::min((box.right-box.left)/sz.width,(box.bottom-box.top)/sz.height);
+ const float w=sz.width*s,h=sz.height*s,x=(box.left+box.right-w)/2,y=(box.top+box.bottom-h)/2;
+ g->rt->DrawBitmap(b,D2D1::RectF(x,y,x+w,y+h),alpha,D2D1_BITMAP_INTERPOLATION_MODE_LINEAR);
+}
+void galPanel(){
+ const float W=g->W(),H=g->H();
+ g->brush->SetColor(rgba(0,0,0.02f));g->brush->SetOpacity(0.86f);
+ g->rt->FillRectangle(D2D1::RectF(W*0.06f,H*0.33f,W*0.94f,H*0.93f),g->brush.Get());g->brush->SetOpacity(1);
+}
+void drawGallery(double now){
+ const float W=g->W(),H=g->H();
+ galPanel();
+ const D2D1_COLOR_F gold=rgba(1.f,0.84f,0.25f),soft=rgba(0.6f,0.66f,0.8f),body=rgba(0.9f,0.93f,1.f);
+ if(!galleryOpen()){
+  text(L"GALLERY LOCKED",g->fHead.Get(),D2D1::RectF(0,H*0.42f,W,H*0.49f),gold,H*0.004f);
+  text(L"BEAT ARCADE MODE IN ANY GAME TO OPEN THE ARCADE MUSEUM AND CHARACTER ENCYCLOPEDIA",g->fSmall.Get(),D2D1::RectF(0,H*0.53f,W,H*0.57f),body,1.5f);
+  text(L"THE LEGENDS LIVE ON!",g->fBody.Get(),D2D1::RectF(0,H*0.61f,W,H*0.66f),rgba(1.f,0.45f,0.3f),2.f);
+  text(L"ESC  BACK",g->fSmall.Get(),D2D1::RectF(0,H*0.94f,W,H*0.98f),soft,2,0.85f);
+  return;
+ }
+ const auto& col=g->cb.launcher->collection();
+ const auto& games=col.galleryGames();
+ const bool blink=std::fmod(now,900.0)<600.0;
+ if(games.empty()){text(L"GALLERY DATA MISSING  (Gallery\\arcade_gallery.mclgallery)",g->fBody.Get(),D2D1::RectF(0,H*0.5f,W,H*0.56f),body,2);return;}
+ g->galGame=std::clamp(g->galGame,0,static_cast<int>(games.size())-1);
+ const auto& gm=games[static_cast<size_t>(g->galGame)];
+ switch(g->galMode){
+  case 0:{
+   text(L"GALLERY",g->fHead.Get(),D2D1::RectF(0,H*0.345f,W,H*0.40f),gold,H*0.004f);
+   text(L"THE LEGENDS LIVE ON!",g->fSmall.Get(),D2D1::RectF(0,H*0.40f,W,H*0.435f),rgba(1.f,0.45f,0.3f),1.5f);
+   static const wchar_t* const sub[]={L"The story of all eight games",L"Bios and backgrounds for all 95 fighters",L"Original artwork from the PlayStation Marvel vs. Capcom gallery"};
+   for(int i=0;i<3;++i){
+    const float y=H*0.49f+H*0.115f*static_cast<float>(i);
+    const bool sel=i==g->galHub;
+    text(kGalHub[i],g->fMenu.Get(),D2D1::RectF(0,y-H*0.04f,W,y+H*0.035f),sel?gold:rgba(0.86f,0.9f,1.f),H*(sel?0.0045f:0.0035f));
+    text(sub[i],g->fSmall.Get(),D2D1::RectF(0,y+H*0.035f,W,y+H*0.07f),sel?body:soft,1.5f);
+   }
+   text(L"↑↓ CHOOSE      ENTER  OPEN      ESC  BACK",g->fSmall.Get(),D2D1::RectF(0,H*0.94f,W,H*0.98f),soft,2,0.85f);
+   break;}
+  case 1:{
+   text((blink?L"◀   ":L"    ")+upper(wide(gm.title))+(blink?L"   ▶":L"    "),g->fHead.Get(),D2D1::RectF(0,H*0.345f,W,H*0.40f),gold,H*0.004f);
+   text(wide(gm.year)+L"   •   "+upper(wide(gm.hardware))+L"   •   "+upper(wide(gm.developer)),g->fSmall.Get(),D2D1::RectF(0,H*0.40f,W,H*0.435f),soft,1.5f);
+   ID2D1Bitmap* card=g->cards.count(gm.id)?g->cards[gm.id].Get():nullptr;
+   const float tx=card?W*0.36f:W*0.09f;
+   if(card){drawCover(card,D2D1::RectF(W*0.09f,H*0.46f,W*0.33f,H*0.59f),1.f,1.f);}
+   float y=H*0.455f;
+   leftText(L"HISTORY",g->fSmall.Get(),tx,y,W*0.3f,H*0.03f,gold);y+=H*0.032f;
+   y+=paragraph(wide(gm.history),g->fSmall.Get(),tx,y,W*0.91f-tx,H*0.25f,body)+H*0.02f;
+   leftText(L"GAMEPLAY",g->fSmall.Get(),tx,y,W*0.3f,H*0.03f,gold);y+=H*0.032f;
+   paragraph(wide(gm.mechanics),g->fSmall.Get(),tx,y,W*0.91f-tx,H*0.90f-y,body);
+   text(L"←→ GAME      ESC  BACK",g->fSmall.Get(),D2D1::RectF(0,H*0.94f,W,H*0.98f),soft,2,0.85f);
+   break;}
+  case 2:{
+   const auto roster=galRoster(gm.id);
+   text((blink?L"◀   ":L"    ")+upper(wide(gm.title))+(blink?L"   ▶":L"    "),g->fBody.Get(),D2D1::RectF(0,H*0.345f,W,H*0.385f),gold,2.f);
+   const int n=static_cast<int>(roster.size()),rows=12;
+   g->galRow=std::clamp(g->galRow,0,std::max(0,n-1));
+   const int first=std::clamp(g->galRow-rows/2,0,std::max(0,n-rows));
+   const float top=H*0.40f,step=H*0.0405f;
+   for(int i=first;i<std::min(n,first+rows);++i){
+    const float y=top+step*static_cast<float>(i-first);
+    const bool sel=i==g->galRow;
+    if(sel){g->brush->SetColor(rgba(0.12f,0.42f,1.f));g->brush->SetOpacity(0.35f);g->rt->FillRectangle(D2D1::RectF(W*0.08f,y,W*0.30f,y+step),g->brush.Get());g->brush->SetOpacity(1);}
+    const bool pic=galImage(artSlug(roster[static_cast<size_t>(i)]->name),"portrait.png")!=nullptr;
+    leftText((pic?L"■ ":L"   ")+upper(wide(roster[static_cast<size_t>(i)]->name)),g->fSmall.Get(),W*0.09f,y,W*0.20f,step,sel?rgba(1,1,1):rgba(0.78f,0.84f,0.97f));
+   }
+   if(n>rows)leftText(std::to_wstring(g->galRow+1)+L" / "+std::to_wstring(n),g->fSmall.Get(),W*0.08f,top+step*rows,W*0.22f,step*0.9f,rgba(0.5f,0.56f,0.7f),DWRITE_TEXT_ALIGNMENT_TRAILING);
+   if(n==0)break;
+   const auto* ch=roster[static_cast<size_t>(g->galRow)];
+   const auto* pf=col.profile(ch->name);
+   // portrait
+   ID2D1Bitmap* pic=galImage(artSlug(ch->name),"portrait.png");
+   const D2D1_RECT_F box=D2D1::RectF(W*0.32f,H*0.40f,W*0.47f,H*0.66f);
+   g->brush->SetColor(rgba(0.05f,0.08f,0.2f));g->rt->FillRectangle(box,g->brush.Get());
+   if(pic)drawFitted(pic,box);
+   else text(L"NO ARTWORK\nIN YOUR\nCOLLECTION",g->fSmall.Get(),box,rgba(0.45f,0.5f,0.65f),1.f);
+   g->brush->SetColor(rgba(0.3f,0.4f,0.7f));g->rt->DrawRectangle(box,g->brush.Get(),1.5f);
+   // name + facts
+   const float tx=W*0.49f,tw=W*0.43f;
+   leftText(upper(wide(ch->name)),g->fBody.Get(),tx,H*0.40f,tw,H*0.045f,rgba(1,1,1));
+   std::wstring role=wide(ch->role);
+   if(role.find(L"boss")!=std::wstring::npos)role=L"BOSS";else if(role.find(L"hidden")!=std::wstring::npos||role.find(L"regional")!=std::wstring::npos)role=L"SECRET FIGHTER";else role=L"FIGHTER";
+   std::wstring apps;
+   for(const auto& other:games){
+    bool in=false;for(const auto& c:col.characters())if(c.game==other.id&&artSlug(c.name)==artSlug(ch->name))in=true;
+    if(in){if(!apps.empty())apps+=L"  •  ";apps+=upper(wide(other.id=="xmcota"?"X-Men COTA":other.id=="msh"?"MSH":other.id=="xmvsf"?"XvSF":other.id=="mshvsf"?"MSHvSF":other.id=="mvsc"?"MvC":other.id=="mvsc2"?"MvC2":other.id=="sfexp"?"EX Plus":"EX2 Plus"));}
+   }
+   leftText((pf?upper(wide(pf->universe)):L"")+L"   •   "+role,g->fSmall.Get(),tx,H*0.445f,tw,H*0.03f,gold);
+   leftText(L"APPEARS IN:  "+apps,g->fSmall.Get(),tx,H*0.475f,tw,H*0.03f,soft);
+   float y=H*0.515f;
+   if(pf){
+    leftText(L"BIO",g->fSmall.Get(),tx,y,tw,H*0.03f,gold);y+=H*0.03f;
+    paragraph(wide(pf->bio),g->fSmall.Get(),tx,y,tw,H*0.66f-y,body);
+    y=H*0.68f;
+    leftText(L"BACKGROUND",g->fSmall.Get(),W*0.32f,y,W*0.6f,H*0.03f,gold);y+=H*0.03f;
+    y+=paragraph(wide(pf->story),g->fSmall.Get(),W*0.32f,y,W*0.60f,H*0.86f-y,body)+H*0.012f;
+   }
+   paragraph(L"In "+wide(gm.title)+L": "+wide(ch->notes),g->fSmall.Get(),W*0.32f,std::max(y,H*0.855f),W*0.60f,H*0.92f-std::max(y,H*0.855f),soft);
+   text(L"←→ GAME      ↑↓ CHARACTER      ESC  BACK      ■ = ARTWORK",g->fSmall.Get(),D2D1::RectF(0,H*0.94f,W,H*0.98f),soft,2,0.85f);
+   break;}
+  case 3:{
+   const int na=static_cast<int>(g->galArtList.size());
+   if(!na){
+    text(L"NO ARTWORK INSTALLED",g->fHead.Get(),D2D1::RectF(0,H*0.5f,W,H*0.56f),gold,2);
+    text(L"Run tools\\import_gallery_art.py to add your PS1 gallery images",g->fSmall.Get(),D2D1::RectF(0,H*0.58f,W,H*0.62f),body,1.5f);
+    break;
+   }
+   g->galArtIdx=std::clamp(g->galArtIdx,0,na-1);
+   const auto& slug=g->galArtList[static_cast<size_t>(g->galArtIdx)];
+   text((blink?L"◀   ":L"    ")+artTitle(slug)+L"   "+std::to_wstring(g->galArtIdx+1)+L" / "+std::to_wstring(na)+(blink?L"   ▶":L"    "),g->fBody.Get(),D2D1::RectF(0,H*0.345f,W,H*0.385f),gold,2.f);
+   drawFitted(galImage(slug,"full.png"),D2D1::RectF(W*0.1f,H*0.395f,W*0.9f,H*0.90f));
+   text(L"←→ BROWSE      ESC  BACK      ARTWORK: MARVEL VS. CAPCOM (PLAYSTATION) GALLERY",g->fSmall.Get(),D2D1::RectF(0,H*0.94f,W,H*0.98f),soft,2,0.85f);
+   break;}
+ }
+}
+// "GALLERY UNLOCKED! THE LEGENDS LIVE ON!" after the first arcade clear (shown on return).
+void drawGalleryUnlock(double now){
+ if(g->cb.launcher&&!g->gameRunning&&g->cb.launcher->takeGalleryUnlock()){g->galleryBannerUntil=now+5000;g->bannerFlash=1.f;playVoice();}
+ if(now>=g->galleryBannerUntil)return;
+ const float W=g->W(),H=g->H();
+ const float k=static_cast<float>((g->galleryBannerUntil-now)/5000.0);
+ const float a=std::min(1.f,k*4);
+ g->brush->SetColor(rgba(0,0,0.03f));g->brush->SetOpacity(0.7f*a);
+ g->rt->FillRectangle(D2D1::RectF(0,H*0.33f,W,H*0.62f),g->brush.Get());g->brush->SetOpacity(1);
+ text(L"GALLERY UNLOCKED!",g->fBanner.Get(),D2D1::RectF(0,H*0.35f,W,H*0.5f),rgba(1.f,0.84f,0.25f),H*0.006f,a);
+ text(L"THE LEGENDS LIVE ON!",g->fHead.Get(),D2D1::RectF(0,H*0.5f,W,H*0.58f),rgba(1.f,0.45f,0.3f),H*0.004f,a);
+}
 void drawControls(){
  const float W=g->W(),H=g->H();
  g->brush->SetColor(rgba(0,0,0.02f));g->brush->SetOpacity(0.82f);
@@ -1056,7 +1390,7 @@ void render(){
  g->rt->Clear(rgba(0,0,0));
  if(g->screen==Screen::Intro){
   drawIntro(now);
-  if(g->rt->EndDraw()==D2DERR_RECREATE_TARGET){g->rt.Reset();g->dc.Reset();g->brush.Reset();g->logo.Reset();g->videoBmp.Reset();g->previewBmp.Reset();g->cards.clear();g->mvcFont.Reset();}
+  if(g->rt->EndDraw()==D2DERR_RECREATE_TARGET){g->rt.Reset();g->dc.Reset();g->brush.Reset();g->logo.Reset();g->videoBmp.Reset();g->previewBmp.Reset();g->cards.clear();g->mvcFont.Reset();g->galArt.clear();}
   return;
  }
  drawBackground();
@@ -1070,6 +1404,8 @@ void render(){
   case Screen::Options: drawOptions(now);break;
   case Screen::Controls: drawControls();break;
   case Screen::Achievements: drawAchievements(now);break;
+  case Screen::Gallery: drawGallery(now);break;
+  case Screen::Jukebox: drawJukebox(now);break;
  }
  drawNowPlaying(now);
  if(g->gameLoading)drawLoading(now);
@@ -1078,6 +1414,7 @@ void render(){
   const float k=static_cast<float>((g->bannerUntil-now)/2200.0);
   text(g->banner,g->fBanner.Get(),D2D1::RectF(0,H*0.35f,W,H*0.5f),rgba(1.f,0.84f,0.25f),H*0.006f,std::min(1.f,k*3));
  }
+ drawGalleryUnlock(now);
  drawAchievementPopup(now);
  // Calmer flashes behind the cards so the previews stay watchable.
  {const double wf=(now-g->whiteFlashStart)/700.0;
@@ -1085,7 +1422,7 @@ void render(){
  const float flash=std::max(g->logoBolts.flash()*(g->screen==Screen::Select?0.35f:1.f),g->bannerFlash);
  if(flash>0.01f){g->brush->SetColor(rgba(0.75f,0.92f,1.f));g->brush->SetOpacity(flash*0.35f);g->rt->FillRectangle(D2D1::RectF(0,0,W,H),g->brush.Get());g->brush->SetOpacity(1);}
  g->bannerFlash=std::max(0.f,g->bannerFlash-0.06f);
- if(g->rt->EndDraw()==D2DERR_RECREATE_TARGET){g->rt.Reset();g->dc.Reset();g->brush.Reset();g->logo.Reset();g->videoBmp.Reset();g->previewBmp.Reset();g->cards.clear();g->mvcFont.Reset();}
+ if(g->rt->EndDraw()==D2DERR_RECREATE_TARGET){g->rt.Reset();g->dc.Reset();g->brush.Reset();g->logo.Reset();g->videoBmp.Reset();g->previewBmp.Reset();g->cards.clear();g->mvcFont.Reset();g->galArt.clear();}
 }
 
 // ---------- input ----------
@@ -1137,7 +1474,7 @@ LRESULT CALLBACK proc(HWND h,UINT m,WPARAM w,LPARAM l){
    //   X = Cross, C = Circle, Backspace = Select, Space = Start: cheat-code buttons only on the
    //   title screen and main menu, so a mistyped code can never open a menu item.
    const bool repeat=(l&(1<<30))!=0;
-   const bool lists=g&&(g->screen==Screen::Cheats||g->screen==Screen::Options||g->screen==Screen::Achievements); // auto-repeat only in lists
+   const bool lists=g&&(g->screen==Screen::Cheats||g->screen==Screen::Options||g->screen==Screen::Achievements||g->screen==Screen::Gallery||g->screen==Screen::Jukebox); // auto-repeat only in lists
    switch(w){
     case VK_UP: if(!repeat||lists)onPad(Pad::Up);return 0;
     case VK_DOWN: if(!repeat||lists)onPad(Pad::Down);return 0;

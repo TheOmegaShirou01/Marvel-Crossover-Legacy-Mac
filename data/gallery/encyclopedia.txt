@@ -1,0 +1,484 @@
+# Marvel: Crossover Legacy - Character Encyclopedia (source text)
+# One block per character, keyed by the exact name used in roster.tsv.
+#   [Name]
+#   universe: Marvel | Capcom | Arika
+#   bio: who they are and what they can do
+#   story: their background and what drives them in these games
+# Original summaries written for this collection (facts checked against Wikipedia and
+# series references); not official Capcom or Marvel biographies.
+# Built into Gallery\arcade_gallery.mclgallery by tools/build_gallery.py.
+
+[Wolverine]
+universe: Marvel
+bio: Logan is a Canadian mutant with razor-sharp senses, a healing factor that lets him survive almost any wound, and three retractable claws in each hand. His skeleton and claws are laced with adamantium, an all-but-unbreakable metal. In every one of these games he is a relentless close-range brawler built around speed and pressure.
+story: Logan has lived for well over a century, much of it with memories stolen or rewritten by the Weapon X program that bonded adamantium to his bones. He found a home, if not peace, with Professor Xavier's X-Men. He is the only fighter who appears in every Marvel game in this collection, from Children of the Atom to Marvel vs. Capcom 2.
+
+[Wolverine (Adamantium)]
+universe: Marvel
+bio: The classic Wolverine with gleaming adamantium claws and skeleton. In Marvel vs. Capcom 2 this version is the faster, more aggressive of the two Wolverines, famous for his diving Drill Claw and Fatal Claw attacks.
+story: Logan's adamantium was bonded to his skeleton by the secret Weapon X program, turning a feral mutant into a living weapon. Marvel vs. Capcom 2 keeps this familiar look as its own roster slot alongside the bone-clawed version.
+
+[Wolverine (Bone Claws)]
+universe: Marvel
+bio: Wolverine as he appeared in the comics of the mid-1990s, fighting with claws of bare bone. This version hits harder and has a slightly different move set from his adamantium self.
+story: In the 1993 "Fatal Attractions" storyline Magneto ripped the adamantium from Logan's body, revealing that his claws were natural bone all along. Capcom first used this look in X-Men vs. Street Fighter and Marvel vs. Capcom, and gave it a separate slot in Marvel vs. Capcom 2.
+
+[Cyclops]
+universe: Marvel
+bio: Scott Summers fires powerful optic blasts from his eyes, held in check only by ruby-quartz lenses. A born tactician, he fights at range with beams and calculated combos.
+story: Orphaned as a boy, Scott became Professor Xavier's first student and the long-standing field leader of the X-Men. His sense of duty and his responsibility for the team define him, often at a personal cost.
+
+[Storm]
+universe: Marvel
+bio: Ororo Munroe commands the weather: wind, lightning, rain and hurricanes. She can fly freely and attacks from the air with gusts and bolts.
+story: Born in New York to a Kenyan princess and an American photojournalist, Ororo was orphaned in Cairo and survived as a street thief before being worshipped as a goddess in Kenya. Xavier recruited her into the X-Men, which she has led many times.
+
+[Colossus]
+universe: Marvel
+bio: Piotr Rasputin can turn his body into organic steel, gaining enormous strength and near-invulnerability. He is a heavy grappler with massive punches and charging attacks.
+story: A gentle farm boy from Siberia, Piotr joined the X-Men to protect people and send help home to his family. His quiet, artistic nature hides one of the strongest bodies on the team.
+
+[Iceman]
+universe: Marvel
+bio: Bobby Drake lowers the temperature around him to form ice, turning his body into living ice and shaping slides, shields and frozen projectiles.
+story: One of the five original X-Men, Bobby is often the team's joker, but his mutant potential is among the greatest of any of Xavier's students.
+
+[Psylocke]
+universe: Marvel
+bio: Elisabeth "Betsy" Braddock is a telepath and ninja who focuses her psychic power into a glowing psychic blade. In the games she is quick and acrobatic, with fast slashes and teleport-like movement.
+story: Betsy is the twin sister of Captain Britain. A series of strange events left her mind in the body of a ninja trained by the Hand, and she became one of the X-Men's deadliest close-combat fighters.
+
+[Gambit]
+universe: Marvel
+bio: Remy LeBeau charges objects with kinetic energy so they explode, most famously playing cards. He also fights with a collapsible bo staff and a smooth Cajun swagger.
+story: Raised by the Thieves Guild of New Orleans, Remy is a master thief who joined the X-Men looking for redemption. His past, including dealings with Mister Sinister, often comes back to haunt him.
+
+[Rogue]
+universe: Marvel
+bio: Rogue absorbs the memories and powers of anyone she touches skin to skin. She has permanently gained super strength, durability and flight. In X-Men vs. Street Fighter she can steal an opponent's special move.
+story: Raised in Mississippi, Rogue began as a member of the Brotherhood of Evil Mutants. Desperate to control her power, she turned to Professor Xavier and became a valued X-Man.
+
+[Sabretooth]
+universe: Marvel
+bio: Victor Creed is a feral mutant with claws, fangs, superhuman senses and a healing factor. He is a savage, overpowering brawler.
+story: A merciless killer with a long, violent history, Sabretooth has hunted Wolverine for decades. Their shared, partly erased past ties them together as bitter enemies.
+
+[Juggernaut]
+universe: Marvel
+bio: Cain Marko is empowered by the Crimson Gem of Cyttorak. Once he starts moving, nothing can stop him. In the games he is a huge, slow powerhouse with crushing charges and super armor.
+story: Cain is Professor Xavier's stepbrother, and his resentment of Charles began in childhood. He found the Crimson Gem in a hidden temple in Korea and became a mystical juggernaut. In Children of the Atom he is the arcade mode's first boss.
+
+[Magneto]
+universe: Marvel
+bio: Max Eisenhardt, known as Erik Lehnsherr, can control magnetism, metal and electromagnetic fields. He can fly, raise force fields and hurl magnetic blasts and storms.
+story: A Holocaust survivor, Magneto believes mutants must protect themselves from humanity by any means. That belief makes him both the X-Men's greatest enemy and, at times, their ally. In Children of the Atom he is the final boss, fought high above the Earth.
+
+[Omega Red]
+universe: Marvel
+bio: Arkady Rossovich is a Russian super-soldier armed with retractable carbonadium coils. Each tentacle drains the life from whatever it wraps around.
+story: The Soviet Union's answer to the Weapon X program, Omega Red is a former serial killer whose mutation forces him to drain life to survive. He has a personal grudge against Wolverine.
+
+[Sentinel]
+universe: Marvel
+bio: A towering mutant-hunting robot armed with rocket punches, chest beams and drones. It is enormous, durable and capable of flight.
+story: Sentinels were first built by Bolivar Trask to hunt and capture mutants, and they have become a symbol of anti-mutant fear. In Marvel vs. Capcom 2 the Sentinel became one of the most dominant fighters in competitive play.
+
+[Silver Samurai]
+universe: Marvel
+bio: Kenuichio Harada can charge his katana with a tachyon field that cuts through almost anything. He is also a master of kenjutsu and fights with elemental sword techniques.
+story: The illegitimate son of the crime lord Shingen Harada, he has worked as a mercenary and a bodyguard, and he has been both a foe and an ally of Wolverine. He inherited the Clan Yashida's samurai traditions.
+
+[Spiral]
+universe: Marvel
+bio: Spiral is a six-armed sorceress and swordswoman. She can open teleportation portals and dance between dimensions, and she fights with blades and magic.
+story: Rita Wayword was a stuntwoman turned into a cybernetic sorceress by the interdimensional showrunner Mojo. She serves Mojo while hunting for a way back to her old life.
+
+[Cable]
+universe: Marvel
+bio: Nathan Summers is a soldier from the future with telepathic and telekinetic power. He carries heavy energy weapons and is famous in Marvel vs. Capcom 2 for his air-to-ground Hyper Viper Beam.
+story: The son of Cyclops, infected with a techno-organic virus as a baby and sent into the future to be saved, Nathan grew up as a hardened soldier. He returned to the past to stop the tyrant Apocalypse.
+
+[Marrow]
+universe: Marvel
+bio: Sarah grows bones outside her body at will and can rip them out to use as knives, clubs and missiles.
+story: Marrow grew up among the Morlocks in the tunnels beneath New York, and the massacre of her people made her angry and distrustful. She was briefly a terrorist and later joined the X-Men.
+
+[Hulk]
+universe: Marvel
+bio: When Dr. Bruce Banner becomes enraged he turns into the Hulk, a gamma-powered giant whose strength keeps growing the angrier he gets. In the games he is all about crushing punches and earth-shaking slams.
+story: Bruce Banner was caught in the blast of his own gamma bomb test, and since then he has struggled to live with the monster inside him. The Hulk wants only to be left alone, but the world rarely obliges.
+
+[Orange Hulk]
+universe: Marvel
+bio: A secret palette version of the Hulk in Marvel vs. Capcom. He plays like the original but carries a different look.
+story: A hidden variant unlocked from the character select screen. Like Capcom's other hidden versions, he rewards players who learn the secret input.
+
+[Spider-Man]
+universe: Marvel
+bio: Peter Parker gained spider-like strength, agility and a danger-sensing "spider-sense" after a radioactive spider bite. He also invented his own web-shooters. In the games he is fast, acrobatic and full of web tricks.
+story: After the death of his Uncle Ben, Peter learned that with great power comes great responsibility. He protects New York while trying to keep his personal life in one piece.
+
+[Armored Spider-Man]
+universe: Marvel
+bio: Spider-Man in a protective suit of armor, a hidden variant in Marvel Super Heroes vs. Street Fighter. He plays like Spider-Man but can withstand more punishment.
+story: The look comes from comics in which Peter Parker built armor to survive overwhelming threats. It is a hidden variant unlocked on the character select screen.
+
+[Venom]
+universe: Marvel
+bio: Eddie Brock is bonded to an alien symbiote that copies Spider-Man's powers and adds a shape-changing body, fangs and tendrils.
+story: The symbiote was once Spider-Man's black costume until Peter rejected it. It then bonded with Eddie Brock, a reporter who blamed Spider-Man for ruining his career, and together they became Spider-Man's twisted mirror image.
+
+[Hyper Venom]
+universe: Marvel
+bio: A hidden, faster version of Venom from Marvel vs. Capcom with its own color scheme.
+story: Hyper Venom is one of the secret variants unlocked from the character select screen in Marvel vs. Capcom.
+
+[Iron Man]
+universe: Marvel
+bio: Tony Stark is a genius industrialist who fights in powered armor that gives him flight, enormous strength and an arsenal of repulsor rays and the chest-mounted Proton Cannon.
+story: Captured and wounded overseas, Tony built his first armor to escape. He became Iron Man to make up for the weapons his company had sold, and he is a founding Avenger.
+
+[War Machine]
+universe: Marvel
+bio: James "Rhodey" Rhodes pilots a heavily armed version of the Iron Man armor fitted with shoulder cannons, missiles and an unloadable arsenal.
+story: Tony Stark's best friend and a U.S. Air Force officer, Rhodey has worn the War Machine armor to fight where Iron Man cannot or will not.
+
+[Gold War Machine]
+universe: Marvel
+bio: A hidden golden-armored War Machine from Marvel vs. Capcom. He plays a little differently from the standard version.
+story: The gold armor is a nod to Iron Man's original golden suit. It is unlocked with a secret input on the character select screen.
+
+[Captain America]
+universe: Marvel
+bio: Steve Rogers is the peak of human potential, thanks to the Super-Soldier Serum. He fights with acrobatic martial arts and his famous indestructible shield, which he can throw and catch.
+story: Steve was a frail young man from Brooklyn who volunteered for a secret wartime experiment. After being frozen in ice for decades he awoke in the modern world and became the moral heart of the Avengers.
+
+[U.S. Agent]
+universe: Marvel
+bio: John Walker is a super-strong soldier who carries a shield of his own. In Marvel Super Heroes vs. Street Fighter he is a hidden variant of Captain America with a tougher, harder-hitting style.
+story: Walker was given superhuman strength and later replaced Steve Rogers as Captain America when the government took the role away from Steve. He is more ruthless than Rogers, and he later took the name U.S. Agent.
+
+[Shuma-Gorath]
+universe: Marvel
+bio: An ancient, tentacled god from another dimension with a single giant eye. It attacks with mystic blasts, eye beams and tentacle grabs.
+story: Shuma-Gorath ruled Earth in prehistoric times before being banished by sorcerers. It has spent eons trying to return, and it is a sworn enemy of Earth's Sorcerer Supreme, Doctor Strange.
+
+[Blackheart]
+universe: Marvel
+bio: The demon son of Mephisto, Blackheart can summon demons, rain fire and bend dark magic to his will. He fights from range with demon swarms and hellish storms.
+story: Created from the concentrated evil of a small town, Blackheart wants to surpass his father and win the human soul for himself. Spider-Man, Daredevil and Ghost Rider have all stood in his way.
+
+[Mephisto]
+universe: Marvel
+bio: The ruler of a hell-dimension who trades in souls. In Marvel Super Heroes vs. Street Fighter he is a hidden variant of his son Blackheart.
+story: Mephisto has bargained for the souls of many heroes and villains. He is one of the most powerful demonic beings in the Marvel universe and the father of Blackheart.
+
+[Doctor Doom]
+universe: Marvel
+bio: Victor von Doom is a genius scientist and powerful sorcerer encased in armor. He fires energy blasts, flies and summons barriers and photon shots.
+story: The ruler of the small European nation of Latveria, Doom blames Reed Richards of the Fantastic Four for the accident that scarred his face. In Marvel Super Heroes he is the mid-boss guarding the path to Thanos.
+
+[Thanos]
+universe: Marvel
+bio: The Mad Titan, an Eternal-Deviant of nearly limitless strength and cosmic power. He uses the Infinity Gems to crush foes with bubbles of energy and terrible blasts.
+story: Obsessed with Death itself, Thanos gathered the six Infinity Gems for the Infinity Gauntlet, which gives its wearer power over all of reality. Marvel Super Heroes is based on this "Infinity Gauntlet" story, and Thanos is its final boss.
+
+[Apocalypse]
+universe: Marvel
+bio: En Sabah Nur is one of the first mutants. He can reshape his body at will, growing giant fists, blades, drills and cannons, and he lives by the law of survival of the fittest.
+story: Born in ancient Egypt, Apocalypse has lived thousands of years believing only the strong deserve to live. He is a giant final boss in X-Men vs. Street Fighter and the next-to-last opponent in Marvel Super Heroes vs. Street Fighter.
+
+[Onslaught]
+universe: Marvel
+bio: A colossal psychic entity. In battle he hurls energy, controls the battlefield with telekinesis, and transforms into a gigantic second form for the final showdown.
+story: Onslaught was born when Professor Xavier shut down Magneto's mind and the darkest parts of both men fused into a new being. In Marvel vs. Capcom he is the final boss whom heroes from both worlds unite to stop.
+
+[Ryu]
+universe: Capcom
+bio: A wandering Japanese martial artist trained in Ansatsuken karate. His Hadoken fireball, Shoryuken dragon punch and Tatsumaki hurricane kick are among the most famous special moves in gaming.
+story: Ryu cares nothing for fame. He lives to test himself against strong opponents and to find the true meaning of the fight. A dark force, the Satsui no Hado, lies inside him and constantly threatens to take hold.
+
+[Evil Ryu]
+universe: Capcom
+bio: Ryu after giving in to the Satsui no Hado, the murderous intent also mastered by Akuma. He is faster and more aggressive, and he can use deadly techniques such as the Shun Goku Satsu.
+story: Evil Ryu is what Ryu could become if his pursuit of strength turns into a pursuit of victory at any cost. In Street Fighter EX Plus he is a hidden, playable version of that possibility.
+
+[Ken]
+universe: Capcom
+bio: Ken Masters is Ryu's best friend and rival, trained by the same master. His Shoryuken burns with fire and his style is flashier and more aggressive than Ryu's.
+story: The son of a wealthy American family, Ken is a champion fighter with a loving family and a playful ego. He and Ryu push each other to grow stronger with every fight.
+
+[Akuma]
+universe: Capcom
+bio: Akuma (Gouki in Japan) has completely mastered the Satsui no Hado. He throws air fireballs, teleports, and can finish an opponent with the Raging Demon, the Shun Goku Satsu.
+story: The brother of Ryu and Ken's master, Gouken, Akuma chose the path of pure killing power. He seeks only worthy opponents and a fight to the death. In the early Marvel games he appears as a secret challenger.
+
+[Cyber-Akuma]
+universe: Capcom
+bio: A cybernetic copy of Akuma (Mech-Gouki in Japan) built into a war machine with rocket fists, beams and missiles. He is the final boss of Marvel Super Heroes vs. Street Fighter.
+story: Cyber-Akuma is the final boss of Marvel Super Heroes vs. Street Fighter, faced after Apocalypse. He combines Akuma's demonic techniques with the weapons of a war machine.
+
+[Chun-Li]
+universe: Capcom
+bio: An Interpol officer and the strongest woman in the world of Street Fighter. She is famous for her lightning-fast kicks, the Spinning Bird Kick and the Kikoken energy ball.
+story: Chun-Li entered the fighting world to find the truth about her father, a police officer who disappeared while investigating the criminal syndicate Shadaloo. She has dedicated her life to bringing M. Bison to justice.
+
+[Shadow Lady]
+universe: Capcom
+bio: A hidden, cybernetically altered Chun-Li in Marvel vs. Capcom. She fights with built-in weapons and lasers in place of some of Chun-Li's techniques.
+story: Shadow Lady imagines Chun-Li turned into a weapon by her enemies. In Marvel vs. Capcom she is one of the secret characters unlocked with a special input.
+
+[Guile]
+universe: Capcom
+bio: A U.S. Air Force officer famous for his flat-top haircut, the Sonic Boom and the somersaulting Flash Kick. His charge-based style rewards patience and defense.
+story: Guile fights to avenge his best friend Charlie, who disappeared while investigating M. Bison's Shadaloo organization.
+
+[Charlie]
+universe: Capcom
+bio: Charlie Nash is a U.S. Air Force soldier whose military fighting style shares the Sonic Boom and Somersault Kick with his student Guile.
+story: Charlie infiltrated Shadaloo to bring down M. Bison and was lost in the attempt, setting Guile on his quest for revenge. He appears in the versus series from X-Men vs. Street Fighter onward.
+
+[Shadow Charlie]
+universe: Capcom
+bio: A hidden, darker version of Charlie in Marvel Super Heroes vs. Street Fighter. He is shown under Shadaloo's control and fights with a modified move set.
+story: Known in Japan simply as "Shadow," this version imagines Charlie brainwashed by Shadaloo after his capture. He is unlocked from the character select screen.
+
+[Zangief]
+universe: Capcom
+bio: The Red Cyclone, a giant Russian wrestler who trains by fighting bears. His Spinning Piledriver and Double Lariat are deadly at close range.
+story: Zangief fights for the glory of his motherland and a love of wrestling. He is the series' original grappler and a symbol of strength and good humor.
+
+[Mech-Zangief]
+universe: Capcom
+bio: A hidden robotic Zangief in Marvel Super Heroes vs. Street Fighter. His metal body shrugs off hits, but he cannot block, and he breathes fire like a machine.
+story: Mech-Zangief is one of the six secret fighters in Marvel Super Heroes vs. Street Fighter, unlocked from the character select screen.
+
+[Dhalsim]
+universe: Capcom
+bio: A yoga master from India who can stretch his arms and legs across the screen, breathe fire and teleport.
+story: A peaceful man and devoted father, Dhalsim enters tournaments to raise money for his poor village, using his fighting as a form of spiritual discipline.
+
+[M. Bison]
+universe: Capcom
+bio: The ruthless dictator of the criminal empire Shadaloo, who draws on the evil Psycho Power. He fights with flying Psycho Crushers, teleports and devastating knee attacks.
+story: Known as Vega in Japan, Bison wants to conquer the world, and countless fighters, including Chun-Li and Guile, have been harmed by his ambitions. He survives defeat after defeat through his Psycho Power.
+
+[Sagat]
+universe: Capcom
+bio: The towering Muay Thai emperor of Thailand. He throws Tiger Shots and drives through opponents with the Tiger Uppercut.
+story: Sagat was champion of the first Street Fighter tournament until Ryu beat him with a Shoryuken that scarred his chest. Since then he has wavered between revenge and an honorable rivalry.
+
+[Vega]
+universe: Capcom
+bio: A narcissistic Spanish matador and ninjutsu fighter who wears a mask and a steel claw. He uses speed, wall jumps and acrobatics.
+story: Known as Balrog in Japan, Vega is a vain killer who believes only the beautiful deserve to live, and he works as an assassin for Shadaloo.
+
+[Blanka]
+universe: Capcom
+bio: A green-skinned beast man from the Brazilian jungle who generates electricity from his body and rolls into opponents like a cannonball.
+story: Blanka is Jimmy, a boy who survived a plane crash in the Amazon and grew up in the wild. Despite his frightening appearance he is kind-hearted and still longs for his mother.
+
+[Cammy]
+universe: Capcom
+bio: A swift fighter who specializes in close range kicks and throws, such as the Spiral Arrow and Cannon Spike.
+story: Cammy was created by M. Bison as one of his "Dolls," a group of brainwashed elite soldiers. She escaped his control and later became an agent of Britain's Delta Red special forces.
+
+[Dan]
+universe: Capcom
+bio: Dan Hibiki is the master of Saikyo-ryu, a deliberately weak style full of taunts and posing. Every move is a joke at Ryu and Ken's expense, but he means every bit of it.
+story: Dan's father was killed by Sagat. Dan was expelled by Gouken for his violent desire for revenge and invented his own fighting style. Capcom created him partly as a parody of rival fighting games.
+
+[Sakura]
+universe: Capcom
+bio: Sakura Kasugano is a Japanese high-school girl who taught herself Ryu's techniques. Her versions of the Hadoken and Shoryuken are a bit wild but full of spirit.
+story: After seeing Ryu fight on the street, Sakura became determined to meet him and become strong. Her cheerful energy has made her a fan favorite.
+
+[Dark Sakura]
+universe: Capcom
+bio: A hidden version of Sakura in Marvel Super Heroes vs. Street Fighter who uses Akuma-like techniques, including a version of the Raging Demon.
+story: Dark Sakura imagines Sakura falling to the Satsui no Hado as she trains to be stronger. It was a secret unlock in the arcade game.
+
+[Captain Commando]
+universe: Capcom
+bio: The futuristic hero of Capcom's 1991 brawler of the same name. He fights with an electric glove and fire, and he calls in his Commando Team (Mack the Knife, Ginzu the Ninja and Baby Head) for support.
+story: Captain Commando is a protector of Metro City in the future. His name was originally a promotional mascot name used on Capcom's NES-era releases ("CAPtain COMmando") before he got his own game.
+
+[Mega Man]
+universe: Capcom
+bio: A robot boy built by Dr. Light, whose Mega Buster arm cannon fires charged shots. In Marvel vs. Capcom he can switch to weapons taken from defeated Robot Masters and call his dog Rush.
+story: Built as a lab assistant, Mega Man asked to be turned into a fighting robot to stop Dr. Wily's evil plans. He is one of Capcom's most famous mascots.
+
+[Roll]
+universe: Capcom
+bio: Mega Man's sister, a household helper robot. She fights with a broom, flowers and a smaller version of the buster.
+story: Built by Dr. Light to help around the lab, Roll is a sweet and cheerful companion. Marvel vs. Capcom made her playable for the first time as a hidden character, and Marvel vs. Capcom 2 kept her.
+
+[Morrigan]
+universe: Capcom
+bio: Morrigan Aensland is a powerful succubus from Capcom's Darkstalkers series. She fights with wings that change into blades and drills, and she fires Soul Fist energy balls.
+story: Morrigan is the heir to the Aensland family, rulers of the Makai demon world. She is bored with her responsibilities and visits the human world in search of excitement.
+
+[Lilith-Mode Morrigan]
+universe: Capcom
+bio: A hidden version of Morrigan in Marvel vs. Capcom with the look and partial move set of Lilith, Morrigan's "sister" from Darkstalkers.
+story: In Darkstalkers, Lilith is a part of Morrigan's soul that was separated at birth. Marvel vs. Capcom lets players fight with her style through a secret input.
+
+[Strider Hiryu]
+universe: Capcom
+bio: A futuristic ninja who carries a plasma sword called Cypher. He climbs walls, teleports, and calls robot animals and drones as support.
+story: Hiryu is the youngest elite member of the Striders, a secret organization of agents. In the 1989 arcade game Strider he fought the tyrant Grandmaster Meio.
+
+[Jin Saotome]
+universe: Capcom
+bio: A hot-blooded pilot from Capcom's Cyberbots who fights with his own body as fiercely as with his giant robot, the Blodia, which he calls into battle.
+story: Jin is a mecha pilot with an exaggerated, intense personality. His bright burning attacks and calls for "Saotome Dynamite" made him a memorable addition to Marvel vs. Capcom.
+
+[Felicia]
+universe: Capcom
+bio: A cheerful catwoman from Darkstalkers who fights with claws, rolling attacks and the help of her friends.
+story: Felicia was raised in a church and dreams of becoming a singer and entertainer. She fights for fun and for the dignity of other Darkstalkers.
+
+[Anakaris]
+universe: Capcom
+bio: An ancient Egyptian pharaoh mummy from Darkstalkers. He can turn opponents into small creatures, summon coffins and use bandages as weapons.
+story: Anakaris was buried with a spell that would let him rise again thousands of years later. Back in the modern world, he searches for the rulers of the Makai to restore his lost kingdom.
+
+[B. B. Hood]
+universe: Capcom
+bio: A Darkstalker hunter who looks like Little Red Riding Hood but carries machine guns, mines and a basket full of explosives.
+story: Known as Bulleta in Japan, she hunts Darkstalkers for money and wants to kill them for the reward. She is far crueler than her innocent appearance suggests.
+
+[Jill Valentine]
+universe: Capcom
+bio: A S.T.A.R.S. operative from Resident Evil who fights with a gun, a knife, grenades and the Resident Evil zombies she can summon in battle.
+story: Jill survived the horror of the Spencer Mansion in the original Resident Evil and the destruction of Raccoon City in Resident Evil 3. She continues to fight the Umbrella Corporation's bioweapons.
+
+[Tron Bonne]
+universe: Capcom
+bio: A young pirate and robotics genius from Mega Man Legends. She fights in her mech, the Gustaff, with an army of little Servbots helping out.
+story: Tron is the only daughter of the Bonne family of sky pirates. She is clever, proud and short-tempered, and she has a crush on Mega Man Volnutt.
+
+[Servbot]
+universe: Capcom
+bio: One of Tron Bonne's 41 small robot helpers. He fights with toy-like tricks and calls in other Servbots for help.
+story: Built and named by Tron, the Servbots are loyal, simple-minded and endlessly hardworking. One of them became a playable fighter in Marvel vs. Capcom 2.
+
+[Anita]
+universe: Capcom
+bio: A quiet, expressionless little girl from Capcom's Darkstalkers series who carries a doll and wields startling psychic power. She is a hidden playable character in the Japanese arcade version of Marvel Super Heroes.
+story: Anita travels with the Darkhunter Donovan Baine, who protects her while she searches for the meaning of her own strange powers. Her secret appearance in Marvel Super Heroes was one of Capcom's earliest Darkstalkers cameos in the Marvel games.
+
+[Norimaro]
+universe: Capcom
+bio: A nervous, bespectacled everyman who fights with schoolyard tricks, a camera flash and pure panic. He is a comic-relief fighter who only appears in the Japanese release of Marvel Super Heroes vs. Street Fighter.
+story: Norimaro was created by the Japanese comedian Noritake Kinashi for a TV comedy sketch rather than by Marvel or Capcom. Licensing kept him out of every international release until the 2024 Marvel vs. Capcom Fighting Collection restored him.
+
+[Amingo]
+universe: Capcom
+bio: A cheerful walking cactus who sprouts thorns, plants seeds that grow into fighting creatures, and turns into vines and spikes.
+story: Amingo is one of the new characters Capcom created for Marvel vs. Capcom 2, a strange, friendly creature who fights by growing parts of himself into plants.
+
+[Ruby Heart]
+universe: Capcom
+bio: A French-speaking air pirate captain who fights with an anchor, a scarf, spiritual flames and the help of her flying ship.
+story: Ruby Heart was created for Marvel vs. Capcom 2, and was originally conceived for a Darkstalkers game. Marvel vs. Capcom 2 has no story mode, so her character comes through in her pirate style and her flying ship, which joins her in battle.
+
+[SonSon]
+universe: Capcom
+bio: An energetic monkey girl who fights with a telescoping bō staff and fireballs, and can turn into a giant ape.
+story: SonSon is the granddaughter of the hero of Capcom's 1984 arcade game SonSon, which was itself inspired by the Monkey King of Journey to the West. Marvel vs. Capcom 2 introduced her as a new generation of the legend.
+
+[Hayato]
+universe: Capcom
+bio: Hayato Kanzaki fights with a plasma sword, a glowing blade that he uses in lightning-fast slashes and powerful energy waves.
+story: Hayato is the hero of Capcom's 3D fighting game Star Gladiator (1996), a member of a team of space soldiers called the Gladiators. He brought his Plasma Sword into Marvel vs. Capcom 2.
+
+[Hokuto]
+universe: Arika
+bio: The heir of the Mizugami family, trained in an ancient form of kobujutsu that turns an opponent's strength against them with throws and counters.
+story: Hokuto set out to find her older half-brother Kairi. She believed she was simply bringing him home, but her family had secretly given her a mission to kill him, sealed inside her by a "Seal of Blood."
+
+[Bloody Hokuto]
+universe: Arika
+bio: Hokuto after the Seal of Blood breaks. She is crueler, faster and more violent, and her moves change to deadly strikes.
+story: When the seal placed in her by her family was released, the gentle Hokuto became a ruthless killing machine. This version is a secret character in Street Fighter EX Plus.
+
+[Kairi]
+universe: Arika
+bio: A brooding karate fighter whose style draws on the same murderous power as Akuma's. He fires Moushou Kyaku kicks and dark energy waves.
+story: Kairi lost his memory and wanders the world fighting strong opponents to find out who he is. He is Hokuto's older half-brother. In Street Fighter EX2 he learns that he killed their father.
+
+[Skullomania]
+universe: Arika
+bio: Saburo Nishikoyama, a Tokyo office worker in a skeleton costume who fights with the moves of a children's TV superhero.
+story: Saburo took a job dressing up as the hero "Skullomania" for a department store promotion, and became a real hero to protect the children who believed in him. He has become one of Arika's most beloved characters.
+
+[Darun Mister]
+universe: Arika
+bio: A huge Indian wrestling champion who wields spectacular power slams, giant swings and back-breakers.
+story: Darun is the bodyguard of Pullum Purna, the daughter of a wealthy inventor. He serves her loyally while she hunts for her missing father.
+
+[Pullum Purna]
+universe: Arika
+bio: A young woman from a wealthy family who fights with graceful kicks and flowing, dance-like movement.
+story: Pullum is the daughter of the inventor Balba Purna. When she overheard the name "Shadaloo" in connection with her father's disappearance, she set out with her bodyguard Darun to find him.
+
+[Doctrine Dark]
+universe: Arika
+bio: A masked German-American mercenary who fights with knives, wires and explosives, and can cover the battlefield with traps.
+story: Doctrine Dark, real name Holger, served under Guile in the military. He blames Guile for not training him well enough and has sworn revenge.
+
+[Cracker Jack]
+universe: Arika
+bio: A former Las Vegas nightclub bouncer who fights with a baseball bat and heavy boxing punches.
+story: Cracker Jack is the bodyguard of the young heiress Blair Dame. In Street Fighter EX2 his own sister is kidnapped, and he fights to rescue her.
+
+[Allen Snider]
+universe: Arika
+bio: An American karate fighter whose fireballs and dragon kicks are clearly based on Ryu and Ken's style.
+story: Allen lost to Ken Masters in his rookie days and has trained ever since to prove himself the best fighter in the world. He is one of the original Street Fighter EX characters.
+
+[Blair Dame]
+universe: Arika
+bio: A young woman from a wealthy European family who has trained in martial arts and fights with acrobatic kicks and throws.
+story: Blair wanted to experience the real fighting world. She travels with her bodyguard Cracker Jack, who keeps her out of the worst trouble she finds.
+
+[Garuda]
+universe: Arika
+bio: A demonic warrior in samurai-like armor with blades growing from his body. He fights with terrifying speed and dark energy.
+story: Garuda is the dark final boss of Street Fighter EX, playable in EX Plus, and a boss again in EX2. His designers wanted a menacing warrior with a sword on his back.
+
+[Cycloid Beta]
+universe: Arika
+bio: A wireframe cyborg that copies the special moves of other fighters using motion commands.
+story: Cycloid Beta started as a test model built from motion-capture data during the game's development. Arika turned it into a secret fighter in Street Fighter EX Plus.
+
+[Cycloid Gamma]
+universe: Arika
+bio: A second wireframe cyborg that copies other fighters' moves using charge-based commands.
+story: Like Beta, Gamma came out of Arika's motion-capture test models. The Japanese home version describes it as a combat weapon built by Pullum's father, Balba Purna.
+
+[Sharon]
+universe: Arika
+bio: A redheaded special agent who fights with military close-quarters combat techniques, firearms and knives.
+story: Sharon is one of the new fighters introduced in Street Fighter EX2, a professional agent with a cool, businesslike style.
+
+[Nanase]
+universe: Arika
+bio: The youngest member of the Mizugami family, who fights with a long staff and the family's martial arts.
+story: Nanase is Hokuto and Kairi's younger sister. She sets out to find her siblings and bring the family back together. She was hidden in EX2 and became a regular fighter in EX2 Plus.
+
+[Rosso]
+universe: Arika
+bio: Vulcano Rosso is an Italian martial artist with a hard-hitting, aggressive fighting style.
+story: Vulcano Rosso is one of the three newcomers added in the Street Fighter EX2 Plus update, alongside Sagat and Area.
+
+[Area]
+universe: Arika
+bio: A young girl with a giant mechanical right arm that she uses for powerful punches and gadgets.
+story: Area is one of the newcomers added in Street Fighter EX2 Plus. Her oversized mechanical arm makes her one of the most unusual fighters in the EX series.
+
+[Shadowgeist]
+universe: Arika
+bio: A masked, darkly costumed vigilante whose style resembles Skullomania's. He fights with acrobatic strikes and theatrical poses.
+story: Shadowgeist is a mysterious avenger who appears in Street Fighter EX2. He is a hidden fighter selected with a secret command.

@@ -5,7 +5,7 @@ using namespace mcl;
 using K=MainMenuModel::Kind;
 int main(){
  MainMenuModel m;
- assert(m.items().size()==5&&m.items()[2]==MenuItem::Achievements&&m.selected()==MenuItem::Arcade);
+ assert(m.items().size()==7&&m.items()[3]==MenuItem::Gallery&&m.items()[4]==MenuItem::Jukebox&&m.items()[2]==MenuItem::Achievements&&m.selected()==MenuItem::Arcade);
  // Navigation wraps.
  assert(m.press(Pad::Up).kind==K::Moved&&m.selected()==MenuItem::Exit);
  assert(m.press(Pad::Down).kind==K::Moved&&m.selected()==MenuItem::Arcade);
@@ -21,7 +21,7 @@ int main(){
   const MenuItem before=e.selected();
   auto u=e.press(Pad::Start);assert(u.kind==K::CheatExUnlocked);
   assert(e.cheatExUnlocked()&&!e.cheatsUnlocked());
-  assert(e.items().size()==6&&e.items()[2]==MenuItem::CheatEx);
+  assert(e.items().size()==8&&e.items()[2]==MenuItem::CheatEx);
   assert(e.selected()==before); // cursor stays on the same item
   // Entering it again is harmless and swallowed.
   e.press(Pad::Down);e.press(Pad::Right);e.press(Pad::Down);e.press(Pad::Left);e.press(Pad::Cross);e.press(Pad::Circle);
@@ -37,7 +37,7 @@ int main(){
   for(Pad p:{Pad::Down,Pad::Right,Pad::Down,Pad::Left,Pad::Cross,Pad::Circle})c.press(p);
   assert(c.press(Pad::Start).kind==K::CheatExUnlocked);
   const auto v=c.items();
-  assert(v.size()==7&&v[2]==MenuItem::Cheats&&v[3]==MenuItem::CheatEx&&v[4]==MenuItem::Achievements&&v[6]==MenuItem::Exit);
+  assert(v.size()==9&&v[2]==MenuItem::Cheats&&v[3]==MenuItem::CheatEx&&v[4]==MenuItem::Achievements&&v[8]==MenuItem::Exit);
  }
  // Title screen: arrows do nothing, X/Enter start the menu, codes still work and
  // their X/C/Enter presses do not start the menu mid-code.
@@ -49,7 +49,7 @@ int main(){
   assert(t.pressOnTitle(Pad::Cross).kind==K::None);
   assert(t.pressOnTitle(Pad::Circle).kind==K::None);
   assert(t.pressOnTitle(Pad::Start).kind==K::CheatExUnlocked);
-  assert(t.cheatExUnlocked()&&t.items().size()==6);
+  assert(t.cheatExUnlocked()&&t.items().size()==8);
   assert(t.pressOnTitle(Pad::Start).kind==K::Activate);
   assert(t.pressOnTitle(Pad::Cross).kind==K::Activate);
   MainMenuModel u;

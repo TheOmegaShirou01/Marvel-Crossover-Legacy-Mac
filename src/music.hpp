@@ -42,4 +42,16 @@ private:
  std::mt19937 rng_;
  void refill(const std::string& game);
 };
+
+// ---------- Arcade Jukebox ----------
+// All nine soundtracks, one page per Music\<game> folder (SF EX3 is jukebox-only).
+const std::vector<std::string>& jukeboxGames();
+// Every piece from that game's folder, in disc order (path, then start time).
+std::vector<Track> jukeboxTracks(const std::vector<Track>& all,const std::string& game);
+// Optional Music\track_titles.tsv: "<path relative to Music>\t<title>" per line, so the
+// player can name raw rips. Lines starting with # are comments.
+std::map<std::string,std::string> loadTrackTitles(const std::filesystem::path& file);
+// Jukebox label: the user's title if given, else the song name, else "Track NN" (number
+// = position in that game's list) for rips that carry no title.
+std::string jukeboxTitle(const Track& t,int number,const std::map<std::string,std::string>& titles);
 }

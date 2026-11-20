@@ -60,5 +60,19 @@ int main(){
  t.name="adx_selc";assert(mcl::trackCaption(t)=="Character Select");
  assert(mcl::loadMusicCatalog(dir/"missing.tsv").empty());
  fs::remove_all(dir);
+ {// Arcade Jukebox: per-folder pages in disc order, numbered raw rips, user titles.
+  std::vector<mcl::Track> lib={{"xmcota","xmcota/SLUS-00044_03.mp3","SLUS-00044_03",0,90000},
+   {"xmcota","xmcota/SLUS-00044_02.mp3","SLUS-00044_02",0,90000},
+   {"sfex3","sfex3/Street Fighter EX3 - Ace.mp3","Street Fighter EX3 - Ace",0,90000},
+   {"msh","msh/x.mp3","x",0,9000}};
+  assert(mcl::jukeboxGames().size()==9&&mcl::jukeboxGames().back()=="sfex3");
+  const auto xm=mcl::jukeboxTracks(lib,"xmcota");
+  assert(xm.size()==2&&xm[0].name=="SLUS-00044_02");
+  std::map<std::string,std::string> none;
+  assert(mcl::jukeboxTitle(xm[0],1,none)=="Track 01");
+  assert(mcl::jukeboxTitle(mcl::jukeboxTracks(lib,"sfex3")[0],1,none)=="Ace");
+  const auto titles=std::map<std::string,std::string>{{"xmcota/SLUS-00044_03.mp3","Wolverine Stage"}};
+  assert(mcl::jukeboxTitle(xm[1],2,titles)=="Wolverine Stage");
+ }
  std::cout<<"PASS: catalog parsing, stinger filter, balanced no-repeat rotation, EX pool, captions\n";
 }

@@ -1,5 +1,6 @@
 #include "music.hpp"
 #include <algorithm>
+#include <cstdio>
 #include <cctype>
 #include <fstream>
 #include <sstream>
@@ -51,6 +52,35 @@ std::string trackCaption(const Track& t){
   return "Original Soundtrack"+(part!=std::string::npos?t.name.substr(part):std::string());
  }
  return n;
+}
+const std::vector<std::string>& jukeboxGames(){
+ static const std::vector<std::string> g{"xmcota","msh","xmvsf","mshvsf","mvsc","mvsc2","sfexp","sfex2p","sfex3"};return g;
+}
+std::vector<Track> jukeboxTracks(const std::vector<Track>& all,const std::string& game){
+ std::vector<Track> v;
+ for(const auto& t:all)if(t.game==game)v.push_back(t);
+ std::stable_sort(v.begin(),v.end(),[](const Track& a,const Track& b){return a.path!=b.path?a.path<b.path:a.startMs<b.startMs;});
+ return v;
+}
+std::map<std::string,std::string> loadTrackTitles(const std::filesystem::path& file){
+ std::map<std::string,std::string> m;
+ std::ifstream in(file);std::string line;
+ while(std::getline(in,line)){
+  if(!line.empty()&&line.back()=='\r')line.pop_back();
+  if(line.empty()||line[0]=='#')continue;
+  const auto tab=line.find('\t');
+  if(tab==std::string::npos||tab==0||tab+1>=line.size())continue;
+  m[line.substr(0,tab)]=line.substr(tab+1);
+ }
+ return m;
+}
+std::string jukeboxTitle(const Track& t,int number,const std::map<std::string,std::string>& titles){
+ const auto it=titles.find(t.path);
+ if(it!=titles.end())return it->second;
+ const std::string cap=trackCaption(t);
+ if(cap.rfind("Original Soundtrack",0)!=0)return cap;
+ char b[16];std::snprintf(b,sizeof b,"Track %02d",number);
+ return b;
 }
 MusicRotation::MusicRotation(const std::vector<Track>& all,const std::vector<std::string>& games,std::uint32_t seed):rng_(seed){
  for(const auto& t:all)

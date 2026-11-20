@@ -35,6 +35,8 @@ public:
  // The master cheat code was entered in the front end (The Secret Code achievement).
  void awardMasterCode();
  const Collection& collection() const {return model_;}
+ // True once, right after the first arcade clear opens the Gallery.
+ bool takeGalleryUnlock(){return model_.consumeGalleryUnlockNotice();}
  // Achievements unlocked since the last call (ids), for the front end's popup.
  std::vector<std::string> takeAchievementNotices();
  // OPTIONS > GAMES START IN: window instead of fullscreen.

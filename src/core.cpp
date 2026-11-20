@@ -77,9 +77,11 @@ AchievementProgress Collection::progress(const std::string& id) const {auto it=p
 bool Collection::recordEvent(const std::string& game,const std::string& event,int amount){
  if(amount<1||amount>1000000)return false;
  if(std::none_of(games_.begin(),games_.end(),[&](auto const&g){return g.id==game;}))return false;
+ const bool wasLocked=!galleryUnlocked();
  auto &s=stats_[game];
  if(event=="win")s.wins+=amount;else if(event=="loss")s.losses+=amount;else if(event=="coin")s.credits+=amount;else if(event=="launch")s.launches+=amount;else if(event=="clear")s.clears+=amount;else if(event=="play_seconds")s.seconds+=amount;else return false;
- bool firstClear=(event=="clear" && galleryUnlocked() && (s.clears==amount));
+ // The unlock notice fires once: on the clear that first opens the Gallery.
+ bool firstClear=(event=="clear" && galleryUnlocked() && wasLocked);
  bool ok=save(); if(ok && firstClear)galleryNotice_=true; return ok;
 }
 bool Collection::unlockAchievement(const std::string& id){
@@ -199,6 +201,10 @@ bool Collection::galleryUnlocked() const {
  for(const auto& g:games_){auto it=stats_.find(g.id); if(it!=stats_.end() && it->second.clears>0)return true;}
  return false;
 }
+const CharacterProfile* Collection::profile(const std::string& name) const{
+ for(const auto& p:profiles_)if(p.name==name)return &p;
+ return nullptr;
+}
 bool Collection::consumeGalleryUnlockNotice(){bool n=galleryNotice_;galleryNotice_=false;return n;}
 
 // MCLGAL01: 8-byte marker + little-endian record count; each record u16 type,
@@ -210,29 +216,34 @@ bool Collection::loadGalleryPackage(const fs::path& path){
  auto end=in.tellg();if(end<std::streampos(44) || end>std::streampos(16*1024*1024))return false;
  std::vector<unsigned char> v(size_t(end),0);in.seekg(0);
  if(!in.read(reinterpret_cast<char*>(v.data()),std::streamsize(v.size())))return false;
- if(std::string(reinterpret_cast<const char*>(v.data()),8)!="MCLGAL01")return false;
+ const std::string magic(reinterpret_cast<const char*>(v.data()),8);
+ if(magic!="MCLGAL01"&&magic!="MCLGAL02")return false;
+ const bool v2=magic=="MCLGAL02"; // v2 adds type-3 encyclopedia records
  size_t pos=8;const size_t limit=v.size()-32;
  auto u16=[&](uint16_t& n){if(pos+2>limit)return false; n=uint16_t(v[pos])|(uint16_t(v[pos+1])<<8);pos+=2;return true;};
  auto u32=[&](uint32_t& n){if(pos+4>limit)return false;n=uint32_t(v[pos])|(uint32_t(v[pos+1])<<8)|(uint32_t(v[pos+2])<<16)|(uint32_t(v[pos+3])<<24);pos+=4;return true;};
  auto field=[&](std::string& x){uint32_t n=0;if(!u32(n)||n>256*1024||n>limit-pos)return false;x.assign(reinterpret_cast<const char*>(v.data()+pos),size_t(n));pos+=n;return true;};
  uint32_t count=0;if(!u32(count)||count>5000)return false;
- std::vector<GalleryGame> gd;std::vector<Character> cd;
+ std::vector<GalleryGame> gd;std::vector<Character> cd;std::vector<CharacterProfile> pd;
  for(uint32_t i=0;i<count;i++){
   uint16_t typ=0;uint32_t nf=0;if(!u16(typ)||!u32(nf))return false;
-  if((typ==1&&nf!=8)||(typ==2&&nf!=7))return false;
+  if((typ==1&&nf!=8)||(typ==2&&nf!=7)||(typ==3&&(!v2||nf!=4)))return false;
   if(typ==1){std::string id,title,year,hw,dev,hist,mechanics,sources;
    if(!field(id)||!field(title)||!field(year)||!field(hw)||!field(dev)||!field(hist)||!field(mechanics)||!field(sources)||!validId(id))return false;
    gd.push_back({id,title,year,hw,dev,hist,mechanics,sources});
   }else if(typ==2){std::string id,game,name,bio,role,sources,img;
    if(!field(id)||!field(game)||!field(name)||!field(bio)||!field(role)||!field(sources)||!field(img)||!validId(id)||!validId(game))return false;
    cd.push_back({game,name,bio,role,img});
+  }else if(typ==3){CharacterProfile p;
+   if(!field(p.name)||!field(p.universe)||!field(p.bio)||!field(p.story)||p.name.empty())return false;
+   pd.push_back(std::move(p));
   }else return false;
  }
  if(pos!=limit||gd.size()!=8||cd.empty())return false;
  // Do not accept data for unknown games.
  for(const auto& g:gd){if(std::none_of(games_.begin(),games_.end(),[&](const Game& x){return x.id==g.id;}))return false;}
  for(const auto& c:cd){if(std::none_of(gd.begin(),gd.end(),[&](const GalleryGame& x){return x.id==c.game;}))return false;}
- galleryGames_=std::move(gd); characters_=std::move(cd);return true;
+ galleryGames_=std::move(gd); characters_=std::move(cd); profiles_=std::move(pd);return true;
 }
 
 }

@@ -18,7 +18,7 @@ public:
  }
  void reset(){at_=0;}
 };
-enum class MenuItem { Arcade, Options, Cheats, CheatEx, Achievements, Credits, Exit };
+enum class MenuItem { Arcade, Options, Cheats, CheatEx, Achievements, Gallery, Jukebox, Credits, Exit };
 inline const wchar_t* menuLabel(MenuItem i){
  switch(i){
   case MenuItem::Arcade: return L"ARCADE";
@@ -26,12 +26,14 @@ inline const wchar_t* menuLabel(MenuItem i){
   case MenuItem::Cheats: return L"CHEATS";
   case MenuItem::CheatEx: return L"CHEAT EX";
   case MenuItem::Achievements: return L"ACHIEVEMENTS";
+  case MenuItem::Gallery: return L"GALLERY";
+  case MenuItem::Jukebox: return L"JUKEBOX";
   case MenuItem::Credits: return L"CREDITS";
   case MenuItem::Exit: return L"EXIT";
  }
  return L"";
 }
-// Main menu: ARCADE / OPTIONS / [CHEATS] / [CHEAT EX] / ACHIEVEMENTS / CREDITS / EXIT.
+// Main menu: ARCADE / OPTIONS / [CHEATS] / [CHEAT EX] / ACHIEVEMENTS / GALLERY / JUKEBOX / CREDITS / EXIT.
 // CHEATS and CHEAT EX appear only after their codes are entered on this menu.
 //   Master cheat code: Up Down Left Right Cross Circle Cross Circle Select Start
 //   CHEAT EX code:     Down Right Down Left Cross Circle Start
@@ -50,7 +52,7 @@ public:
   std::vector<MenuItem> v{MenuItem::Arcade,MenuItem::Options};
   if(cheats_)v.push_back(MenuItem::Cheats);
   if(cheatEx_)v.push_back(MenuItem::CheatEx);
-  v.push_back(MenuItem::Achievements);v.push_back(MenuItem::Credits);v.push_back(MenuItem::Exit);
+  v.push_back(MenuItem::Achievements);v.push_back(MenuItem::Gallery);v.push_back(MenuItem::Jukebox);v.push_back(MenuItem::Credits);v.push_back(MenuItem::Exit);
   return v;
  }
  int cursor() const {return cursor_;}

@@ -10,6 +10,8 @@ namespace fs = std::filesystem;
 struct Game { std::string id,title,year,hardware,description; };
 struct Achievement {std::string id,game,title,condition,tier;};
 struct Character {std::string game,name,notes,role,portraitAsset;};
+// Character Encyclopedia entry (gallery package v2): one per character name.
+struct CharacterProfile {std::string name,universe,bio,story;};
 struct GalleryGame {std::string id,title,year,hardware,developer,history,mechanics,sources;};
 struct Media {std::string game,category,title; fs::path path;};
 struct Stats {int wins=0, losses=0, credits=0, launches=0, clears=0; long long seconds=0;};
@@ -38,6 +40,8 @@ public:
     const std::vector<Game>& games() const { return games_; }
     const std::vector<Achievement>& achievements() const {return achievements_;}
     const std::vector<Character>& characters() const {return characters_;}
+    const std::vector<CharacterProfile>& characterProfiles() const {return profiles_;}
+    const CharacterProfile* profile(const std::string& name) const;
     const std::vector<GalleryGame>& galleryGames() const {return galleryGames_;}
     bool galleryUnlocked() const; // first VERIFIED arcade clear, from trusted emulator event only
     bool consumeGalleryUnlockNotice(); // one-shot display request for the host GUI
@@ -60,6 +64,7 @@ private:
     std::vector<Achievement> achievements_;
     std::vector<Character> characters_;
     std::vector<GalleryGame> galleryGames_;
+    std::vector<CharacterProfile> profiles_;
     bool galleryDataLoaded_=false;
     bool galleryNotice_=false;
     std::vector<std::string> achievementNotices_;

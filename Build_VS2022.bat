@@ -29,7 +29,15 @@ if exist "earth_background.mp4" (
  copy /Y "earth_background.mp4" "bin\earth_background.mp4" >nul
  if errorlevel 1 echo WARNING: Could not copy Earth background video.
 ) else (echo WARNING: Earth background missing; selection window will use fallback.)
+REM Gallery text package is rebuilt from data\gallery (tools\build_gallery.py).
+py -3 tools\build_gallery.py --src data\gallery --out Gallery\arcade_gallery.mclgallery
+if errorlevel 1 echo WARNING: Gallery package not rebuilt; using the committed copy.
 if not exist "bin\Gallery" mkdir "bin\Gallery"
+REM PS1 gallery art from the user's own zip (never committed).
+if not exist "bin\Gallery\Art" (
+ py -3 tools\import_gallery_art.py --out bin\Gallery\Art
+ if errorlevel 1 echo WARNING: Gallery art not installed; the gallery shows text only.
+)
 copy /Y "Gallery\arcade_gallery.mclgallery" "bin\Gallery\arcade_gallery.mclgallery" >nul
 if errorlevel 1 (
  echo ERROR: Gallery package was not installed to bin\Gallery

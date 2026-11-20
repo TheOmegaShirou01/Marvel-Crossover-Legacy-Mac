@@ -1,0 +1,75 @@
+# Marvel: Crossover Legacy - Arcade Museum (source text)
+# One block per game. Facts checked against the games' English Wikipedia articles
+# (read 2026-11-20); the summaries are original writing for this collection.
+
+[xmcota]
+title: X-Men: Children of the Atom
+year: 1994
+hardware: Capcom CP System II (CPS-2)
+developer: Capcom
+history: Children of the Atom reached Japanese arcades in December 1994 and North America in January 1995. It was the first fighting game Capcom built around Marvel characters. Its story loosely follows the "Fatal Attractions" comics: Magneto threatens the world with an electromagnetic pulse, gathers villains to his side, and waits for the X-Men in orbit, with Juggernaut guarding the way. It was a hit in arcades, topping Japanese and American earnings charts in early 1995. The Sega Saturn port won praise, while a later PlayStation port was poorly received. More than anything, it laid the groundwork for the entire Marvel vs. Capcom series.
+mechanics: Ten selectable fighters battle in best-of-three matches. The X-Power gauge fuels X-Ability specials and Hyper X supers. Super jumps and air combos give the game its high-flying style, and some stages collapse into lower levels mid-fight. Akuma waits as a hidden challenger for players who meet his conditions.
+sources: https://en.wikipedia.org/wiki/X-Men:_Children_of_the_Atom_(video_game)
+
+[msh]
+title: Marvel Super Heroes
+year: 1995
+hardware: Capcom CP System II (CPS-2)
+developer: Capcom
+history: Released in November 1995, Marvel Super Heroes widened Capcom's Marvel cast beyond the X-Men. Its story loosely adapts "The Infinity Gauntlet": Thanos has gathered the six Infinity Gems, and heroes and villains battle for them before facing Doctor Doom and the Mad Titan himself. Capcom brought back Wolverine, Juggernaut, Magneto and Psylocke from Children of the Atom, and the game is dedicated to Jack Kirby. Saturn and PlayStation ports followed in 1997. The Japanese arcade version also hides Anita from Darkstalkers as a secret fighter.
+mechanics: Six Infinity Gems (Power, Time, Space, Reality, Soul and Mind) drop during fights. Each gives a different temporary boost, such as extra strength, speed, or health regeneration. Infinity Combos serve as super moves, and the fast, air-combo-heavy fighting of Children of the Atom returns in a bigger form.
+sources: https://en.wikipedia.org/wiki/Marvel_Super_Heroes_(video_game)
+
+[xmvsf]
+title: X-Men vs. Street Fighter
+year: 1996
+hardware: Capcom CP System II (CPS-2)
+developer: Capcom
+history: X-Men vs. Street Fighter arrived in Japanese arcades in September 1996 and North America that October. It was the first true crossover between Capcom's two universes and became the most successful arcade game in Japan for October 1996. Eight X-Men face nine Street Fighters, with Apocalypse as the giant boss and Akuma hidden on the roster. A Saturn port reproduced the arcade game very closely using a RAM cartridge. The PlayStation version had to drop real tag-team play to fit the hardware and was widely criticized for it.
+mechanics: Players choose a team of two and can tag partners in and out at any time, while the resting fighter slowly recovers health. Fights last a single long round. The Hyper Combo gauge powers supers and the Variable Combination, in which both partners unleash their supers together. A Variable Counter lets the partner jump in from a block.
+sources: https://en.wikipedia.org/wiki/X-Men_vs._Street_Fighter
+
+[mshvsf]
+title: Marvel Super Heroes vs. Street Fighter
+year: 1997
+hardware: Capcom CP System II (CPS-2)
+developer: Capcom
+history: Released in Japan in July 1997 and North America in November, this sequel pitted the Marvel Super Heroes cast against Street Fighter. Apocalypse returns as the next-to-last boss before the final battle with Cyber-Akuma. Six secret palette-variant fighters, including Dark Sakura, Mech-Zangief, U.S. Agent and Armored Spider-Man, rewarded players who learned their codes. The Japanese version also includes Norimaro, a comedy character created by the television personality Noritake Kinashi.
+mechanics: Tag teams of two return. The big addition is the Variable Assist, which calls the off-screen partner in for a single special move. It became one of the defining systems of the whole series. The developers deliberately calmed some of the chaos of X-Men vs. Street Fighter.
+sources: https://en.wikipedia.org/wiki/Marvel_Super_Heroes_vs._Street_Fighter
+
+[mvsc]
+title: Marvel vs. Capcom: Clash of Super Heroes
+year: 1998
+hardware: Capcom CP System II (CPS-2)
+developer: Capcom
+history: Marvel vs. Capcom reached Japanese arcades in February 1998 and America in March. For the first time Capcom's side reached beyond Street Fighter, bringing in Mega Man, Strider Hiryu, Captain Commando, Morrigan and Jin Saotome. The final boss is Onslaught, the psychic monster from Marvel's 1996 crossover event. It was one of Capcom's last major CPS-2 fighting games. Dreamcast and PlayStation ports followed, and it remains a fan favorite for its wild, colorful style.
+mechanics: Teams of two fight with tag-outs, plus a randomly assigned Special Partner, a helper character called in for a limited number of assists per round. The Duo Team Attack lets both fighters attack together for a limited time. Six secret characters, including Roll, Shadow Lady and Lilith-Mode Morrigan, are unlocked with inputs on the select screen.
+sources: https://en.wikipedia.org/wiki/Marvel_vs._Capcom:_Clash_of_Super_Heroes
+
+[mvsc2]
+title: Marvel vs. Capcom 2: New Age of Heroes
+year: 2000
+hardware: Sega NAOMI
+developer: Capcom
+history: Marvel vs. Capcom 2 arrived in Japanese arcades in March 2000 on Sega's NAOMI hardware, with a Dreamcast version days later. It gathered 56 fighters from across both companies' histories, along with three brand-new fighters, Amingo, Ruby Heart and SonSon, and the new boss Abyss. It was later ported to PlayStation 2, Xbox, Xbox 360, PlayStation 3 and iOS. It became a cornerstone of competitive fighting games, and its online versions were delisted in 2013 when the Marvel license lapsed.
+mechanics: Teams of three fighters with three assist types each (alpha, beta and gamma). Delayed Hyper Combos chain supers between partners, and the Snapback forces a specific opponent into play. It uses four attack buttons and two assist buttons. Hand-drawn sprites fight on 3D backgrounds, and the final boss Abyss has three forms.
+sources: https://en.wikipedia.org/wiki/Marvel_vs._Capcom_2:_New_Age_of_Heroes
+
+[sfexp]
+title: Street Fighter EX Plus
+year: 1997
+hardware: Sony ZN-1
+developer: Arika (with Capcom)
+history: Street Fighter EX was developed by Arika, a studio founded by former Capcom developers including Akira Nishitani, and released in November 1996 as the first Street Fighter with polygonal 3D graphics. The Plus update reached arcades in March 1997, adding more fighters and the secret Cycloid-beta and Cycloid-gamma. Arika brought a new cast to Street Fighter, including Hokuto, Kairi, Skullomania, Pullum Purna, Darun Mister, Doctrine Dark and the boss Garuda. The PlayStation version, EX Plus Alpha, was very well reviewed.
+mechanics: Fighters move in a 3D arena but battle on a 2D plane. A three-level super meter powers Super Combos, Super Cancels chain one super into another, and the Guard Break smashes through an opponent's defense.
+sources: https://en.wikipedia.org/wiki/Street_Fighter_EX
+
+[sfex2p]
+title: Street Fighter EX2 Plus
+year: 1999
+hardware: Sony ZN-2
+developer: Arika (with Capcom)
+history: Street Fighter EX2 was released in 1998 and was Japan's top arcade game in July of that year. The Plus update followed in June 1999, adding Sagat, Vulcano Rosso and Area to a cast that already included Sharon, Nanase and the hidden Shadowgeist. Its soundtrack was composed by a team of former Namco musicians. Between fights, bonus stages challenge players to smash objects such as a falling satellite, and the PlayStation version added a Director Mode. In arcade mode, the strongest players eventually face the secret final boss, M. Bison II.
+mechanics: EX2 introduced Excel combos, a limited time in which basic and special moves chain freely. Plus added the Meteor Combo, an ultimate attack that uses all three bars of the super meter. Guard Breaks and Super Cancels return from the first EX.
+sources: https://en.wikipedia.org/wiki/Street_Fighter_EX2
