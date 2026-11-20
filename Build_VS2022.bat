@@ -54,5 +54,10 @@ if exist "Audio\title_voice.*" (copy /Y "Audio\title_voice.*" "bin\Audio\" >nul)
 REM IMPORTANT: ROMs/BIOS are external. Do not copy or package them.
 REM Optional: create bin\rom_directory.txt with ONE path to your external ROM folder.
 REM This script does not write to ROM archives and does not install them.
+REM Marvel vs. Capcom font for the intro, extracted from the user's own mvsc.zip (never committed).
+if not exist "bin\Fonts\mvc_font.png" (
+ py -3 tools\extract_mvc_font.py --rom-list bin\rom_directory.txt --out bin\Fonts\mvc_font.png
+ if errorlevel 1 echo WARNING: MvC font not extracted; the intro will use the built-in font.
+)
 echo BUILD SUCCESS: bin\MarvelCrossoverLegacy_Features.exe
 endlocal

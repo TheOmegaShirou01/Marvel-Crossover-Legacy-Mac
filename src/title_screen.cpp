@@ -36,7 +36,7 @@ using mcl::MenuItem;
 using MK=mcl::MainMenuModel::Kind;
 
 constexpr float kLogoW=1600.f,kLogoH=760.f;
-enum class Screen { Title, Menu, Credits, Cheats, Select, Options, Controls };
+enum class Screen { Intro, Title, Menu, Credits, Cheats, Select, Options, Controls };
 enum OptRow { OptMusic, OptVoice, OptDisplay, OptGames, OptVideo, OptCaption, OptControls, OptDevTools, OptBack, OptCount };
 
 // Arcade Select cards: collection id, full title, credit line.
@@ -114,7 +114,8 @@ struct App {
  std::wstring nowPlaying;double nowPlayingSince=-1e9;
  double whiteFlashStart=-1e9;          // EXIT GAME > YES: white flash on return
  double quickExitSince=-1;bool quickExit=false; // L1+R1+R2+SELECT+START held 3 s
- Screen screen=Screen::Title;double screenSince=0;
+ Screen screen=Screen::Intro;double screenSince=0;
+ ComPtr<ID2D1Bitmap> mvcFont; // Fonts\mvc_font.png: MvC's own 8x8 font (tools/extract_mvc_font.py)
  double layoutFrom=0,layoutTo=0,layoutStart=-1e9; // 0 = title layout, 1 = menu layout
  std::wstring banner;double bannerUntil=0;float bannerFlash=0;
  bool fullscreen=true;
@@ -170,6 +171,7 @@ bool ensureTarget(){
  g->rt.As(&g->dc);
  g->rt->CreateSolidColorBrush(rgba(1,1,1),&g->brush);
  g->logo=loadPng(g->dir/"Logos"/"mcl_logo.png");
+ g->mvcFont=loadPng(g->dir/"Fonts"/"mvc_font.png");
  g->cards.clear();
  for(const auto& c:kMarvelCards)g->cards[c.id]=loadPng(g->dir/"Logos"/"Cards"/(std::string(c.id)+".png"));
  for(const auto& c:kExCards)g->cards[c.id]=loadPng(g->dir/"Logos"/"Cards"/(std::string(c.id)+".png"));
@@ -282,6 +284,7 @@ struct VideoPause{VideoPause(){g->video.setPaused(true);}~VideoPause(){g->video.
 // OPTIONS screen handlers (defined further down).
 void optionsPad(Pad p);
 void changeOption(int dir);
+void endIntro();
 // ---------- Arcade Select helpers ----------
 const CardInfo* selCards(int& n){
  if(g->exMode){n=static_cast<int>(sizeof(kExCards)/sizeof(kExCards[0]));return kExCards;}
@@ -352,6 +355,7 @@ void onPad(Pad p){
  // Ignore input while another window (Arcade Select, Options, a game) is in front:
  // their modal loops still dispatch messages to this window.
  if(!IsWindowEnabled(g->hwnd)||g->gameRunning)return;
+ if(g->screen==Screen::Intro){if(p==Pad::Cross||p==Pad::Circle||p==Pad::Start)endIntro();return;}
  if(!g->overlay.empty()){if(p==Pad::Cross||p==Pad::Circle||p==Pad::Start)g->overlay.clear();return;}
  const double now=g->now();
  switch(g->screen){
@@ -423,11 +427,13 @@ void startMenu(){
 // Enter: confirm on every screen; does not touch cheat-code progress on title/menu.
 void onConfirm(){
  if(!IsWindowEnabled(g->hwnd)||g->gameRunning)return;
+ if(g->screen==Screen::Intro){endIntro();return;}
  if(!g->overlay.empty()){g->overlay.clear();return;}
  switch(g->screen){
   case Screen::Select: launchSelected();break;
   case Screen::Options: changeOption(0);break;
   case Screen::Controls: setScreen(Screen::Options);break;
+  case Screen::Intro: endIntro();break;
   case Screen::Title: startMenu();break;
   case Screen::Menu: g->menu.resetCodes();activate(g->menu.selected());break;
   case Screen::Cheats: onPad(Pad::Cross);break;   // toggle the highlighted cheat
@@ -437,8 +443,10 @@ void onConfirm(){
 // Esc: back on every screen.
 void onBack(){
  if(!IsWindowEnabled(g->hwnd)||g->gameRunning)return;
+ if(g->screen==Screen::Intro){endIntro();return;}
  if(!g->overlay.empty()){g->overlay.clear();return;}
  switch(g->screen){
+  case Screen::Intro: endIntro();break;
   case Screen::Title: break;
   case Screen::Menu: g->menu.resetCodes();setScreen(Screen::Title);goLayout(0,g->now());break;
   case Screen::Cheats: onPad(Pad::Circle);break;
@@ -740,6 +748,7 @@ void updateMusic(double now){
  if(g->library.empty())return;
  // Silent from the moment a game is chosen until it has closed (covers controller launches,
  // which happen inside the same frame as this update).
+ if(g->screen==Screen::Intro)return;
  if(g->gameRunning||g->settings.musicVolume<=0){if(g->track){g->music.stop();g->track=nullptr;g->fadeStart=-1;}return;}
  const std::string want=wantedPool();
  if(!g->track){startNextTrack(want,now);return;}
@@ -769,6 +778,43 @@ void drawNowPlaying(double now){
  g->brush->SetColor(rgba(1.f,0.84f,0.25f));g->rt->DrawTextLayout(D2D1::Point2F(W*0.02f,H*0.02f),l.Get(),g->brush.Get());
  g->brush->SetOpacity(1);
 }
+// ---------- INTRO: "YAMANATSUCHI INITIATIVE PRESENTS" in Marvel vs. Capcom's font ----------
+constexpr double kIntroMs=3800;
+// Draws upper-case text with the MvC 8x8 font atlas at an integer pixel scale (crisp pixels).
+void drawMvcText(const std::wstring& s,float cx,float top,float scale,float alpha){
+ if(!g->mvcFont)return;
+ const float w=8.f*scale*static_cast<float>(s.size());
+ float x=cx-w/2;
+ for(wchar_t c:s){
+  if(c>=L'a'&&c<=L'z')c=static_cast<wchar_t>(c-32);
+  if(c>0x20&&c<0x60){ // skip spaces: MvC's space tile has stray pixels
+   const int i=c-0x20;
+   const D2D1_RECT_F src=D2D1::RectF(static_cast<float>(i%16*8),static_cast<float>(i/16*8),static_cast<float>(i%16*8+8),static_cast<float>(i/16*8+8));
+   const D2D1_RECT_F dst=D2D1::RectF(x,top,x+8*scale,top+8*scale);
+   if(g->dc)g->dc->DrawBitmap(g->mvcFont.Get(),&dst,alpha,D2D1_INTERPOLATION_MODE_NEAREST_NEIGHBOR,&src);
+   else g->rt->DrawBitmap(g->mvcFont.Get(),dst,alpha,D2D1_BITMAP_INTERPOLATION_MODE_NEAREST_NEIGHBOR,src);
+  }
+  x+=8*scale;
+ }
+}
+void endIntro(){setScreen(Screen::Title);g->layoutFrom=g->layoutTo=0;g->layoutStart=-1e9;}
+void drawIntro(double now){
+ const float W=g->W(),H=g->H();
+ const double t=now-g->screenSince;
+ if(t>=kIntroMs){endIntro();return;}
+ const float a=static_cast<float>(std::clamp(std::min(t/600.0,(kIntroMs-t)/600.0),0.0,1.0));
+ const std::wstring line1=L"YAMANATSUCHI INITIATIVE",line2=L"PRESENTS";
+ const float big=std::max(2.f,std::floor(W*0.86f/(8.f*static_cast<float>(line1.size()))));
+ const float smallScale=std::max(2.f,std::floor(big*0.75f));
+ if(g->mvcFont){
+  drawMvcText(line1,W/2,H*0.43f-8*big,big,a);
+  drawMvcText(line2,W/2,H*0.43f+big*5,smallScale,a);
+ }else{ // atlas not extracted yet: same words in the front end's own style
+  text(line1,g->fBanner.Get(),D2D1::RectF(0,H*0.32f,W,H*0.46f),rgba(1.f,0.4f,0.45f),H*0.005f,a);
+  text(line2,g->fHead.Get(),D2D1::RectF(0,H*0.47f,W,H*0.55f),rgba(1.f,0.6f,0.7f),H*0.004f,a);
+ }
+}
+
 // ---------- OPTIONS ----------
 void saveSettings(){g->settings.save(g->dir/"MCL_UserData"/"settings.txt");}
 void applyVideoSetting(){
@@ -877,6 +923,11 @@ void render(){
  const float W=g->W(),H=g->H();
  g->rt->BeginDraw();
  g->rt->Clear(rgba(0,0,0));
+ if(g->screen==Screen::Intro){
+  drawIntro(now);
+  if(g->rt->EndDraw()==D2DERR_RECREATE_TARGET){g->rt.Reset();g->dc.Reset();g->brush.Reset();g->logo.Reset();g->videoBmp.Reset();g->previewBmp.Reset();g->cards.clear();g->mvcFont.Reset();}
+  return;
+ }
  drawBackground();
  drawLogo(now);
  switch(g->screen){
@@ -901,7 +952,7 @@ void render(){
  const float flash=std::max(g->logoBolts.flash()*(g->screen==Screen::Select?0.35f:1.f),g->bannerFlash);
  if(flash>0.01f){g->brush->SetColor(rgba(0.75f,0.92f,1.f));g->brush->SetOpacity(flash*0.35f);g->rt->FillRectangle(D2D1::RectF(0,0,W,H),g->brush.Get());g->brush->SetOpacity(1);}
  g->bannerFlash=std::max(0.f,g->bannerFlash-0.06f);
- if(g->rt->EndDraw()==D2DERR_RECREATE_TARGET){g->rt.Reset();g->dc.Reset();g->brush.Reset();g->logo.Reset();g->videoBmp.Reset();g->previewBmp.Reset();g->cards.clear();}
+ if(g->rt->EndDraw()==D2DERR_RECREATE_TARGET){g->rt.Reset();g->dc.Reset();g->brush.Reset();g->logo.Reset();g->videoBmp.Reset();g->previewBmp.Reset();g->cards.clear();g->mvcFont.Reset();}
 }
 
 // ---------- input ----------
@@ -969,6 +1020,7 @@ LRESULT CALLBACK proc(HWND h,UINT m,WPARAM w,LPARAM l){
    }
    break;}
   case WM_LBUTTONDOWN:
+   if(g&&g->screen==Screen::Intro){endIntro();return 0;}
    if(g&&g->screen==Screen::Title)onPad(Pad::Start);
    return 0;
   case WM_ERASEBKGND: return 1;
