@@ -37,9 +37,10 @@ local function item(y, label, selected)
   container:draw_text("center", y, selected and (">  " .. label .. "  <") or label,
                       selected and GOLD or GREY, 0)
 end
+-- draw_box(left, top, right, bottom, outline colour, fill colour)
 local function panel(title)
-  container:draw_box(0, 0, 1, 1, 0xb0000008, 0)
-  container:draw_box(0.28, 0.30, 0.72, 0.70, 0xf0101830, GOLD)
+  container:draw_box(0, 0, 1, 1, 0x00000000, 0xb0000008)
+  container:draw_box(0.28, 0.30, 0.72, 0.70, GOLD, 0xf0101830)
   container:draw_text("center", 0.35, title, WHITE, 0)
 end
 
@@ -62,7 +63,7 @@ emu.register_frame_done(function()
   if state == "flash" then
     flash = flash + 1
     local a = math.max(0, 255 - flash * 10)
-    container:draw_box(0, 0, 1, 1, (a << 24) | 0xffffff, 0)
+    container:draw_box(0, 0, 1, 1, 0x00000000, (a << 24) | 0xffffff)
     if flash >= 26 then machine:exit() end
     return
   end
