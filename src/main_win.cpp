@@ -138,6 +138,19 @@ int WINAPI wWinMain(HINSTANCE inst,HINSTANCE,LPWSTR,int){
   }}
  // New PC / first run: find the player's ROMs, MAME and Flycast when the config files don't work.
  try{mcl::autoConfigure(appDir);}catch(...){} // never let setup stop the game from starting
+ // Keep the game's content out of sight so nobody edits it by accident: content folders
+ // and setting files get the Hidden + System attributes (Explorer hides them even with
+ // "show hidden files" on). The game opens them by path, so gameplay is unaffected.
+ // Done at every start because ZIP extraction drops these attributes.
+ {std::error_code ec;std::filesystem::create_directories(appDir/"MCL_UserData",ec);}
+ for(const wchar_t* name:{L"ROMs",L"Gallery",L"Music",L"Audio",L"Fonts",L"Logos",L"Previews",L"Emulators",
+                          L"MCL_UserData",L"Logs",L"Source",L"earth_background.mp4",
+                          L"rom_directory.txt",L"mame_executable.txt",L"flycast_executable.txt"}){
+  const std::filesystem::path p=appDir/name;
+  const DWORD a=GetFileAttributesW(p.c_str());
+  if(a!=INVALID_FILE_ATTRIBUTES&&(a&(FILE_ATTRIBUTE_HIDDEN|FILE_ATTRIBUTE_SYSTEM))!=(FILE_ATTRIBUTE_HIDDEN|FILE_ATTRIBUTE_SYSTEM))
+   SetFileAttributesW(p.c_str(),a|FILE_ATTRIBUTE_HIDDEN|FILE_ATTRIBUTE_SYSTEM);
+ }
  // Auto-save safety net: repair a lost/damaged save from Backups, then back up.
  mcl::restoreIfNeeded(appDir/"MCL_UserData");
  mcl::backupUserData(appDir/"MCL_UserData",mcl::backupStamp());

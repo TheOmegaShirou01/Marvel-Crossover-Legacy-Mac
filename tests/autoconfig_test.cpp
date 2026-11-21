@@ -1,4 +1,7 @@
 #include "autoconfig.hpp"
+#ifdef _WIN32
+#include <windows.h>
+#endif
 #include "external_roms.hpp"
 #include "mame_backend.hpp"
 #include <cassert>
@@ -42,6 +45,13 @@ int main(){
  const fs::path moved=root/"Somewhere Else"/"MCL";fs::create_directories(moved.parent_path());fs::rename(pkg,moved);
  assert(mcl::gamesFound(mcl::readRomSearchPath(moved/"rom_directory.txt").dirs)==8); // still works after moving
  assert(fs::is_regular_file(mcl::readMameExecutable(moved/"mame_executable.txt")));
+#ifdef _WIN32
+ // setting files are hidden + system at runtime; a broken one must still be rewritten
+ SetFileAttributesW((moved/"mame_executable.txt").c_str(),FILE_ATTRIBUTE_HIDDEN|FILE_ATTRIBUTE_SYSTEM);
+ fs::rename(moved/"Emulators"/"MAME 0.289",moved/"Emulators"/"MAME new");
+ r=mcl::autoConfigure(moved,{moved});
+ assert(r.mameChanged&&mcl::readMameExecutable(moved/"mame_executable.txt").parent_path().filename()=="MAME new");
+#endif
  fs::remove_all(root);
  std::cout<<"PASS: finds ROM folders and emulators on a new PC, leaves working setups alone, relative inside the game folder\n";
 }

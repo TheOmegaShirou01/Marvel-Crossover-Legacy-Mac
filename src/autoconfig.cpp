@@ -1,4 +1,10 @@
 #include "autoconfig.hpp"
+#ifdef _WIN32
+#ifndef NOMINMAX
+#define NOMINMAX
+#endif
+#include <windows.h>
+#endif
 #include "external_roms.hpp"
 #include "mame_backend.hpp"
 #include "mame_sets.hpp"
@@ -49,6 +55,16 @@ std::string homeDir(){
  return h;
 #else
  const char* v=std::getenv("HOME");return v?v:"";
+#endif
+}
+// The setting files are hidden + system at runtime (main_win.cpp); Windows refuses to
+// overwrite such files, so their attributes are cleared before writing.
+void writable(const fs::path& p){
+#ifdef _WIN32
+ std::error_code ec;
+ if(fs::exists(p,ec))SetFileAttributesW(p.c_str(),FILE_ATTRIBUTE_NORMAL);
+#else
+ (void)p;
 #endif
 }
 std::vector<fs::path> defaultRoots(const fs::path& appDir){
@@ -119,12 +135,12 @@ AutoConfigResult autoConfigure(const fs::path& appDir,const std::vector<fs::path
  fs::path mame=readMameExecutable(appDir/"mame_executable.txt");
  if(mame.empty()||!fs::is_regular_file(mame,ec)){
   const auto found=findExecutable(roots,L"mame.exe",4);
-  if(!found.empty()){std::ofstream(appDir/"mame_executable.txt",std::ios::trunc)<<storePath(appDir,found)<<"\n";mame=found;r.mameChanged=true;}
+  if(!found.empty()){(writable(appDir/"mame_executable.txt"),std::ofstream(appDir/"mame_executable.txt",std::ios::trunc))<<storePath(appDir,found)<<"\n";mame=found;r.mameChanged=true;}
  }
  fs::path fly=readMameExecutable(appDir/"flycast_executable.txt");
  if(fly.empty()||!fs::is_regular_file(fly,ec)){
   const auto found=findExecutable(roots,L"flycast.exe",4);
-  if(!found.empty()){std::ofstream(appDir/"flycast_executable.txt",std::ios::trunc)<<storePath(appDir,found)<<"\n";r.flycastChanged=true;}
+  if(!found.empty()){(writable(appDir/"flycast_executable.txt"),std::ofstream(appDir/"flycast_executable.txt",std::ios::trunc))<<storePath(appDir,found)<<"\n";r.flycastChanged=true;}
  }
  // ROMs: keep the configured folders when every game is already there.
  auto current=readRomSearchPath(appDir/"rom_directory.txt").dirs;
@@ -148,6 +164,7 @@ AutoConfigResult autoConfigure(const fs::path& appDir,const std::vector<fs::path
  }
  const int now=gamesFound(merged);
  if(now>have){
+  writable(appDir/"rom_directory.txt");
   std::ofstream out(appDir/"rom_directory.txt",std::ios::trunc);
   out<<"# Found automatically on this PC (Marvel: Crossover Legacy first-run setup)\n";
   for(const auto& f:merged)out<<storePath(appDir,f)<<"\n";

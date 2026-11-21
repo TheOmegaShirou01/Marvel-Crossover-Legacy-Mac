@@ -85,7 +85,8 @@ New-Item -ItemType Directory -Force (Join-Path $dest "Source") | Out-Null
 @"
 Marvel: Crossover Legacy v$Version  (portable)
 
-Run MarvelCrossoverLegacy_Features.exe. Everything it needs is in this folder:
+Run MarvelCrossoverLegacy_Features.exe. Everything it needs is in this folder
+(the game keeps its content folders hidden so they are not changed by accident):
 emulators (MAME 0.289, Flycast 2.7), ROMs and BIOS, music, gallery art and sounds.
 Paths are relative, so the whole folder can be moved or copied to another PC.
 
