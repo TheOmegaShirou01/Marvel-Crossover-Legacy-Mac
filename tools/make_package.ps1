@@ -41,7 +41,7 @@ function Copy-Tree($from, $to, [string[]]$excludeDirs = @(), [string[]]$excludeF
   if ($LASTEXITCODE -ge 8) { throw "copy failed: $from" }
 }
 # 1. the app (bin) without logs, build leftovers and the user's data
-Copy-Tree $bin $dest @("Logs", "MCL_UserData") @("app.res", "mame_executable.txt", "flycast_executable.txt", "rom_directory.txt")
+Copy-Tree $bin $dest @("Logs", "MCL_UserData") @("app.res", "mame_executable.txt", "flycast_executable.txt", "rom_directory.txt", "*.rar", "*.7z")
 # 2. music (the app looks for Music next to the exe)
 Copy-Tree (Join-Path $proj "Music") (Join-Path $dest "Music")
 # 3. emulators
