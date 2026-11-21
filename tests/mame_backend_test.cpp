@@ -66,13 +66,13 @@ int main(){
   assert(!mcl::createFlycastLaunchSpec(fly,search,"mvsc2",spec,reason)&&reason.find("naomi.zip")!=std::string::npos);
   {std::ofstream f(orig/"naomi.zip");f<<"x";}
   assert(mcl::createFlycastLaunchSpec(fly,search,"mvsc2",spec,reason));
-  assert(spec.arguments.size()==5&&spec.arguments[1]==L"window:fullscreen=yes");
-  assert(spec.arguments[4].find(L"orig")!=std::wstring::npos);
+  assert(spec.arguments.size()==7&&spec.arguments[1]==L"window:fullscreen=yes"&&spec.arguments[5]==L"input:maple_sdl_keyboard=4");
+  assert(spec.arguments[6].find(L"orig")!=std::wstring::npos);
   // A repaired copy in the later folder overrides, but only with its BIOS beside it.
   {std::ofstream f(extra/"mvsc2.zip");f<<"x";}
   assert(!mcl::createFlycastLaunchSpec(fly,search,"mvsc2",spec,reason));
   {std::ofstream f(extra/"naomi.zip");f<<"x";}
-  assert(mcl::createFlycastLaunchSpec(fly,search,"mvsc2",spec,reason)&&spec.arguments[4].find(L"extra")!=std::wstring::npos);
+  assert(mcl::createFlycastLaunchSpec(fly,search,"mvsc2",spec,reason)&&spec.arguments[6].find(L"extra")!=std::wstring::npos);
   assert(!mcl::createFlycastLaunchSpec(fly,search,"xmcota",spec,reason));
   assert(!mcl::createFlycastLaunchSpec(root/"nope.exe",search,"mvsc2",spec,reason));
   // Flycast exits 0 on failure; the log decides.

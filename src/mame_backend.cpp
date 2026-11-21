@@ -97,7 +97,9 @@ bool createFlycastLaunchSpec(const fs::path& flycast,const RomSearchPath& roms,
   reason=std::string("Flycast needs ")+set->bios+".zip in the same folder as "+set->set+".zip";return false;
  }
  output.executable=fs::absolute(flycast);output.roms=roms;output.game=game;output.mameSet=set->set;
- output.arguments={L"-config",L"window:fullscreen=yes",L"-config",L"log:LogToFile=yes",fs::absolute(zip).wstring()};
+ // input:maple_sdl_keyboard=4: the keyboard drives both players (MvC2 player 2 keys); a second
+ // controller is player 2 on its own (Flycast gives the 2nd pad port B).
+ output.arguments={L"-config",L"window:fullscreen=yes",L"-config",L"log:LogToFile=yes",L"-config",L"input:maple_sdl_keyboard=4",fs::absolute(zip).wstring()};
  reason.clear();return true;
 }
 bool createLaunchSpec(const fs::path& emulator,const RomSearchPath& roms,

@@ -6,6 +6,7 @@
 namespace mcl {
 const std::vector<GameInput>& gameInputs(){
  // Keyboard defaults are MAME's own; pad defaults are MAME's standard joystick items.
+ // Player 1 (12 inputs) then Player 2 (12 inputs, same order). Keys are MAME's defaults.
  static const std::vector<GameInput> v={
   {"P1_JOYSTICK_UP","UP","KEYCODE_UP","JOYCODE_1_YAXIS_UP_SWITCH OR JOYCODE_1_HAT1UP"},
   {"P1_JOYSTICK_DOWN","DOWN","KEYCODE_DOWN","JOYCODE_1_YAXIS_DOWN_SWITCH OR JOYCODE_1_HAT1DOWN"},
@@ -19,6 +20,18 @@ const std::vector<GameInput>& gameInputs(){
   {"P1_BUTTON6","HEAVY KICK","KEYCODE_X","JOYCODE_1_BUTTON6"},
   {"START1","START","KEYCODE_1","JOYCODE_1_START OR JOYCODE_1_BUTTON10"},
   {"COIN1","COIN (SELECT)","KEYCODE_5","JOYCODE_1_SELECT OR JOYCODE_1_BUTTON9"},
+  {"P2_JOYSTICK_UP","UP","KEYCODE_R","JOYCODE_2_YAXIS_UP_SWITCH OR JOYCODE_2_HAT1UP"},
+  {"P2_JOYSTICK_DOWN","DOWN","KEYCODE_F","JOYCODE_2_YAXIS_DOWN_SWITCH OR JOYCODE_2_HAT1DOWN"},
+  {"P2_JOYSTICK_LEFT","LEFT","KEYCODE_D","JOYCODE_2_XAXIS_LEFT_SWITCH OR JOYCODE_2_HAT1LEFT"},
+  {"P2_JOYSTICK_RIGHT","RIGHT","KEYCODE_G","JOYCODE_2_XAXIS_RIGHT_SWITCH OR JOYCODE_2_HAT1RIGHT"},
+  {"P2_BUTTON1","LIGHT PUNCH","KEYCODE_A","JOYCODE_2_BUTTON1"},
+  {"P2_BUTTON2","MEDIUM PUNCH","KEYCODE_S","JOYCODE_2_BUTTON2"},
+  {"P2_BUTTON3","HEAVY PUNCH","KEYCODE_Q","JOYCODE_2_BUTTON3"},
+  {"P2_BUTTON4","LIGHT KICK","KEYCODE_W","JOYCODE_2_BUTTON4"},
+  {"P2_BUTTON5","MEDIUM KICK","KEYCODE_E","JOYCODE_2_BUTTON5"},
+  {"P2_BUTTON6","HEAVY KICK","KEYCODE_T","JOYCODE_2_BUTTON6"},
+  {"START2","START","KEYCODE_2","JOYCODE_2_START OR JOYCODE_2_BUTTON10"},
+  {"COIN2","COIN (SELECT)","KEYCODE_6","JOYCODE_2_SELECT OR JOYCODE_2_BUTTON9"},
  };
  return v;
 }
@@ -118,7 +131,12 @@ std::string mameKeyName(int vk){
  }
  return {};
 }
-const char* mvc2Label(const std::string& port){
+const char* mvc2Label(const std::string& full){
+ // same labels for both players
+ std::string port=full;
+ if(port.rfind("P2_",0)==0)port="P1_"+port.substr(3);
+ if(port=="START2")port="START1";
+ if(port=="COIN2")port="COIN1";
  if(port=="P1_BUTTON1")return "LIGHT PUNCH";if(port=="P1_BUTTON2")return "HEAVY PUNCH";if(port=="P1_BUTTON3")return "ASSIST 1";
  if(port=="P1_BUTTON4")return "LIGHT KICK";if(port=="P1_BUTTON5")return "HEAVY KICK";if(port=="P1_BUTTON6")return "ASSIST 2";
  for(const auto& g:gameInputs())if(port==g.port)return g.label;
@@ -141,24 +159,30 @@ int sdlScancode(const std::string& code){
  const auto it=named.find(k);return it==named.end()?-1:it->second;
 }
 std::string flycastKeyboardCfg(const ControlsConfig& c){
+ // The keyboard runs in Flycast's "all players" mode (launched with input:maple_sdl_keyboard=4):
+ // unsuffixed names drive player 1, names ending in 1 drive player 2.
  static const std::pair<const char*,const char*> map[]={
-  {"P1_JOYSTICK_UP","btn_dpad1_up"},{"P1_JOYSTICK_DOWN","btn_dpad1_down"},{"P1_JOYSTICK_LEFT","btn_dpad1_left"},{"P1_JOYSTICK_RIGHT","btn_dpad1_right"},
-  {"P1_BUTTON1","btn_a"},{"P1_BUTTON2","btn_b"},{"P1_BUTTON3","btn_c"},{"P1_BUTTON4","btn_x"},{"P1_BUTTON5","btn_y"},{"P1_BUTTON6","btn_z"},
-  {"START1","btn_start"},{"COIN1","btn_d"}};
- std::map<int,std::string> binds; // scancode -> Flycast button (one action per key)
- binds[43]="btn_menu";            // Tab: the front end's MvC2 pause screen
- for(const auto& m:map){
-  std::string seq=c.binding(m.first).key;
-  for(size_t at=0;;){
-   const size_t end=seq.find(" OR ",at);
-   const int sc=sdlScancode(seq.substr(at,end==std::string::npos?std::string::npos:end-at));
-   if(sc>=0&&sc!=43)binds[sc]=m.second;
-   if(end==std::string::npos)break;at=end+4;
+  {"JOYSTICK_UP","btn_dpad1_up"},{"JOYSTICK_DOWN","btn_dpad1_down"},{"JOYSTICK_LEFT","btn_dpad1_left"},{"JOYSTICK_RIGHT","btn_dpad1_right"},
+  {"BUTTON1","btn_a"},{"BUTTON2","btn_b"},{"BUTTON3","btn_c"},{"BUTTON4","btn_x"},{"BUTTON5","btn_y"},{"BUTTON6","btn_z"},
+  {"START","btn_start"},{"COIN","btn_d"}};
+ std::map<int,std::string> binds[2]; // per player: scancode -> Flycast button (one action per key)
+ binds[0][43]="btn_menu";             // Tab: the front end's MvC2 pause screen
+ for(int player=0;player<2;++player){
+  for(const auto& m:map){
+   const std::string what=m.first;
+   const std::string port=what=="START"||what=="COIN"?what+std::to_string(player+1):"P"+std::to_string(player+1)+"_"+what;
+   std::string seq=c.binding(port).key;
+   for(size_t at=0;;){
+    const size_t end=seq.find(" OR ",at);
+    const int sc=sdlScancode(seq.substr(at,end==std::string::npos?std::string::npos:end-at));
+    if(sc>=0&&sc!=43)binds[player][sc]=std::string(m.second)+(player?"1":"");
+    if(end==std::string::npos)break;at=end+4;
+   }
   }
  }
  std::ostringstream o;
  o<<"[digital]\n";int n=0;
- for(const auto& b:binds)o<<"bind"<<n++<<" = "<<b.first<<":"<<b.second<<"\n";
+ for(const auto& table:binds)for(const auto& b:table)o<<"bind"<<n++<<" = "<<b.first<<":"<<b.second<<"\n";
  o<<"\n[emulator]\ndead_zone = 10\nmapping_name = Keyboard\nrumble_power = 100\nsaturation = 100\nversion = 4\n";
  return o.str();
 }

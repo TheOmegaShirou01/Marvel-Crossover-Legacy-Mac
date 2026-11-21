@@ -7,12 +7,12 @@ namespace fs=std::filesystem;
 int main(int argc,char** argv){
  if(argc==3&&std::string(argv[1])=="--write"){mcl::ControlsConfig m(mcl::ControlsConfig::Layout::Mvc2);std::ofstream(std::string(argv[2])+"/SDL_Xbox 360 Controller_arcade.cfg")<<mcl::flycastPadCfg(m,'r');std::ofstream(std::string(argv[2])+"/SDL_Keyboard_arcade.cfg")<<mcl::flycastKeyboardCfg(m);return 0;}
  mcl::ControlsConfig c;
- assert(c.isDefault()&&mcl::gameInputs().size()==12);
+ assert(c.isDefault()&&mcl::gameInputs().size()==24);
  assert(c.binding("P1_BUTTON1").key=="KEYCODE_LCONTROL");
  c.binding("P1_BUTTON1").key="KEYCODE_A";c.binding("P1_BUTTON6").pad="JOYCODE_2_ZAXIS_POS_SWITCH";c.menuConfirm=1;
  assert(!c.isDefault());
  const auto xml=c.mameCtrlrXml();
- assert(xml.find("<port type=\"P1_BUTTON1\">")!=std::string::npos);
+ assert(xml.find("<port type=\"P1_BUTTON1\">")!=std::string::npos&&xml.find("<port type=\"P2_BUTTON1\">")!=std::string::npos&&xml.find("KEYCODE_T OR JOYCODE_2_BUTTON6")!=std::string::npos);
  assert(xml.find("KEYCODE_A OR JOYCODE_1_BUTTON1")!=std::string::npos);
  assert(xml.find("KEYCODE_X OR JOYCODE_2_ZAXIS_POS_SWITCH")!=std::string::npos);
  c.binding("P1_BUTTON2").key.clear();c.binding("P1_BUTTON2").pad.clear();
@@ -38,6 +38,8 @@ int main(int argc,char** argv){
   const std::string kb=mcl::flycastKeyboardCfg(m);
   assert(kb.find("43:btn_menu")!=std::string::npos&&kb.find("224:btn_a")!=std::string::npos&&kb.find("30:btn_start")!=std::string::npos);
   assert(kb.find("82:btn_dpad1_up")!=std::string::npos&&kb.find("version = 4")!=std::string::npos);
+  assert(kb.find("31:btn_start1")!=std::string::npos&&kb.find("4:btn_a1")!=std::string::npos&&kb.find("21:btn_dpad1_up1")!=std::string::npos); // player 2: 2, A, R
+  assert(mcl::mvc2Label("P2_BUTTON3")==std::string("ASSIST 1"));
   // Xbox pad through Raw Input: X(2)=LP, Back(6)=pause, hat = D-pad, RT axis 5
   m.binding("P1_BUTTON6").pad="PAD_RT";
   const std::string r=mcl::flycastPadCfg(m,'r');
