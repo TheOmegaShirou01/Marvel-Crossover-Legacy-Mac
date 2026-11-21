@@ -67,5 +67,10 @@ if not exist "bin\Fonts\mvc_font.png" (
  py -3 tools\extract_mvc_font.py --rom-list bin\rom_directory.txt --out bin\Fonts\mvc_font.png
  if errorlevel 1 echo WARNING: MvC font not extracted; the intro will use the built-in font.
 )
+REM Achievement unlock sounds: each game's coin sound recorded from the user's ROMs (never committed).
+if not exist "bin\Audio\Unlock\mvsc.wav" (
+ py -3 tools\extract_unlock_sounds.py --out bin\Audio\Unlock
+ if errorlevel 1 echo WARNING: some unlock sounds could not be extracted.
+)
 echo BUILD SUCCESS: bin\MarvelCrossoverLegacy_Features.exe
 endlocal

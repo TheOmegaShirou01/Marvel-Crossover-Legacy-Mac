@@ -114,7 +114,7 @@ struct App {
  double galleryBannerUntil=-1;
  double savedAt=-1e9; // "AUTO-SAVED" toast
  int achGroup=0,achRow=0;                 // ACHIEVEMENTS screen
- std::vector<std::string> achQueue;double achShowSince=-1; // "ACHIEVEMENT UNLOCKED!" popups
+ std::vector<std::string> achQueue;double achShowSince=-1;std::string achSoundFor; // "ACHIEVEMENT UNLOCKED!" popups
  mcl::AppSettings settings;int optRow=0; // OPTIONS screen (MCL_UserData\settings.txt)
  std::wstring overlay; // modal message panel (failed launch etc.)
  // Menu music
@@ -264,6 +264,21 @@ float menuTop(){return g->H()*0.46f;}
 float menuStep(){const float n=static_cast<float>(g->menu.items().size());return g->H()*std::min(0.078f,0.42f/std::max(1.f,n-1));}
 
 // ---------- audio ----------
+// Achievement unlock: the game's own coin sound, recorded from the user's ROM by
+// tools/extract_unlock_sounds.py into Audio\Unlock\<game>.wav. MvC2 (Flycast) and
+// collection trophies use Marvel vs. Capcom's. Played at the VOICE VOLUME setting.
+void playUnlockSound(const std::string& game){
+ if(g->settings.voiceVolume<=0)return;
+ std::error_code ec;
+ fs::path f=g->dir/"Audio"/"Unlock"/(game+".wav");
+ if(!fs::is_regular_file(f,ec))f=g->dir/"Audio"/"Unlock"/"mvsc.wav";
+ if(!fs::is_regular_file(f,ec))return;
+ mciSendStringW(L"close mcl_unlock",nullptr,0,nullptr);
+ if(mciSendStringW((L"open \""+f.wstring()+L"\" type mpegvideo alias mcl_unlock").c_str(),nullptr,0,nullptr)==0){
+  mciSendStringW((L"setaudio mcl_unlock volume to "+std::to_wstring(g->settings.voiceVolume*100)).c_str(),nullptr,0,nullptr);
+  mciSendStringW(L"play mcl_unlock from 0",nullptr,0,nullptr);
+ }
+}
 void playVoice(){
  std::error_code ec;
  const fs::path mp3=g->dir/"Audio"/"title_voice.mp3",wav=g->dir/"Audio"/"title_voice.wav";
@@ -1042,6 +1057,10 @@ void drawAchievementPopup(double now){
  const mcl::Achievement* a=nullptr;
  for(const auto& x:g->cb.launcher->collection().achievements())if(x.id==g->achQueue.front())a=&x;
  if(!a){g->achQueue.erase(g->achQueue.begin());g->achShowSince=-1;return;}
+ if(g->achSoundFor!=a->id+std::to_string(static_cast<long long>(g->achShowSince))){ // new popup on screen
+  g->achSoundFor=a->id+std::to_string(static_cast<long long>(g->achShowSince));
+  playUnlockSound(a->game);
+ }
  const float W=g->W(),H=g->H();
  const float slide=ease(static_cast<float>(std::min(t,600.0)/600.0))*(t>3600?ease(static_cast<float>((4000-t)/400.0)):1.f);
  const float pw=W*0.30f,ph=H*0.115f;
