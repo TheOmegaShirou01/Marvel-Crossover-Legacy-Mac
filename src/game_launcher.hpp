@@ -1,5 +1,11 @@
 #pragma once
 #ifdef _WIN32
+#ifndef NOMINMAX
+#define NOMINMAX
+#endif
+#include <windows.h>
+#endif
+#ifdef _WIN32
 #include "core.hpp"
 #include <filesystem>
 #include <memory>
@@ -32,6 +38,8 @@ public:
  // True once MAME has finished loading (first frame); Flycast games are ready at once.
  bool gameReady() const;
  void bringToFront();
+ void startCoverGuard(HWND cover);
+ void stopCoverGuard();
  // The master cheat code was entered in the front end (The Secret Code achievement).
  void awardMasterCode();
  const Collection& collection() const {return model_;}

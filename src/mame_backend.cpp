@@ -1,6 +1,8 @@
 #include "mame_backend.hpp"
 #include "mame_sets.hpp"
 #include "autosave.hpp"
+#include <atomic>
+#include <thread>
 #include <algorithm>
 #include <cctype>
 #include <fstream>
@@ -104,6 +106,7 @@ bool createLaunchSpec(const fs::path& emulator,const RomSearchPath& roms,
 }
 #ifdef _WIN32
 struct MameBackend::Private {
+ std::thread guard; std::atomic<bool> guardOn{false}; std::atomic<bool> wasTopmost{false};
  fs::path executable;
  HANDLE process=nullptr;
  DWORD pid=0;
@@ -116,7 +119,7 @@ struct MameBackend::Private {
  std::string lastError;
  ULONGLONG startedAt=0;
  explicit Private(fs::path e):executable(std::move(e)){}
- ~Private(){if(process)CloseHandle(process);}
+ ~Private(){guardOn=false;if(guard.joinable())guard.join();if(process)CloseHandle(process);}
 };
 static std::wstring quote(const std::wstring& str){
  // Windows CreateProcess argument quoting, including embedded quotes and backslashes.
@@ -246,11 +249,42 @@ static BOOL CALLBACK findPauseWindow(HWND h,LPARAM arg){
  }
  return TRUE;
 }
+void MameBackend::startCoverGuard(HWND cover){
+ stopCoverGuard();
+ if(!running())return;
+ p_->guardOn=true;p_->wasTopmost=false;
+ const DWORD pid=p_->pid;
+ (void)cover;
+ p_->guard=std::thread([this,pid]{
+  // 1 ms waits without changing the system timer: high-resolution waitable timer (Win10+),
+  // falling back to Sleep(1).
+  HANDLE timer=CreateWaitableTimerExW(nullptr,nullptr,0x00000002/*CREATE_WAITABLE_TIMER_HIGH_RESOLUTION*/,TIMER_ALL_ACCESS);
+  while(p_->guardOn){
+   PauseWindowLookup lookup{pid,nullptr};
+   EnumWindows(findPauseWindow,reinterpret_cast<LPARAM>(&lookup));
+   // Only the emulator window is touched (synchronously): out of "always on top" it can
+   // never cover the front end's topmost loading screen. The cover itself is left alone,
+   // so nothing is queued that could re-raise it after loading.
+   if(lookup.window&&(GetWindowLongW(lookup.window,GWL_EXSTYLE)&WS_EX_TOPMOST)){
+    p_->wasTopmost=true;
+    SetWindowPos(lookup.window,HWND_NOTOPMOST,0,0,0,0,SWP_NOMOVE|SWP_NOSIZE|SWP_NOACTIVATE|SWP_NOOWNERZORDER);
+   }
+   if(timer){LARGE_INTEGER due;due.QuadPart=-10000;SetWaitableTimer(timer,&due,0,nullptr,nullptr,FALSE);WaitForSingleObject(timer,5);}
+   else Sleep(1);
+  }
+  if(timer)CloseHandle(timer);
+ });
+}
+void MameBackend::stopCoverGuard(){
+ p_->guardOn=false;
+ if(p_->guard.joinable())p_->guard.join();
+}
 bool MameBackend::bringToFront(){
  if(!running())return false;
  PauseWindowLookup lookup{p_->pid,nullptr};
  EnumWindows(findPauseWindow,reinterpret_cast<LPARAM>(&lookup));
  if(!lookup.window)return false;
+ if(p_->wasTopmost){SetWindowPos(lookup.window,HWND_TOPMOST,0,0,0,0,SWP_NOMOVE|SWP_NOSIZE|SWP_NOACTIVATE);p_->wasTopmost=false;}
  ShowWindow(lookup.window,SW_SHOW);
  SetForegroundWindow(lookup.window);
  return true;

@@ -88,6 +88,8 @@ bool GameLauncher::gameReady() const{
  std::error_code ec;return fs::is_regular_file(dir_/"MCL_UserData"/"game_ready.txt",ec);
 }
 void GameLauncher::bringToFront(){if(emulator_)emulator_->bringToFront();}
+void GameLauncher::startCoverGuard(HWND cover){if(emulator_)emulator_->startCoverGuard(cover);}
+void GameLauncher::stopCoverGuard(){if(emulator_)emulator_->stopCoverGuard();}
 void GameLauncher::awardMasterCode(){VerifiedEvent e;e.type="master_code";model_.processVerifiedEvent(e);}
 std::vector<std::string> GameLauncher::takeAchievementNotices(){return model_.consumeAchievementNotices();}
 // Results reported by the in-game detector (achievement_lua.cpp) go through the session,

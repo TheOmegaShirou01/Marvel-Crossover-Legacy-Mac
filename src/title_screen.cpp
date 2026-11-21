@@ -372,6 +372,7 @@ void launchSelected(){
  // so its plain "Loading Machine (xx%)" box is never seen.
  g->gameLoading=true;g->loadingSince=g->now();
  SetWindowPos(g->hwnd,HWND_TOPMOST,0,0,0,0,SWP_NOMOVE|SWP_NOSIZE);
+ g->cb.launcher->startCoverGuard(g->hwnd); // keeps the emulator's own loading box under the cover
 }
 void moveCard(Pad p){
  int n=0;selCards(n);
@@ -1727,6 +1728,7 @@ int mcl_title::run(HINSTANCE inst,const fs::path& appDir,const Callbacks& cb){
    }
    std::wstring failure;
    if(app.cb.launcher&&app.cb.launcher->pollEnded(failure)){
+    app.cb.launcher->stopCoverGuard();
     if(app.gameLoading){app.gameLoading=false;SetWindowPos(app.hwnd,HWND_NOTOPMOST,0,0,0,0,SWP_NOMOVE|SWP_NOSIZE);}
     app.gameRunning=false;app.video.setPaused(false);
     // Results were just saved by the launcher; keep a dated backup and say so.
@@ -1747,10 +1749,17 @@ int mcl_title::run(HINSTANCE inst,const fs::path& appDir,const Callbacks& cb){
    }else if(app.gameLoading){
     // MAME is loading behind our cover: keep drawing NOW LOADING until it's ready (or 25 s).
     if(app.cb.launcher->gameReady()||app.now()-app.loadingSince>25000){
+     app.cb.launcher->stopCoverGuard();
      app.gameLoading=false;app.video.setPaused(true);
      SetWindowPos(app.hwnd,HWND_NOTOPMOST,0,0,0,0,SWP_NOMOVE|SWP_NOSIZE|SWP_NOACTIVATE);
      app.cb.launcher->bringToFront();
-    }else{render();continue;}
+    }else{
+     // The emulator window is held out of "always on top" by the cover guard (1 ms checks);
+     // the cover re-asserts its own top position every frame from this thread, so nothing
+     // is left queued that could re-raise it once loading is over.
+     SetWindowPos(app.hwnd,HWND_TOPMOST,0,0,0,0,SWP_NOMOVE|SWP_NOSIZE|SWP_NOACTIVATE|SWP_SHOWWINDOW);
+     render();continue;
+    }
    }else{Sleep(100);continue;}
   }
   if(IsIconic(app.hwnd)||!IsWindowEnabled(app.hwnd)){app.video.setPaused(true);WaitMessage();continue;}

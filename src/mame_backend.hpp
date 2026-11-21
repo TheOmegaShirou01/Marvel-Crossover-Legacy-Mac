@@ -1,4 +1,10 @@
 #pragma once
+#ifdef _WIN32
+#ifndef NOMINMAX
+#define NOMINMAX
+#endif
+#include <windows.h>
+#endif
 #include "emulator_bridge.hpp"
 #include "external_roms.hpp"
 #include <filesystem>
@@ -62,6 +68,13 @@ public:
  bool requestClose();
  // Put the emulator's main window in front (after the frontend's loading cover).
  bool bringToFront();
+ // While a game loads behind the front end's NOW LOADING cover: a background thread checks
+ // every millisecond that the emulator's window is not "always on top" (MAME sets that on
+ // its fullscreen window, and again partway through loading) and keeps the cover above
+ // it without taking focus. stopCoverGuard() ends it; bringToFront() then gives the
+ // emulator window its top position back.
+ void startCoverGuard(HWND cover);
+ void stopCoverGuard();
  bool pause(bool paused) override;
  bool running()const;
  // Best-effort default MAME F5 UI pause key. This does not confirm paused state.
