@@ -24,6 +24,8 @@ struct DetectorProfile {
  int roundsToWin=2;           // tag games end the match on the first team KO
  int finalStage=7;
  std::vector<std::pair<int,std::string>> bosses; // stage index -> boss id
+ std::vector<unsigned> chars; // P1 character id byte per team slot (MAME cheat DB "Select Character")
+ unsigned encounterAddr=0,encounterValue=0; std::string encounterName; // e.g. Akuma appearing as P2
  // Verified final bosses: xmcota Magneto (Juggernaut 1 stage before), msh Thanos, xmvsf
  // Apocalypse, mshvsf Cyber-Akuma (Apocalypse before), mvsc Onslaught, sfexp Garuda,
  // sfex2p M. Bison II (snapshots showed the ending right after each).
@@ -33,5 +35,10 @@ DetectorProfile detectorProfile(const std::string& game);
 std::string buildAchievementLua(const std::string& game,const std::string& eventsFileUtf8);
 // One parsed line of the events file.
 struct DetectedEvent { std::string type; int stage=-1; bool continued=false; bool allAlive=false; std::string detail; };
+// Character name for a game's P1 character id byte, "" when unknown. Names match the
+// gallery roster (e.g. mshvsf 0x2A = "Dark Sakura").
+std::string characterName(const std::string& game,unsigned id);
+// "c=2A,08" (match_win / arcade_clear detail) -> character names, unknown ids skipped.
+std::vector<std::string> charactersFromDetail(const std::string& game,const std::string& detail);
 std::vector<DetectedEvent> parseDetectedEvents(const std::string& text);
 }

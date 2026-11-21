@@ -1,5 +1,6 @@
 #include "achievement_lua.hpp"
 #include <cstdio>
+#include <map>
 #include <sstream>
 namespace mcl {
 namespace {
@@ -65,6 +66,13 @@ local function mcl_detector()
     return hp, n
   end
   local function newMatch() w1, w2, clean = 0, 0, true end
+  local encountered = false
+  local function chars()
+    if not C.chars or #C.chars == 0 then return nil end
+    local t = {}
+    for _, a in ipairs(C.chars) do t[#t + 1] = string.format("%02X", mem:read_u8(a)) end
+    return "c=" .. table.concat(t, ",")
+  end
   local function roundOver(result, allAlive, stage)
     if result == 0 then return end -- double KO / draw: no score
     if result == 1 then
@@ -77,12 +85,12 @@ local function mcl_detector()
     if w1 >= C.rounds then
       if vs then emit("two_player_match", stage); vs = false
       else
-        emit("match_win", stage, allAlive)
+        emit("match_win", stage, allAlive, chars())
         if clean then emit("perfect_match", stage) end
         streak = streak + 1
         if streak == 5 then emit("win_streak", stage) end
         if C.bosses[stage] then emit("boss_defeated", stage, false, C.bosses[stage]) end
-        if stage == C.final then emit("arcade_clear", stage); armed = false end
+        if stage == C.final then emit("arcade_clear", stage, false, chars()); armed = false end
       end
       newMatch()
     elseif w2 >= C.rounds then
@@ -104,6 +112,7 @@ local function mcl_detector()
       if not armed then
         credits = credits - 1
         armed, continued, streak, awaitContinue, vs, rs = true, false, 0, 0, false, "idle"
+        encountered = false
         needZero = true
         newMatch()
         emit("start", stage)
@@ -130,7 +139,12 @@ local function mcl_detector()
     local t = mem:read_u8(C.timer)
     local both = a1 > 0 and a2 > 0
     if rs == "idle" then
-      if both and t == C.full then rs, best1, hurt = "live", h1, false end
+      if both and t == C.full then
+        rs, best1, hurt = "live", h1, false
+        if C.enc and not encountered and mem:read_u8(C.enc) == C.encv then
+          encountered = true; emit("encounter", stage, false, C.encn)
+        end
+      end
     elseif rs == "live" then
       if h1 < best1 then hurt = true elseif h1 > best1 then best1 = h1 end
       local result
@@ -149,12 +163,12 @@ mcl_detector()
 }
 DetectorProfile detectorProfile(const std::string& g){
  DetectorProfile p;
- if(g=="xmcota"){p={g,{0xFF4191},{0xFF4591},0x90,true,0xFF4808,0x99,0xFFED5E,2,7,{{6,"juggernaut"},{7,"magneto"}}};}
- else if(g=="msh"){p={g,{0xFF4191},{0xFF4591},0x90,true,0xFF4808,0x99,0xFF4850,2,7,{{7,"thanos"}}};}
- else if(g=="xmvsf"){p={g,{0xFF4211,0xFF4A11},{0xFF4611,0xFF4E11},0x90,true,0xFF5008,0x99,0xFF5081,1,7,{{7,"apocalypse"}}};}
- else if(g=="mshvsf"){p={g,{0xFF3A51,0xFF4251},{0xFF3E51,0xFF4651},0x90,true,0xFF4808,0x99,0xFF4881,1,8,{{7,"apocalypse"},{8,"cyber_akuma"}}};}
- else if(g=="mvsc"){p={g,{0xFF3271,0xFF3A71},{0xFF3671,0xFF3E71},0x90,true,0xFF4008,0x99,0xFF4081,1,7,{{7,"onslaught"}}};}
- else if(g=="sfexp"){p={g,{0x3249E4},{0x325E58},0xC8,false,0x31D5CC,0x63,0x31D5DF,2,9,{{9,"garuda"}}};}
+ if(g=="xmcota"){p={g,{0xFF4191},{0xFF4591},0x90,true,0xFF4808,0x99,0xFFED5E,2,7,{{6,"juggernaut"},{7,"magneto"}},{0xFF4051},0xFF4451,0x18,"akuma"};}
+ else if(g=="msh"){p={g,{0xFF4191},{0xFF4591},0x90,true,0xFF4808,0x99,0xFF4850,2,7,{{7,"thanos"}},{0xFF4051}};}
+ else if(g=="xmvsf"){p={g,{0xFF4211,0xFF4A11},{0xFF4611,0xFF4E11},0x90,true,0xFF5008,0x99,0xFF5081,1,7,{{7,"apocalypse"}},{0xFF4053,0xFF4853}};}
+ else if(g=="mshvsf"){p={g,{0xFF3A51,0xFF4251},{0xFF3E51,0xFF4651},0x90,true,0xFF4808,0x99,0xFF4881,1,8,{{7,"apocalypse"},{8,"cyber_akuma"}},{0xFF3853,0xFF4053}};}
+ else if(g=="mvsc"){p={g,{0xFF3271,0xFF3A71},{0xFF3671,0xFF3E71},0x90,true,0xFF4008,0x99,0xFF4081,1,7,{{7,"onslaught"}},{0xFF3053,0xFF3853}};}
+ else if(g=="sfexp"){p={g,{0x3249E4},{0x325E58},0xC8,false,0x31D5CC,0x63,0x31D5DF,2,9,{{9,"garuda"}},{0x32358A}};}
  else if(g=="sfex2p"){p={g,{0x2B68A8},{0x2B80AC},0xC8,false,0x2AE5BC,0x63,0x2AE5C6,2,6,{{6,"bison2"}}};}
  return p;
 }
@@ -167,8 +181,46 @@ std::string buildAchievementLua(const std::string& game,const std::string& event
   <<", timer="<<hex(p.timer)<<", full="<<hex(p.timerFull)<<", stage="<<hex(p.stage)
   <<", rounds="<<p.roundsToWin<<", final="<<p.finalStage<<", bosses={";
  for(size_t i=0;i<p.bosses.size();++i){if(i)o<<", ";o<<"["<<p.bosses[i].first<<"]=\""<<p.bosses[i].second<<"\"";}
- o<<"}}\n"<<kDetector;
+ o<<"}, chars="<<list(p.chars);
+ if(p.encounterAddr)o<<", enc="<<hex(p.encounterAddr)<<", encv="<<hex(p.encounterValue)<<", encn=\""<<p.encounterName<<"\"";
+ o<<"}\n"<<kDetector;
  return o.str();
+}
+std::string characterName(const std::string& game,unsigned id){
+ // From MAME's cheat database "Select Character PL1" lists (ids are the byte values).
+ static const std::map<std::string,std::map<unsigned,const char*>> names={
+  {"xmcota",{{0x00,"Wolverine"},{0x02,"Psylocke"},{0x04,"Colossus"},{0x06,"Cyclops"},{0x08,"Storm"},{0x0A,"Iceman"},
+   {0x0C,"Spiral"},{0x0E,"Silver Samurai"},{0x10,"Omega Red"},{0x12,"Sentinel"},{0x14,"Juggernaut"},{0x16,"Magneto"},{0x18,"Akuma"}}},
+  {"msh",{{0x00,"Spider-Man"},{0x02,"Captain America"},{0x04,"Hulk"},{0x06,"Iron Man"},{0x08,"Wolverine"},{0x0A,"Psylocke"},
+   {0x0C,"Blackheart"},{0x0E,"Shuma-Gorath"},{0x10,"Juggernaut"},{0x12,"Magneto"},{0x14,"Doctor Doom"},{0x16,"Thanos"},{0x18,"Anita"}}},
+  {"xmvsf",{{0x00,"Wolverine"},{0x02,"Cyclops"},{0x04,"Storm"},{0x06,"Rogue"},{0x08,"Gambit"},{0x0A,"Sabretooth"},{0x0C,"Juggernaut"},
+   {0x0E,"Magneto"},{0x10,"Apocalypse"},{0x12,"Ryu"},{0x14,"Ken"},{0x16,"Chun-Li"},{0x18,"Dhalsim"},{0x1A,"Zangief"},{0x1C,"M. Bison"},
+   {0x1E,"Akuma"},{0x20,"Charlie"},{0x22,"Cammy"},{0x24,"Chun-Li"}}},
+  {"mshvsf",{{0x02,"Cyclops"},{0x04,"Captain America"},{0x06,"Hulk"},{0x08,"Wolverine"},{0x0A,"Shuma-Gorath"},{0x0C,"Omega Red"},
+   {0x0E,"Spider-Man"},{0x10,"Blackheart"},{0x12,"Ryu"},{0x14,"Ken"},{0x16,"Chun-Li"},{0x18,"Dhalsim"},{0x1A,"Zangief"},{0x1C,"M. Bison"},
+   {0x1E,"Akuma"},{0x20,"Sakura"},{0x22,"Norimaro"},{0x24,"Dan"},{0x26,"Cyber-Akuma"},{0x28,"Mech-Zangief"},{0x2A,"Dark Sakura"},
+   {0x2C,"Shadow Charlie"},{0x2E,"U.S. Agent"},{0x30,"Mephisto"},{0x32,"Armored Spider-Man"}}},
+  {"mvsc",{{0x02,"War Machine"},{0x04,"Captain America"},{0x06,"Hulk"},{0x08,"Wolverine"},{0x0A,"Gambit"},{0x0C,"Venom"},{0x0E,"Spider-Man"},
+   {0x10,"Roll"},{0x12,"Ryu"},{0x14,"Captain Commando"},{0x16,"Chun-Li"},{0x18,"Jin Saotome"},{0x1A,"Zangief"},{0x1C,"Strider Hiryu"},
+   {0x1E,"Morrigan"},{0x20,"Mega Man"},{0x22,"Onslaught"},{0x24,"Hyper Venom"},{0x26,"Orange Hulk"},{0x28,"Gold War Machine"},
+   {0x2A,"Shadow Lady"},{0x2C,"Lilith-Mode Morrigan"}}},
+  {"sfexp",{{0x00,"Kairi"},{0x01,"Hokuto"},{0x02,"Darun Mister"},{0x03,"Doctrine Dark"},{0x04,"Pullum Purna"},{0x05,"Blair Dame"},
+   {0x06,"Skullomania"},{0x07,"Allen Snider"},{0x08,"Cracker Jack"},{0x09,"Guile"},{0x0A,"M. Bison"},{0x0B,"Garuda"},{0x0C,"Ryu"},
+   {0x0D,"Ken"},{0x0E,"Chun-Li"},{0x0F,"Zangief"},{0x10,"Akuma"},{0x11,"Akuma"},{0x12,"Evil Ryu"},{0x13,"Bloody Hokuto"},
+   {0x14,"M. Bison"},{0x15,"Garuda"},{0x16,"Cycloid Gamma"},{0x17,"Cycloid Beta"}}},
+ };
+ const auto g=names.find(game);if(g==names.end())return {};
+ const auto c=g->second.find(id);return c==g->second.end()?std::string():c->second;
+}
+std::vector<std::string> charactersFromDetail(const std::string& game,const std::string& detail){
+ std::vector<std::string> out;
+ if(detail.rfind("c=",0)!=0)return out;
+ std::istringstream in(detail.substr(2));std::string tok;
+ while(std::getline(in,tok,',')){
+  if(tok.empty()||tok.size()>2)continue;
+  try{const auto n=characterName(game,static_cast<unsigned>(std::stoul(tok,nullptr,16)));if(!n.empty())out.push_back(n);}catch(...){}
+ }
+ return out;
 }
 std::vector<DetectedEvent> parseDetectedEvents(const std::string& text){
  std::vector<DetectedEvent> out;

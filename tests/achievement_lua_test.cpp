@@ -21,5 +21,12 @@ int main(int argc,char** argv){
  assert(ev.size()==3);
  assert(ev[1].type=="match_win"&&ev[1].stage==3&&ev[1].continued&&ev[1].allAlive);
  assert(ev[2].detail=="onslaught"&&!ev[2].continued);
+ // character ids from the MAME cheat database
+ assert(mcl::characterName("mshvsf",0x2A)=="Dark Sakura"&&mcl::characterName("sfexp",0x12)=="Evil Ryu");
+ assert(mcl::characterName("mvsc",0x99).empty()&&mcl::characterName("mvsc2",0).empty());
+ const auto team=mcl::charactersFromDetail("xmvsf","c=00,12");
+ assert(team.size()==2&&team[0]=="Wolverine"&&team[1]=="Ryu");
+ assert(mcl::charactersFromDetail("xmvsf","onslaught").empty());
+ assert(mcl::buildAchievementLua("xmcota","x").find("enc=0xFF4451, encv=0x18")!=std::string::npos);
  std::cout<<"PASS: detector scripts for 7 games, read-only, event parsing\n";
 }

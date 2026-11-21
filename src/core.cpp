@@ -8,6 +8,8 @@
 #include <cctype>
 #include <cstdint>
 #include <limits>
+#include <iterator>
+#include <initializer_list>
 namespace mcl {
 namespace {
 std::string utcNow(){auto t=std::time(nullptr); std::tm out{};
@@ -88,6 +90,7 @@ bool Collection::unlockAchievement(const std::string& id){
  auto it=std::find_if(achievements_.begin(),achievements_.end(),[&](auto const&a){return a.id==id;});if(it==achievements_.end())return false;
  auto& p=progress_[id];if(p.unlocked)return false;p.unlocked=true;p.timestamp=utcNow();return save();
 }
+bool Collection::setFlag(const std::string& f){if(!flags_.insert(f).second)return false;return save();}
 std::vector<std::string> Collection::consumeAchievementNotices(){
  auto result=std::move(achievementNotices_);achievementNotices_.clear();return result;
 }
@@ -97,8 +100,17 @@ bool Collection::processVerifiedEvent(const VerifiedEvent& e){
  if(e.count!=1)return false;
  // The master cheat code is entered in the front end, not in a game.
  if(e.type=="master_code"){if(unlockAchievement("collection_05"))achievementNotices_.push_back("collection_05");return true;}
+ // A cheat was applied in a main game (launcher reports it): Cheat Master needs all six.
+ if(e.type=="cheat_used"){
+  static const char* six[]={"xmcota","msh","xmvsf","mshvsf","mvsc","mvsc2"};
+  if(std::find(std::begin(six),std::end(six),e.game)==std::end(six))return false;
+  setFlag("cheat_"+e.game);
+  bool all=true;for(const char* g:six)all=all&&flags_.count(std::string("cheat_")+g);
+  if(all&&unlockAchievement("collection_06"))achievementNotices_.push_back("collection_06");
+  return true;
+ }
  if(std::none_of(games_.begin(),games_.end(),[&](const Game& g){return g.id==e.game;}))return false;
- const bool mastery=e.type=="perfect_round"||e.type=="perfect_match"||e.type=="win_streak"||e.type=="boss_defeated";
+ const bool mastery=e.type=="perfect_round"||e.type=="perfect_match"||e.type=="win_streak"||e.type=="boss_defeated"||e.type=="encounter";
  if(e.type!="coin"&&e.type!="launch"&&e.type!="match_win"&&e.type!="match_loss"&&
     e.type!="arcade_clear"&&e.type!="two_player_match"&&!mastery)return false;
  if((e.type=="match_win"||e.type=="match_loss"||e.type=="arcade_clear"||mastery)&&
@@ -118,10 +130,12 @@ bool Collection::processVerifiedEvent(const VerifiedEvent& e){
    for(const auto& b:kBosses)if(e.game==b.game&&e.detail==b.boss){give(b.id);known=true;}
    return known;
   }
+  if(e.type=="encounter"){if(e.game=="xmcota"&&e.detail=="akuma"){give("xmcota_08");return true;}return false;}
   if(e.type=="win_streak"){if(e.game=="xmcota")give("xmcota_05");if(e.game=="mshvsf")give("mshvsf_06");if(e.game=="sfexp")give("sfexp_06");}
   return true;
  }
  std::string raw;
+ if(e.type=="cheat_used")return false; // handled above
  if(e.type=="coin")raw="coin";
  else if(e.type=="launch")raw="launch";
  else if(e.type=="match_win")raw="win";
@@ -143,6 +157,42 @@ bool Collection::processVerifiedEvent(const VerifiedEvent& e){
   if(total>=500)award("collection_08");
  }
  if(e.type=="two_player_match")award("collection_04");
+ // Character trophies (never with cheats: the cheat list can pick any fighter).
+ if((e.type=="match_win"||e.type=="arcade_clear")&&!e.cheatsEnabled&&!e.characters.empty()){
+  const auto has=[&](const char* n){return std::find(e.characters.begin(),e.characters.end(),n)!=e.characters.end();};
+  const auto all=[&](std::initializer_list<const char*> set){
+   for(const auto& c:e.characters)if(std::none_of(set.begin(),set.end(),[&](const char* s){return c==s;}))return false;return true;};
+  if(e.type=="match_win"){
+   if(e.game=="xmvsf"&&e.characters.size()==2){
+    if(all({"Wolverine","Cyclops","Storm","Rogue","Gambit","Sabretooth","Juggernaut","Magneto"}))award("xmvsf_06");
+    if(all({"Ryu","Ken","Chun-Li","Dhalsim","Zangief","M. Bison","Akuma","Charlie","Cammy"}))award("xmvsf_07");
+   }
+   if(e.game=="mshvsf"){
+    if(has("Dark Sakura"))award("mshvsf_07");
+    if(has("Shadow Charlie"))award("mshvsf_08");
+    if(has("Mech-Zangief"))award("mshvsf_09");
+    static const char* secret[]={"Mech-Zangief","Dark Sakura","Shadow Charlie","U.S. Agent","Mephisto","Armored Spider-Man"};
+    for(const char* s:secret)if(has(s))setFlag(std::string("mshvsf_secret_")+s);
+    bool every=true;for(const char* s:secret)every=every&&flags_.count(std::string("mshvsf_secret_")+s);
+    if(every)award("mshvsf_12");
+   }
+   if(e.game=="mvsc"&&(has("Roll")||has("Shadow Lady")||has("Lilith-Mode Morrigan")||has("Gold War Machine")||has("Orange Hulk")||has("Hyper Venom")))award("mvsc_09");
+   if(e.game=="sfexp"){
+    if(has("Evil Ryu"))award("sfexp_07");
+    if(has("Bloody Hokuto"))award("sfexp_08");
+    if(has("Cycloid Beta"))award("sfexp_09");
+    if(has("Cycloid Gamma"))award("sfexp_10");
+   }
+  }else{ // arcade_clear
+   if(e.game=="xmcota"){if(has("Akuma"))award("xmcota_09");if(has("Juggernaut"))award("xmcota_10");if(has("Magneto"))award("xmcota_11");}
+   if(e.game=="xmvsf"&&has("Apocalypse"))award("xmvsf_11");
+   if(e.game=="mvsc"&&e.characters.size()==2){
+    static const char* marvel[]={"War Machine","Captain America","Hulk","Wolverine","Gambit","Venom","Spider-Man","Hyper Venom","Orange Hulk","Gold War Machine"};
+    int m=0;for(const auto& c:e.characters)if(std::find_if(std::begin(marvel),std::end(marvel),[&](const char* x){return c==x;})!=std::end(marvel))++m;
+    if(m==1)award("mvsc_11");
+   }
+  }
+ }
  if(e.type=="launch"){
   bool all=true;for(int i=0;i<6;++i)all=all&&stats(games_[size_t(i)].id).launches>0;
   if(all)award("collection_02");
@@ -150,11 +200,13 @@ bool Collection::processVerifiedEvent(const VerifiedEvent& e){
  if(e.type=="arcade_clear"){
   // A no-continue clear is never awarded if a cheat was active.
   if(!e.cheatsEnabled&&!e.continued){
-   noContinueClears_[e.game]=1;
+   noContinueClears_[e.game]=1;setFlag("nocontinue_"+e.game);
    if(e.game=="xmcota"||e.game=="msh"||e.game=="xmvsf"||e.game=="mvsc"||e.game=="mvsc2"||e.game=="sfexp"||e.game=="sfex2p")award(e.game+"_12");
   }
   bool all=true;for(int i=0;i<6;++i)all=all&&stats(games_[size_t(i)].id).clears>0;
   if(all)award("collection_09");
+  bool allClean=true;for(int i=0;i<6;++i)allClean=allClean&&flags_.count("nocontinue_"+games_[size_t(i)].id);
+  if(allClean)award("collection_10");
  }
  // Derived completion trophies can follow any award; no circular award.
  bool allMain=true;
@@ -183,6 +235,7 @@ bool Collection::save() const {
  out<<"MCL-STATE-1\n";
  for(auto const& [id,s]:stats_)out<<"S\t"<<id<<"\t"<<s.wins<<"\t"<<s.losses<<"\t"<<s.credits<<"\t"<<s.launches<<"\t"<<s.clears<<"\t"<<s.seconds<<"\n";
  for(auto const& [id,p]:progress_)if(p.unlocked)out<<"A\t"<<id<<"\t"<<p.timestamp<<"\n";
+ for(const auto& f:flags_)out<<"F\t"<<f<<"\n";
  out.close();if(!out)return false;fs::rename(tmp,p,ec);if(ec){fs::remove(p,ec);ec.clear();fs::rename(tmp,p,ec);}return !ec;
 }
 bool Collection::load(){
@@ -191,6 +244,7 @@ bool Collection::load(){
  auto f=split(line,'\t');try{
  if(f.size()==8&&f[0]=="S"&&validId(f[1])&&std::any_of(games_.begin(),games_.end(),[&](auto const&g){return g.id==f[1];})){
  Stats s; s.wins=std::stoi(f[2]);s.losses=std::stoi(f[3]);s.credits=std::stoi(f[4]);s.launches=std::stoi(f[5]);s.clears=std::stoi(f[6]);s.seconds=std::stoll(f[7]);if(s.wins>=0&&s.losses>=0&&s.credits>=0&&s.launches>=0&&s.clears>=0&&s.seconds>=0)stats_[f[1]]=s;
+ }else if(f.size()==2&&f[0]=="F"&&!f[1].empty()&&f[1].size()<80){flags_.insert(f[1]);
  }else if(f.size()==3&&f[0]=="A"&&std::any_of(achievements_.begin(),achievements_.end(),[&](auto const&a){return a.id==f[1];}))progress_[f[1]]={true,f[2]};
  }catch(...){continue;}
  }

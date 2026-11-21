@@ -61,7 +61,8 @@ GameLauncher::Result GameLauncher::launch(const std::string& game,bool cheatsUnl
   r.message=why.empty()?L"The emulator did not start. Check the emulator path, game ROM and BIOS.":widen(why);
   return r;
  }
- if(!pokes.empty()){session_->onCheatApplicationStatus(true);r.cheats=true;}
+ if(!pokes.empty()){session_->onCheatApplicationStatus(true);r.cheats=true;
+  VerifiedEvent c;c.game=game;c.type="cheat_used";model_.processVerifiedEvent(c);}
  {VerifiedEvent e;e.game=game;e.type="launch";session_->onVerifiedGameplayEvent(e);}
  r.ok=true;return r;
 }
@@ -92,6 +93,7 @@ void GameLauncher::ingestDetectedEvents(){
   VerifiedEvent e;e.game=game;e.type=d.type;e.detail=d.detail;
   e.arcadeMode=d.type!="two_player_match";e.humanControlled=true;
   e.continued=d.continued;e.allCharactersAlive=d.allAlive;
+  if(d.type=="match_win"||d.type=="arcade_clear"){e.characters=charactersFromDetail(game,d.detail);e.detail.clear();}
   session_->onVerifiedGameplayEvent(e);
  }
 }

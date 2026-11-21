@@ -1,6 +1,7 @@
 #pragma once
 #include <string>
 #include <vector>
+#include <set>
 #include <map>
 #include <filesystem>
 #include <functional>
@@ -33,6 +34,7 @@ struct VerifiedEvent {
     bool allCapcomTeam=false;
     int count=1;
     std::string detail;
+    std::vector<std::string> characters; // P1's fighters (match_win / arcade_clear)
 };
 class Collection {
 public:
@@ -69,6 +71,8 @@ private:
     bool galleryNotice_=false;
     std::vector<std::string> achievementNotices_;
     std::map<std::string,int> noContinueClears_;
+    std::set<std::string> flags_; // saved progress markers ("F" lines): secret wins, cheats used, no-continue clears
+    bool setFlag(const std::string& f);
     bool loadGalleryPackage(const fs::path& path);
     std::map<std::string,Stats> stats_;
     std::map<std::string,AchievementProgress> progress_;

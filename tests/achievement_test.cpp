@@ -37,6 +37,31 @@ int main(){
   p.game="sfex2p";p.detail="bison2";assert(c.processVerifiedEvent(p));assert(c.progress("sfex2p_11").unlocked);
   mcl::VerifiedEvent m;m.type="master_code";assert(c.processVerifiedEvent(m));assert(c.progress("collection_05").unlocked);
  }
+ {mcl::Collection c(root);
+  mcl::VerifiedEvent w;w.arcadeMode=true;w.humanControlled=true;w.type="match_win";
+  // character trophies
+  w.game="mshvsf";w.characters={"Dark Sakura","Ryu"};assert(c.processVerifiedEvent(w));assert(c.progress("mshvsf_07").unlocked);
+  w.game="xmvsf";w.characters={"Wolverine","Rogue"};assert(c.processVerifiedEvent(w));assert(c.progress("xmvsf_06").unlocked&&!c.progress("xmvsf_07").unlocked);
+  w.characters={"Ryu","Cammy"};w.cheatsEnabled=true;assert(c.processVerifiedEvent(w));assert(!c.progress("xmvsf_07").unlocked); // not with cheats
+  w.cheatsEnabled=false;assert(c.processVerifiedEvent(w));assert(c.progress("xmvsf_07").unlocked);
+  w.game="sfexp";w.characters={"Cycloid Beta"};assert(c.processVerifiedEvent(w));assert(c.progress("sfexp_09").unlocked);
+  // secret fighters accumulate across sessions (saved flags)
+  w.game="mshvsf";
+  for(const char* s:{"Mech-Zangief","Shadow Charlie","U.S. Agent","Mephisto"}){w.characters={s};assert(c.processVerifiedEvent(w));}
+  assert(!c.progress("mshvsf_12").unlocked);
+  // encounter Akuma
+  mcl::VerifiedEvent en;en.game="xmcota";en.type="encounter";en.detail="akuma";en.arcadeMode=true;en.humanControlled=true;
+  assert(c.processVerifiedEvent(en));assert(c.progress("xmcota_08").unlocked);
+  // Cheat Master needs a cheat in each of the six main games
+  mcl::VerifiedEvent ch;ch.type="cheat_used";
+  for(const char* g:{"xmcota","msh","xmvsf","mshvsf","mvsc"}){ch.game=g;assert(c.processVerifiedEvent(ch));}
+  assert(!c.progress("collection_06").unlocked);
+ }
+ {mcl::Collection c(root); // flags survived a restart
+  mcl::VerifiedEvent w;w.arcadeMode=true;w.humanControlled=true;w.type="match_win";w.game="mshvsf";w.characters={"Armored Spider-Man"};
+  assert(c.processVerifiedEvent(w));assert(c.progress("mshvsf_12").unlocked);
+  mcl::VerifiedEvent ch;ch.type="cheat_used";ch.game="mvsc2";assert(c.processVerifiedEvent(ch));assert(c.progress("collection_06").unlocked);
+ }
  {mcl::Collection c(root);assert(c.achievements().size()==108);assert(c.progress("sfexp_01").unlocked);assert(c.progress("xmcota_04").unlocked);
   assert(c.progress("mvsc_12").unlocked);assert(c.galleryUnlocked());}
  fs::remove_all(root);std::cout<<"PASS: 108 achievements, verified events, guards, unlocks, notifications, persistence\\n";
