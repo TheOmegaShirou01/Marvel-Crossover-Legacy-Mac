@@ -21,6 +21,8 @@ param(
   [switch]$Zip
 )
 $ErrorActionPreference = "Stop"
+$utf8 = New-Object System.Text.UTF8Encoding $false   # no BOM: the app reads these files byte for byte
+function Write-Text($path, $lines) { [IO.File]::WriteAllText($path, (($lines | ForEach-Object { $_ }) -join "`r`n") + "`r`n", $utf8) }
 $proj = (Resolve-Path ".").Path
 $bin = Join-Path $proj "bin"
 function First-Line($f) { (Get-Content $f | Where-Object { $_ -and -not $_.StartsWith("#") } | Select-Object -First 1).Trim() }
@@ -57,9 +59,9 @@ for ($i = 0; $i -lt $romDirs.Count; $i++) {
   $romTargets += $name
 }
 # 5. relative configuration
-Set-Content -Encoding UTF8 (Join-Path $dest "mame_executable.txt") ("Emulators\" + (Split-Path $mameDir -Leaf) + "\" + (Split-Path $mameExe -Leaf))
-if ($flyExe) { Set-Content -Encoding UTF8 (Join-Path $dest "flycast_executable.txt") ("Emulators\" + (Split-Path (Split-Path $flyExe -Parent) -Leaf) + "\" + (Split-Path $flyExe -Leaf)) }
-Set-Content -Encoding UTF8 (Join-Path $dest "rom_directory.txt") (@("# ROM/BIOS folders, relative to this file") + $romTargets)
+Write-Text (Join-Path $dest "mame_executable.txt") ("Emulators\" + (Split-Path $mameDir -Leaf) + "\" + (Split-Path $mameExe -Leaf))
+if ($flyExe) { Write-Text (Join-Path $dest "flycast_executable.txt") ("Emulators\" + (Split-Path (Split-Path $flyExe -Parent) -Leaf) + "\" + (Split-Path $flyExe -Leaf)) }
+Write-Text (Join-Path $dest "rom_directory.txt") (@("# ROM/BIOS folders, relative to this file") + $romTargets)
 # 6. the player's progress (save, settings, controls, backups)
 if (-not $NoUserData -and (Test-Path (Join-Path $bin "MCL_UserData"))) {
   Copy-Tree (Join-Path $bin "MCL_UserData") (Join-Path $dest "MCL_UserData") @() @("game_*.txt", "game_script.lua")
@@ -80,7 +82,7 @@ backups in MCL_UserData\Backups). High scores are saved by MAME in
 Emulators\MAME 0.289\hiscore.
 
 Source code: Source\MCL_v${Version}_SOURCE.zip
-"@ | Set-Content -Encoding UTF8 (Join-Path $dest "README.txt")
+"@ | Out-File -Encoding utf8 (Join-Path $dest "README.txt")
 $size = (Get-ChildItem $dest -Recurse -File | Measure-Object Length -Sum).Sum
 Write-Host ("Package ready: {0:N1} GB in {1}" -f ($size / 1GB), $dest)
 if ($Zip) {
