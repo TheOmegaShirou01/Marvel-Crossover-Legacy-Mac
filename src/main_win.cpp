@@ -1,5 +1,6 @@
 #define WIN32_LEAN_AND_MEAN
 #include "autosave.hpp"
+#include "autoconfig.hpp"
 #include <windows.h>
 #include <shellapi.h>
 #include <commctrl.h>
@@ -122,6 +123,8 @@ void showFeatureWindow(HWND owner,bool exUnlocked){
 int WINAPI wWinMain(HINSTANCE inst,HINSTANCE,LPWSTR,int){
  wchar_t exe[MAX_PATH];GetModuleFileNameW(nullptr,exe,MAX_PATH);
  const std::filesystem::path appDir=std::filesystem::path(exe).parent_path();
+ // New PC / first run: find the player's ROMs, MAME and Flycast when the config files don't work.
+ mcl::autoConfigure(appDir);
  // Auto-save safety net: repair a lost/damaged save from Backups, then back up.
  mcl::restoreIfNeeded(appDir/"MCL_UserData");
  mcl::backupUserData(appDir/"MCL_UserData",mcl::backupStamp());

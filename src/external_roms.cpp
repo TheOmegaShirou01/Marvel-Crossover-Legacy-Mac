@@ -66,8 +66,17 @@ fs::path readRomDirectory(const fs::path& configFile) {
 RomSearchPath resolveRuntimeRomSearchPath(const fs::path& applicationDirectory){
  auto explicitPaths=readRomSearchPath(applicationDirectory/"rom_directory.txt");
  if(!explicitPaths.empty())return explicitPaths;
- std::error_code ec;auto local=applicationDirectory/"Runtime"/"ROMs";
- if(fs::is_directory(local,ec))return RomSearchPath(local);
+ // No setting file: a ROMs folder beside the exe (portable package layout), with any
+ // sub-folders that hold extra files, then the old Runtime\ROMs location.
+ std::error_code ec;
+ for(const auto& local:{applicationDirectory/"ROMs",applicationDirectory/"Runtime"/"ROMs"}){
+  if(!fs::is_directory(local,ec))continue;
+  RomSearchPath p(local);
+  for(fs::directory_iterator it(local,fs::directory_options::skip_permission_denied,ec),end;!ec&&it!=end;it.increment(ec)){
+   std::error_code e2;if(it->is_directory(e2))p.dirs.push_back(it->path());
+  }
+  return p;
+ }
  return {};
 }
 fs::path resolveRuntimeRomDirectory(const fs::path& applicationDirectory){
