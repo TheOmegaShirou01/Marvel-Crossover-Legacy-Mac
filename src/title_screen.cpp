@@ -1190,6 +1190,19 @@ ID2D1Bitmap* galImage(const std::string& slug,const char* file){
  }
  return it->second.Get();
 }
+// Portrait for a character in a game: the PS1 gallery art when the player has it,
+// otherwise that game's own select-screen portrait extracted from the ROM
+// (tools/extract_portraits.py -> Art\<slug>\rom_<game>.png), otherwise any game's.
+ID2D1Bitmap* charPortrait(const std::string& name,const std::string& game,bool& pixelArt){
+ const std::string s=artSlug(name);
+ pixelArt=false;
+ if(auto* b=galImage(s,"portrait.png"))return b;
+ pixelArt=true;
+ if(auto* b=galImage(s,("rom_"+game+".png").c_str()))return b;
+ static const char* order[]={"xmcota","msh","xmvsf","mshvsf","mvsc","sfexp","sfex2p"};
+ for(const char* o:order)if(auto* b=galImage(s,(std::string("rom_")+o+".png").c_str()))return b;
+ return nullptr;
+}
 bool galleryOpen(){return g->cb.launcher&&g->cb.launcher->collection().galleryUnlocked();}
 std::vector<const mcl::Character*> galRoster(const std::string& game){
  std::vector<const mcl::Character*> v;
@@ -1256,12 +1269,12 @@ float paragraph(const std::wstring& t,IDWriteTextFormat* f,float x,float y,float
  g->brush->SetColor(c);g->rt->DrawTextLayout(D2D1::Point2F(x,y),l.Get(),g->brush.Get());
  DWRITE_TEXT_METRICS m{};l->GetMetrics(&m);return std::min(m.height,maxH);
 }
-void drawFitted(ID2D1Bitmap* b,D2D1_RECT_F box,float alpha=1.f){
+void drawFitted(ID2D1Bitmap* b,D2D1_RECT_F box,float alpha=1.f,bool pixelArt=false){
  if(!b)return;
  const auto sz=b->GetSize();
  const float s=std::min((box.right-box.left)/sz.width,(box.bottom-box.top)/sz.height);
  const float w=sz.width*s,h=sz.height*s,x=(box.left+box.right-w)/2,y=(box.top+box.bottom-h)/2;
- g->rt->DrawBitmap(b,D2D1::RectF(x,y,x+w,y+h),alpha,D2D1_BITMAP_INTERPOLATION_MODE_LINEAR);
+ g->rt->DrawBitmap(b,D2D1::RectF(x,y,x+w,y+h),alpha,pixelArt?D2D1_BITMAP_INTERPOLATION_MODE_NEAREST_NEIGHBOR:D2D1_BITMAP_INTERPOLATION_MODE_LINEAR);
 }
 void galPanel(){
  const float W=g->W(),H=g->H();
@@ -1289,7 +1302,7 @@ void drawGallery(double now){
   case 0:{
    text(L"GALLERY",g->fHead.Get(),D2D1::RectF(0,H*0.345f,W,H*0.40f),gold,H*0.004f);
    text(L"THE LEGENDS LIVE ON!",g->fSmall.Get(),D2D1::RectF(0,H*0.40f,W,H*0.435f),rgba(1.f,0.45f,0.3f),1.5f);
-   static const wchar_t* const sub[]={L"The story of all eight games",L"Bios and backgrounds for all 95 fighters",L"Original artwork from the PlayStation Marvel vs. Capcom gallery"};
+   static const wchar_t* const sub[]={L"The story of all eight games",L"Bios, backgrounds and portraits for all 95 fighters",L"Original artwork from the PlayStation Marvel vs. Capcom gallery"};
    for(int i=0;i<3;++i){
     const float y=H*0.49f+H*0.115f*static_cast<float>(i);
     const bool sel=i==g->galHub;
@@ -1322,7 +1335,7 @@ void drawGallery(double now){
     const float y=top+step*static_cast<float>(i-first);
     const bool sel=i==g->galRow;
     if(sel){g->brush->SetColor(rgba(0.12f,0.42f,1.f));g->brush->SetOpacity(0.35f);g->rt->FillRectangle(D2D1::RectF(W*0.08f,y,W*0.30f,y+step),g->brush.Get());g->brush->SetOpacity(1);}
-    const bool pic=galImage(artSlug(roster[static_cast<size_t>(i)]->name),"portrait.png")!=nullptr;
+    bool px=false;const bool pic=charPortrait(roster[static_cast<size_t>(i)]->name,gm.id,px)!=nullptr;
     leftText((pic?L"■ ":L"   ")+upper(wide(roster[static_cast<size_t>(i)]->name)),g->fSmall.Get(),W*0.09f,y,W*0.20f,step,sel?rgba(1,1,1):rgba(0.78f,0.84f,0.97f));
    }
    if(n>rows)leftText(std::to_wstring(g->galRow+1)+L" / "+std::to_wstring(n),g->fSmall.Get(),W*0.08f,top+step*rows,W*0.22f,step*0.9f,rgba(0.5f,0.56f,0.7f),DWRITE_TEXT_ALIGNMENT_TRAILING);
@@ -1330,10 +1343,10 @@ void drawGallery(double now){
    const auto* ch=roster[static_cast<size_t>(g->galRow)];
    const auto* pf=col.profile(ch->name);
    // portrait
-   ID2D1Bitmap* pic=galImage(artSlug(ch->name),"portrait.png");
+   bool pixel=false;ID2D1Bitmap* pic=charPortrait(ch->name,gm.id,pixel);
    const D2D1_RECT_F box=D2D1::RectF(W*0.32f,H*0.40f,W*0.47f,H*0.66f);
    g->brush->SetColor(rgba(0.05f,0.08f,0.2f));g->rt->FillRectangle(box,g->brush.Get());
-   if(pic)drawFitted(pic,box);
+   if(pic)drawFitted(pic,box,1.f,pixel);
    else text(L"NO ARTWORK\nIN YOUR\nCOLLECTION",g->fSmall.Get(),box,rgba(0.45f,0.5f,0.65f),1.f);
    g->brush->SetColor(rgba(0.3f,0.4f,0.7f));g->rt->DrawRectangle(box,g->brush.Get(),1.5f);
    // name + facts

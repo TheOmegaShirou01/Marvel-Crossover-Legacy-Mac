@@ -72,5 +72,10 @@ if not exist "bin\Audio\Unlock\mvsc.wav" (
  py -3 tools\extract_unlock_sounds.py --out bin\Audio\Unlock
  if errorlevel 1 echo WARNING: some unlock sounds could not be extracted.
 )
+REM ROM character portraits for the Gallery (from the user's ROMs, never committed).
+if not exist "bin\Gallery\Art\colossus\rom_xmcota.png" (
+ py -3 tools\extract_portraits.py --out bin\Gallery\Art
+ if errorlevel 1 echo WARNING: ROM portraits could not be extracted; the gallery shows text only for those fighters.
+)
 echo BUILD SUCCESS: bin\MarvelCrossoverLegacy_Features.exe
 endlocal
