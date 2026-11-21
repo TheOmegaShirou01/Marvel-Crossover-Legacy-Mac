@@ -1,4 +1,5 @@
 #define WIN32_LEAN_AND_MEAN
+#include "autosave.hpp"
 #include <windows.h>
 #include <shellapi.h>
 #include <commctrl.h>
@@ -121,6 +122,9 @@ void showFeatureWindow(HWND owner,bool exUnlocked){
 int WINAPI wWinMain(HINSTANCE inst,HINSTANCE,LPWSTR,int){
  wchar_t exe[MAX_PATH];GetModuleFileNameW(nullptr,exe,MAX_PATH);
  const std::filesystem::path appDir=std::filesystem::path(exe).parent_path();
+ // Auto-save safety net: repair a lost/damaged save from Backups, then back up.
+ mcl::restoreIfNeeded(appDir/"MCL_UserData");
+ mcl::backupUserData(appDir/"MCL_UserData",mcl::backupStamp());
  model=std::make_unique<mcl::Collection>(appDir/"MCL_UserData");
  INITCOMMONCONTROLSEX ic{sizeof(ic),ICC_STANDARD_CLASSES};InitCommonControlsEx(&ic);
  mcl::GameLauncher launcher(appDir,*model);

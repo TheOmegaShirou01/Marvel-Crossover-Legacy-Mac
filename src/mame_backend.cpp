@@ -1,5 +1,6 @@
 #include "mame_backend.hpp"
 #include "mame_sets.hpp"
+#include "autosave.hpp"
 #include <algorithm>
 #include <cctype>
 #include <fstream>
@@ -156,6 +157,9 @@ bool MameBackend::start(const std::string& id,const RomSearchPath& roms){
  }else{
   p_->activeLog=p_->log;
   std::error_code ce;
+  // High scores: MAME's hiscore plugin saves each game's table to MAME\hiscore\<set>.hi.
+  ensureHiscoreDat(spec.executable);
+  spec.arguments.push_back(L"-plugin");spec.arguments.push_back(L"hiscore");
   if(!p_->cheatScript.empty()&&fs::is_regular_file(p_->cheatScript,ce)){
    spec.arguments.push_back(L"-autoboot_script");
    spec.arguments.push_back(fs::absolute(p_->cheatScript).wstring());

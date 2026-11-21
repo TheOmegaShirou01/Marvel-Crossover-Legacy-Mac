@@ -8,6 +8,7 @@
 #include "music.hpp"
 #include "music_player.hpp"
 #include "app_settings.hpp"
+#include "autosave.hpp"
 #include <map>
 #include <fstream>
 #include <memory>
@@ -111,6 +112,7 @@ struct App {
  int galMode=0,galHub=0,galGame=0,galRow=0,galArtIdx=0;
  std::map<std::string,ComPtr<ID2D1Bitmap>> galArt;std::vector<std::string> galArtList;
  double galleryBannerUntil=-1;
+ double savedAt=-1e9; // "AUTO-SAVED" toast
  int achGroup=0,achRow=0;                 // ACHIEVEMENTS screen
  std::vector<std::string> achQueue;double achShowSince=-1; // "ACHIEVEMENT UNLOCKED!" popups
  mcl::AppSettings settings;int optRow=0; // OPTIONS screen (MCL_UserData\settings.txt)
@@ -436,7 +438,7 @@ void onPad(Pad p){
       const auto& game=games[static_cast<size_t>(g->cheatGame)];
       const auto& c=list[static_cast<size_t>(g->cheatRow)];
       g->cheats->set(game,c.id,!g->cheats->enabled(game,c.id));
-      g->cheats->save();
+      if(g->cheats->save())g->savedAt=g->now();
      }
      break;
     case Pad::Circle: setScreen(g->cheatsReturn);if(g->cheatsReturn==Screen::Select)g->selSince=g->now();break;
@@ -860,7 +862,7 @@ void drawIntro(double now){
 }
 
 // ---------- OPTIONS ----------
-void saveSettings(){g->settings.save(g->dir/"MCL_UserData"/"settings.txt");}
+void saveSettings(){if(g->settings.save(g->dir/"MCL_UserData"/"settings.txt"))g->savedAt=g->now();}
 void applyVideoSetting(){
  if(g->settings.backgroundVideo)g->video.start(g->dir/"earth_background.mp4",1280,720);
  else{g->video.stop();g->videoBmp.Reset();g->videoSerial=0;}
@@ -1415,6 +1417,10 @@ void render(){
   text(g->banner,g->fBanner.Get(),D2D1::RectF(0,H*0.35f,W,H*0.5f),rgba(1.f,0.84f,0.25f),H*0.006f,std::min(1.f,k*3));
  }
  drawGalleryUnlock(now);
+ // "AUTO-SAVED" toast, bottom left
+ {const double t=now-g->savedAt;
+  if(t>=0&&t<1800){const float a=static_cast<float>(std::min(1.0,std::min(t/150.0,(1800-t)/400.0)));
+   text(L"✔ AUTO-SAVED",g->fSmall.Get(),D2D1::RectF(W*0.02f,H*0.94f,W*0.25f,H*0.98f),rgba(0.55f,0.95f,0.6f),1.5f,a);}}
  drawAchievementPopup(now);
  // Calmer flashes behind the cards so the previews stay watchable.
  {const double wf=(now-g->whiteFlashStart)/700.0;
@@ -1549,6 +1555,8 @@ int mcl_title::run(HINSTANCE inst,const fs::path& appDir,const Callbacks& cb){
    if(app.cb.launcher&&app.cb.launcher->pollEnded(failure)){
     if(app.gameLoading){app.gameLoading=false;SetWindowPos(app.hwnd,HWND_NOTOPMOST,0,0,0,0,SWP_NOMOVE|SWP_NOSIZE);}
     app.gameRunning=false;app.video.setPaused(false);
+    // Results were just saved by the launcher; keep a dated backup and say so.
+    mcl::backupUserData(app.dir/"MCL_UserData",mcl::backupStamp());app.savedAt=app.now();
     ShowWindow(app.hwnd,SW_SHOW);SetForegroundWindow(app.hwnd);
     app.selSince=app.now();app.padPrev=0xFFFF; // ignore buttons still held from the game
     if(app.cb.launcher->takeExitSignal()){
