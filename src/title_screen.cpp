@@ -119,6 +119,9 @@ struct App {
  // Controllers: XInput (Xbox) + DirectInput (PlayStation 3/4/5, Switch, generic pads)
  mcl::Gamepads pads;std::vector<std::uint64_t> diPrev;std::vector<int> diStickPrev;
  mcl::ControlsConfig controls;int csRow=0,csCol=0,csCapture=0;double csCaptureSince=0; // CONTROLS SETUP
+ mcl::ControlsConfig mvc2Controls{mcl::ControlsConfig::Layout::Mvc2};int csGame=0;
+ WORD capXB[4]{};std::vector<std::uint64_t> capDi; // MvC2 controller capture: state when it began
+ // CONTROLS SETUP > GAME: MARVEL VS. CAPCOM 2 (controls_mvc2.txt)
  int achGroup=0,achRow=0;                 // ACHIEVEMENTS screen
  std::vector<std::string> achQueue;double achShowSince=-1;std::string achSoundFor; // "ACHIEVEMENT UNLOCKED!" popups
  mcl::AppSettings settings;int optRow=0; // OPTIONS screen (MCL_UserData\settings.txt)
@@ -1462,48 +1465,116 @@ void pollDirectPads(){
  }
 }
 // ---------- CONTROLS SETUP ----------
-// Rows: the 12 game inputs (keyboard + controller columns), then the 4 menu buttons
-// (controller only), RESET TO DEFAULTS and BACK. Enter = assign, Backspace = clear.
+// Row 0 picks the game set: MAME GAMES (keyboard + controller columns, then the 4 menu
+// buttons) or MARVEL VS. CAPCOM 2 (Flycast: its own keyboard layout; controllers use
+// Flycast's arcade layout). Then RESET TO DEFAULTS and BACK. Enter = assign, Backspace = clear.
 const wchar_t* const kMenuRows[]={L"MENU: CONFIRM",L"MENU: BACK",L"MENU: SELECT",L"MENU: START"};
+enum class CsRow { Game, Input, Menu, Reset, Back };
+bool csMvc2(){return g->csGame==1;}
+mcl::ControlsConfig& csCfg(){return csMvc2()?g->mvc2Controls:g->controls;}
 int csGameRows(){return static_cast<int>(mcl::gameInputs().size());}
-int csRows(){return csGameRows()+4+2;}
-void csSave(){if(g->controls.save(g->dir/"MCL_UserData"/"controls.txt"))g->savedAt=g->now();}
+int csRows(){return 1+csGameRows()+(csMvc2()?0:4)+2;}
+CsRow csKind(int r,int& index){
+ index=0;
+ if(r==0)return CsRow::Game;
+ r-=1;if(r<csGameRows()){index=r;return CsRow::Input;}
+ r-=csGameRows();
+ if(!csMvc2()){if(r<4){index=r;return CsRow::Menu;}r-=4;}
+ return r==0?CsRow::Reset:CsRow::Back;
+}
+// MvC2 controller rows: directions are always D-pad + stick and COIN is unused (FREE PLAY).
+bool csPadFixed(int input){
+ const std::string port=mcl::gameInputs()[static_cast<size_t>(input)].port;
+ return port.rfind("P1_JOYSTICK_",0)==0||port=="COIN1";
+}
+// MvC2: the next controller button pressed, by name (PAD_A...), "" if none. XInput pads are read
+// by name; DirectInput pads by their family's numbering (PlayStation, Switch, otherwise Xbox order).
+std::string namedPadPress(bool begin){
+ std::string hit;
+ static const std::pair<WORD,const char*> xb[]={{XINPUT_GAMEPAD_A,"PAD_A"},{XINPUT_GAMEPAD_B,"PAD_B"},{XINPUT_GAMEPAD_X,"PAD_X"},{XINPUT_GAMEPAD_Y,"PAD_Y"},
+  {XINPUT_GAMEPAD_LEFT_SHOULDER,"PAD_LB"},{XINPUT_GAMEPAD_RIGHT_SHOULDER,"PAD_RB"},{XINPUT_GAMEPAD_START,"PAD_START"},
+  {XINPUT_GAMEPAD_LEFT_THUMB,"PAD_LS"},{XINPUT_GAMEPAD_RIGHT_THUMB,"PAD_RS"}};
+ for(DWORD i=0;i<XUSER_MAX_COUNT;++i){
+  XINPUT_STATE st{};WORD now=0;
+  if(XInputGetState(i,&st)==ERROR_SUCCESS){
+   now=st.Gamepad.wButtons;
+   if(st.Gamepad.bLeftTrigger>150)now|=0x0400; // spare bits for the triggers
+   if(st.Gamepad.bRightTrigger>150)now|=0x0800;
+  }
+  const WORD pressed=static_cast<WORD>(now&~g->capXB[i]);g->capXB[i]=now;
+  if(begin||!hit.empty())continue;
+  for(const auto& b:xb)if(pressed&b.first){hit=b.second;break;}
+  if(hit.empty()&&(pressed&0x0400))hit="PAD_LT";
+  if(hit.empty()&&(pressed&0x0800))hit="PAD_RT";
+ }
+ static const char* const sony[]={"PAD_X","PAD_A","PAD_B","PAD_Y","PAD_LB","PAD_RB","PAD_LT","PAD_RT","","PAD_START","PAD_LS","PAD_RS"};
+ static const char* const nintendo[]={"PAD_B","PAD_A","PAD_Y","PAD_X","PAD_LB","PAD_RB","PAD_LT","PAD_RT","","PAD_START","PAD_LS","PAD_RS"};
+ static const char* const xbox[]={"PAD_A","PAD_B","PAD_X","PAD_Y","PAD_LB","PAD_RB","","PAD_START","PAD_LS","PAD_RS"};
+ const int n=g->pads.count();g->capDi.resize(static_cast<size_t>(n),0);
+ for(int i=0;i<n;++i){
+  const auto& info=g->pads.info(i);if(info.isXInput)continue;
+  mcl::PadSnapshot snap;if(!g->pads.poll(i,snap))continue;
+  const std::uint64_t pressed=snap.buttons&~g->capDi[static_cast<size_t>(i)];g->capDi[static_cast<size_t>(i)]=snap.buttons;
+  if(begin||!hit.empty())continue;
+  const char* const* table=info.vid==0x054C?sony:info.vid==0x057E?nintendo:xbox;
+  const int size=info.vid==0x054C||info.vid==0x057E?12:10;
+  for(int k=0;k<size;++k)if((pressed&(std::uint64_t(1)<<k))&&table[k][0]){hit=table[k];break;}
+ }
+ return hit;
+}
+void csSave(){
+ const bool ok=csMvc2()?g->mvc2Controls.save(g->dir/"MCL_UserData"/"controls_mvc2.txt"):g->controls.save(g->dir/"MCL_UserData"/"controls.txt");
+ if(ok)g->savedAt=g->now();
+}
 int& csMenuSlot(int i){return i==0?g->controls.menuConfirm:i==1?g->controls.menuBack:i==2?g->controls.menuSelect:g->controls.menuStart;}
 void csAssign(const std::string& code){
- const int r=g->csRow;
- if(r<csGameRows()){
-  auto& b=g->controls.binding(mcl::gameInputs()[static_cast<size_t>(r)].port);
+ int i=0;const CsRow k=csKind(g->csRow,i);
+ if(k==CsRow::Input){
+  auto& b=csCfg().binding(mcl::gameInputs()[static_cast<size_t>(i)].port);
   if(g->csCapture==1)b.key=code;else b.pad=code;
- }else if(r<csGameRows()+4){
+ }else if(k==CsRow::Menu){
   const auto at=code.find("_BUTTON");
   if(at==std::string::npos)return; // menu buttons must be buttons
-  try{csMenuSlot(r-csGameRows())=std::stoi(code.substr(at+7))-1;}catch(...){return;}
+  try{csMenuSlot(i)=std::stoi(code.substr(at+7))-1;}catch(...){return;}
  }
  g->csCapture=0;csSave();
 }
 void controlSetupPad(Pad p){
  if(g->csCapture)return;
  const int n=csRows();
+ int i=0;const CsRow k=csKind(g->csRow,i);
  switch(p){
   case Pad::Up: g->csRow=(g->csRow+n-1)%n;break;
   case Pad::Down: g->csRow=(g->csRow+1)%n;break;
-  case Pad::Left: case Pad::Right: if(g->csRow<csGameRows())g->csCol=1-g->csCol;break;
+  case Pad::Left: case Pad::Right:
+   if(k==CsRow::Game){g->csGame=1-g->csGame;g->csCol=0;}
+   else if(k==CsRow::Input&&!(csMvc2()&&csPadFixed(i)))g->csCol=1-g->csCol;
+   break;
   case Pad::Cross: case Pad::Start:
-   if(g->csRow<csGameRows()){g->csCapture=g->csCol==0?1:2;}
-   else if(g->csRow<csGameRows()+4){g->csCapture=2;}
-   else if(g->csRow==csGameRows()+4){g->controls.resetDefaults();csSave();showBanner(L"CONTROLS RESET");}
+   if(k==CsRow::Game){g->csGame=1-g->csGame;g->csCol=0;}
+   else if(k==CsRow::Input){
+    if(g->csCol==0)g->csCapture=1;
+    else if(!(csMvc2()&&csPadFixed(i)))g->csCapture=2;
+   }
+   else if(k==CsRow::Menu){g->csCapture=2;}
+   else if(k==CsRow::Reset){
+    if(csMvc2())g->mvc2Controls.resetDefaults();
+    else{const int c=g->controls.menuConfirm,b=g->controls.menuBack,s=g->controls.menuSelect,t=g->controls.menuStart;(void)c;(void)b;(void)s;(void)t;g->controls.resetDefaults();}
+    csSave();showBanner(L"CONTROLS RESET");
+   }
    else{setScreen(Screen::Options);}
-   if(g->csCapture){g->csCaptureSince=g->now();if(g->csCapture==2){g->pads.rescan();g->pads.resetCapture();}}
+   if(g->csCapture){g->csCaptureSince=g->now();if(g->csCapture==2){g->pads.rescan();g->pads.resetCapture();if(csMvc2())namedPadPress(true);}}
    break;
   case Pad::Select:
-   if(g->csRow<csGameRows()){auto& b=g->controls.binding(mcl::gameInputs()[static_cast<size_t>(g->csRow)].port);(g->csCol==0?b.key:b.pad).clear();csSave();}
-   else if(g->csRow<csGameRows()+4){csMenuSlot(g->csRow-csGameRows())=-1;csSave();}
+   if(k==CsRow::Input&&!(g->csCol==1&&csMvc2()&&csPadFixed(i))){auto& b=csCfg().binding(mcl::gameInputs()[static_cast<size_t>(i)].port);(g->csCol==0?b.key:b.pad).clear();csSave();}
+   else if(k==CsRow::Menu){csMenuSlot(i)=-1;csSave();}
    break;
   case Pad::Circle: setScreen(Screen::Options);break;
  }
 }
 void drawControlSetup(double now){
  const float W=g->W(),H=g->H();
+ const bool mvc2=csMvc2();
  g->brush->SetColor(rgba(0,0,0.02f));g->brush->SetOpacity(0.86f);
  g->rt->FillRectangle(D2D1::RectF(W*0.06f,H*0.33f,W*0.94f,H*0.93f),g->brush.Get());g->brush->SetOpacity(1);
  text(L"CONTROLS SETUP",g->fHead.Get(),D2D1::RectF(0,H*0.335f,W,H*0.385f),rgba(1.f,0.84f,0.25f),H*0.004f);
@@ -1514,36 +1585,47 @@ void drawControlSetup(double now){
  leftText(pads,g->fSmall.Get(),W*0.08f,H*0.385f,W*0.84f,H*0.03f,rgba(0.55f,0.62f,0.78f),DWRITE_TEXT_ALIGNMENT_CENTER);
  const float top=H*0.45f,step=H*0.031f;
  leftText(L"KEYBOARD",g->fSmall.Get(),W*0.42f,top-step,W*0.2f,step,rgba(1.f,0.84f,0.25f));
- leftText(L"CONTROLLER",g->fSmall.Get(),W*0.66f,top-step,W*0.25f,step,rgba(1.f,0.84f,0.25f));
+ leftText(L"CONTROLLER",g->fSmall.Get(),W*0.66f,top-step,W*0.27f,step,rgba(1.f,0.84f,0.25f));
  const int n=csRows(),rows=14;
  const int first=std::clamp(g->csRow-rows/2,0,std::max(0,n-rows));
  const bool blink=std::fmod(now,600.0)<350.0;
+ // MvC2 rows that can't be changed: directions (D-pad + left stick) and COIN (the game is on FREE PLAY).
+ static const wchar_t* const flyPad[]={L"D-PAD / STICK",L"D-PAD / STICK",L"D-PAD / STICK",L"D-PAD / STICK",L"",L"",L"",L"",L"",L"",L"",L"- (FREE PLAY)"};
  for(int r=first;r<std::min(n,first+rows);++r){
   const float y=top+step*static_cast<float>(r-first);
   const bool sel=r==g->csRow;
   if(sel){g->brush->SetColor(rgba(0.12f,0.42f,1.f));g->brush->SetOpacity(0.30f);g->rt->FillRectangle(D2D1::RectF(W*0.08f,y,W*0.92f,y+step),g->brush.Get());g->brush->SetOpacity(1);}
-  std::wstring label,key,pad;
-  if(r<csGameRows()){
-   const auto& gi=mcl::gameInputs()[static_cast<size_t>(r)];const auto& b=g->controls.binding(gi.port);
-   label=wide(gi.label);key=wide(mcl::inputLabel(b.key));pad=wide(mcl::inputLabel(b.pad));
-  }else if(r<csGameRows()+4){
-   label=kMenuRows[r-csGameRows()];key=L"";const int v=csMenuSlot(r-csGameRows());pad=v<0?L"AUTO":L"BUTTON "+std::to_wstring(v+1);
-  }else if(r==csGameRows()+4){label=L"RESET TO DEFAULTS";}
+  int i=0;const CsRow k=csKind(r,i);
+  std::wstring label,key,pad;bool keyCell=false,padCell=false,padFixed=false;
+  if(k==CsRow::Game){
+   label=L"GAME";key=mvc2?L"◀ MARVEL VS. CAPCOM 2 ▶":L"◀ MAME GAMES ▶";
+  }else if(k==CsRow::Input){
+   const auto& gi=mcl::gameInputs()[static_cast<size_t>(i)];const auto& b=csCfg().binding(gi.port);
+   label=wide(mvc2?mcl::mvc2Label(gi.port):gi.label);key=wide(mcl::inputLabel(b.key));keyCell=true;
+   pad=wide(mcl::inputLabel(b.pad));
+   if(mvc2&&csPadFixed(i)){pad=flyPad[i];padFixed=true;}else padCell=true;
+  }else if(k==CsRow::Menu){
+   label=kMenuRows[i];const int v=csMenuSlot(i);pad=v<0?L"AUTO":L"BUTTON "+std::to_wstring(v+1);padCell=true;
+  }else if(k==CsRow::Reset){label=L"RESET TO DEFAULTS";}
   else{label=L"BACK";}
   leftText(label,g->fSmall.Get(),W*0.10f,y,W*0.30f,step,sel?rgba(1,1,1):rgba(0.8f,0.86f,0.98f));
   const auto cell=[&](const std::wstring& t,int col,float x){
-   const bool on=sel&&r<csGameRows()+4&&(r>=csGameRows()?col==1:g->csCol==col);
+   const bool on=sel&&(k==CsRow::Input?g->csCol==col:k==CsRow::Menu?col==1:false);
    std::wstring v=t;
    if(on&&g->csCapture)v=blink?(col==0?L"PRESS A KEY...":L"PRESS A BUTTON..."):L"";
    else if(on)v=L"▶ "+t;
-   leftText(v,g->fSmall.Get(),x,y,W*0.24f,step,on?rgba(1.f,0.84f,0.25f):rgba(0.65f,0.75f,0.95f));
+   leftText(v,g->fSmall.Get(),x,y,W*0.26f,step,on?rgba(1.f,0.84f,0.25f):rgba(0.65f,0.75f,0.95f));
   };
-  if(r<csGameRows()+4){if(r<csGameRows())cell(key,0,W*0.42f);cell(pad,1,W*0.66f);}
+  if(k==CsRow::Game)leftText(key,g->fSmall.Get(),W*0.42f,y,W*0.48f,step,sel?rgba(1.f,0.84f,0.25f):rgba(0.65f,0.75f,0.95f));
+  if(keyCell)cell(key,0,W*0.42f);
+  if(padCell)cell(pad,1,W*0.66f);
+  if(padFixed)leftText(pad,g->fSmall.Get(),W*0.66f,y,W*0.26f,step,rgba(0.5f,0.56f,0.7f));
  }
  const std::wstring hint=g->csCapture?L"PRESS THE KEY / BUTTON TO USE      ESC  CANCEL      (8 SECONDS)":
   L"↑↓ CHOOSE      ←→ KEYBOARD / CONTROLLER      ENTER  ASSIGN      BACKSPACE  CLEAR      ESC  BACK";
  text(hint,g->fSmall.Get(),D2D1::RectF(0,H*0.94f,W,H*0.98f),rgba(0.6f,0.66f,0.8f),2,0.85f);
- text(L"APPLIES TO ALL MAME GAMES  •  MvC2 (FLYCAST): SET BUTTONS IN FLYCAST'S OWN MENU (TAB)",g->fSmall.Get(),D2D1::RectF(0,H*0.895f,W,H*0.925f),rgba(0.5f,0.56f,0.7f),1.5f,0.9f);
+ text(mvc2?L"MARVEL VS. CAPCOM 2 ONLY (FLYCAST)  •  TAB / BACK BUTTON = PAUSE":L"APPLIES TO ALL MAME GAMES  •  CHOOSE MARVEL VS. CAPCOM 2 IN THE GAME ROW FOR ITS OWN KEYS",
+  g->fSmall.Get(),D2D1::RectF(0,H*0.895f,W,H*0.925f),rgba(0.5f,0.56f,0.7f),1.5f,0.9f);
 }
 void drawControls(){
  const float W=g->W(),H=g->H();
@@ -1629,7 +1711,7 @@ void render(){
 void pollDirectPads();
 void pollPad(){
  if(g->screen==Screen::ControlSetup&&g->csCapture){ // capturing: buttons go to the setup, not the menus
-  if(g->csCapture==2){const std::string c=g->pads.capturePress();if(!c.empty())csAssign(c);}
+  if(g->csCapture==2){const std::string c=csMvc2()?namedPadPress(false):g->pads.capturePress();if(!c.empty())csAssign(c);}
   if(g->now()-g->csCaptureSince>8000)g->csCapture=0;
   WORD held=0;for(DWORD i=0;i<XUSER_MAX_COUNT;++i){XINPUT_STATE s{};if(XInputGetState(i,&s)==ERROR_SUCCESS)held|=s.Gamepad.wButtons;}
   g->padPrev=held;
@@ -1909,6 +1991,7 @@ int mcl_title::run(HINSTANCE inst,const fs::path& appDir,const Callbacks& cb){
  if(!app.hwnd){g=nullptr;if(SUCCEEDED(co))CoUninitialize();return 2;}
  app.settings.load(appDir/"MCL_UserData"/"settings.txt");
  app.controls.load(appDir/"MCL_UserData"/"controls.txt");
+ app.mvc2Controls.load(appDir/"MCL_UserData"/"controls_mvc2.txt");
  app.updater=std::make_unique<mcl::Updater>(appDir);app.updater->startCheck(); // GitHub releases, in the background
  app.pads.init(app.hwnd);
  setFullscreen(app.settings.fullscreen);

@@ -40,6 +40,37 @@ GameLauncher::Result GameLauncher::launch(const std::string& game,bool cheatsUnl
    std::ofstream(mame.parent_path()/"ctrlr"/"mcl_controls.cfg",std::ios::trunc)<<controls.mameCtrlrXml();
    emulator_->setControllerFile(L"mcl_controls");
   }}
+ // MvC2 (Flycast): the player's own MvC2 keys and controller buttons (CONTROLS SETUP > GAME:
+ // MARVEL VS. CAPCOM 2), written as Flycast's mappings for arcade games. Flycast keeps one
+ // mapping per controller model, so one file is written for every pad Flycast has reported
+ // in its log (remembered in MCL_UserDatalycast_pads.txt) plus the common models.
+ if(usesFlycast(game)){
+  const fs::path fly=readMameExecutable(dir_/"flycast_executable.txt");
+  if(!fly.empty()){
+   ControlsConfig mvc2(ControlsConfig::Layout::Mvc2);mvc2.load(dir_/"MCL_UserData"/"controls_mvc2.txt");
+   const fs::path maps=fly.parent_path()/"mappings";
+   std::error_code ec;fs::create_directories(maps,ec);
+   std::ofstream(maps/"SDL_Keyboard_arcade.cfg",std::ios::trunc)<<flycastKeyboardCfg(mvc2);
+   std::vector<std::pair<char,std::string>> pads={{'r',"Xbox 360 Controller"},{'r',"XInput Controller"},{'r',"Xbox One Controller"},
+    {'r',"Xbox Series X Controller"},{'r',"Controller (XBOX 360 For Windows)"},{'h',"PS3 Controller"},{'h',"PS4 Controller"},
+    {'h',"PS5 Controller"},{'h',"Nintendo Switch Pro Controller"}};
+   const fs::path known=dir_/"MCL_UserData"/"flycast_pads.txt";
+   {std::ifstream in(known);std::string line;
+    while(std::getline(in,line))if(line.size()>2&&line[1]=='\t')pads.push_back({line[0],line.substr(2)});}
+   {std::ifstream in(fly.parent_path()/"flycast.log");const std::string log((std::istreambuf_iterator<char>(in)),std::istreambuf_iterator<char>());
+    for(const auto& p:flycastPadsFromLog(log))pads.push_back(p);}
+   // last word wins (the log is newest), one entry per name
+   std::vector<std::pair<char,std::string>> unique;
+   for(auto it=pads.rbegin();it!=pads.rend();++it){bool seen=false;for(const auto& u:unique)seen=seen||u.second==it->second;if(!seen)unique.push_back(*it);}
+   {std::ofstream out(known,std::ios::trunc);for(const auto& u:unique)if(u.first)out<<u.first<<'\t'<<u.second<<"\n";}
+   for(const auto& u:unique){
+    const std::string cfg=flycastPadCfg(mvc2,u.first);if(cfg.empty())continue;
+    std::string file="SDL_"+u.second+"_arcade.cfg";
+    for(char& ch:file)if(std::string("/\\:?*|\"<>").find(ch)!=std::string::npos)ch='-';
+    std::ofstream(maps/fs::u8path(file),std::ios::trunc)<<cfg;
+   }
+  }
+ }
  session_=std::make_unique<EmulatorBridge>(model_,*emulator_,resolveRuntimeRomSearchPath(dir_));
  // Cheats: Marvel ones need the master code, EX ones need CHEAT EX, this session.
  std::vector<Poke> pokes;
