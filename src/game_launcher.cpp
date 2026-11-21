@@ -24,6 +24,7 @@ GameLauncher::Result GameLauncher::launch(const std::string& game,bool cheatsUnl
   if(running()){r.message=L"A game is already running.";return r;}
   session_->stop();
  }
+ game_=game;
  // Fresh backend each time so edits to the config files take effect without a restart.
  session_.reset();
  emulator_=std::make_unique<MameBackend>(readMameExecutable(dir_/"mame_executable.txt"));
@@ -88,6 +89,11 @@ bool GameLauncher::gameReady() const{
  std::error_code ec;return fs::is_regular_file(dir_/"MCL_UserData"/"game_ready.txt",ec);
 }
 void GameLauncher::bringToFront(){if(emulator_)emulator_->bringToFront();}
+bool GameLauncher::flycastGame() const{return running()&&usesFlycast(game_);}
+HWND GameLauncher::gameWindow() const{return emulator_?emulator_->window():nullptr;}
+bool GameLauncher::freezeGame(bool frozen){return emulator_&&emulator_->freeze(frozen);}
+int GameLauncher::gameAdvancing(){return emulator_?emulator_->naomiAdvancing():-1;}
+bool GameLauncher::tapGameKey(unsigned vk){return emulator_&&emulator_->tapKey(vk);}
 void GameLauncher::startCoverGuard(HWND cover){if(emulator_)emulator_->startCoverGuard(cover);}
 void GameLauncher::stopCoverGuard(){if(emulator_)emulator_->stopCoverGuard();}
 void GameLauncher::awardMasterCode(){VerifiedEvent e;e.type="master_code";model_.processVerifiedEvent(e);}

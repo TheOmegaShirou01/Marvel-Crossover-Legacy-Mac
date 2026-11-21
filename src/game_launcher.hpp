@@ -38,6 +38,13 @@ public:
  // True once MAME has finished loading (first frame); Flycast games are ready at once.
  bool gameReady() const;
  void bringToFront();
+ // MvC2 (Flycast) pause screen support: the running game, its window, freeze/unfreeze,
+ // whether the NAOMI program is advancing (0 = Flycast's own menu is open) and key taps.
+ bool flycastGame() const;
+ HWND gameWindow() const;
+ bool freezeGame(bool frozen);
+ int gameAdvancing();
+ bool tapGameKey(unsigned vk);
  void startCoverGuard(HWND cover);
  void stopCoverGuard();
  // The master cheat code was entered in the front end (The Secret Code achievement).
@@ -56,6 +63,7 @@ private:
  std::unique_ptr<EmulatorBridge> session_;
  bool gamesWindowed_=false;
  bool needsReadySignal_=false;
+ std::string game_;
  void ingestDetectedEvents();
 };
 }

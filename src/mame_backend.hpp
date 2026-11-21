@@ -77,6 +77,15 @@ public:
  void stopCoverGuard();
  bool pause(bool paused) override;
  bool running()const;
+ // The emulator's main window (nullptr if none yet).
+ HWND window() const;
+ // Freeze / unfreeze every thread of the emulator process (front-end pause screen).
+ bool freeze(bool frozen);
+ // Flycast: is the NAOMI program still running? Compares its work RAM 150 ms apart.
+ // 1 = changing (emulation running), 0 = frozen (Flycast's menu is open), -1 = unknown.
+ int naomiAdvancing();
+ // Send one key press straight to the emulator window (no focus needed).
+ bool tapKey(unsigned vk);
  // Best-effort default MAME F5 UI pause key. This does not confirm paused state.
  bool requestPauseHotkey();
  // Launches MAME, or Flycast for games mapped to it. Name kept for history.

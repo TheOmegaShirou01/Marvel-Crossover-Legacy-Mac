@@ -3,6 +3,8 @@
 #include "autosave.hpp"
 #include <atomic>
 #include <thread>
+#include <cstdint>
+#include <vector>
 #include <algorithm>
 #include <cctype>
 #include <fstream>
@@ -305,5 +307,42 @@ bool MameBackend::requestPauseHotkey(){
  return SendInput(2,key,sizeof(INPUT))==2;
 }
 bool MameBackend::pause(bool){return false; /* No verified pause state/acknowledgement protocol yet. */}
+HWND MameBackend::window() const{
+ if(!running())return nullptr;
+ PauseWindowLookup lookup{p_->pid,nullptr};
+ EnumWindows(findPauseWindow,reinterpret_cast<LPARAM>(&lookup));
+ return lookup.window;
+}
+bool MameBackend::freeze(bool frozen){
+ if(!p_->process)return false;
+ using NtProc=LONG(NTAPI*)(HANDLE);
+ static const HMODULE nt=GetModuleHandleW(L"ntdll.dll");
+ if(!nt)return false;
+ const auto fn=reinterpret_cast<NtProc>(reinterpret_cast<void*>(GetProcAddress(nt,frozen?"NtSuspendProcess":"NtResumeProcess")));
+ return fn&&fn(p_->process)>=0;
+}
+int MameBackend::naomiAdvancing(){
+ if(!running())return -1;
+ // NAOMI main RAM is Flycast's one 32 MB file-mapped region; MvC2's variables sit in its first 4 MB.
+ std::uintptr_t base=0;MEMORY_BASIC_INFORMATION mbi{};
+ for(std::uintptr_t a=0;VirtualQueryEx(p_->process,reinterpret_cast<void*>(a),&mbi,sizeof mbi)==sizeof mbi;a=reinterpret_cast<std::uintptr_t>(mbi.BaseAddress)+mbi.RegionSize){
+  if(mbi.State==MEM_COMMIT&&mbi.Type==MEM_MAPPED&&mbi.RegionSize==0x2000000&&!(mbi.Protect&PAGE_GUARD)){base=reinterpret_cast<std::uintptr_t>(mbi.BaseAddress);break;}
+  if(mbi.RegionSize==0)break;
+ }
+ if(!base)return -1;
+ const size_t size=0x400000;std::vector<char> a(size),b(size);SIZE_T got=0;
+ if(!ReadProcessMemory(p_->process,reinterpret_cast<void*>(base),a.data(),size,&got)||got!=size)return -1;
+ Sleep(150);
+ if(!ReadProcessMemory(p_->process,reinterpret_cast<void*>(base),b.data(),size,&got)||got!=size)return -1;
+ return a==b?0:1;
+}
+bool MameBackend::tapKey(unsigned vk){
+ const HWND h=window();if(!h)return false;
+ const UINT sc=MapVirtualKeyW(vk,MAPVK_VK_TO_VSC);
+ PostMessageW(h,WM_KEYDOWN,vk,static_cast<LPARAM>(1|(sc<<16)));
+ Sleep(80);
+ PostMessageW(h,WM_KEYUP,vk,static_cast<LPARAM>(1|(sc<<16)|(3u<<30)));
+ return true;
+}
 #endif
 }

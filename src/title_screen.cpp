@@ -130,6 +130,11 @@ struct App {
  std::wstring nowPlaying;double nowPlayingSince=-1e9;
  double whiteFlashStart=-1e9;          // EXIT GAME > YES: white flash on return
  double quickExitSince=-1;bool quickExit=false; // L1+R1+R2+SELECT+START held 3 s
+ // MvC2 (Flycast) pause screen, opened by Back/Select on any pad or Tab. Those are also Flycast's
+ // own menu buttons, so Flycast's menu (Cheats, Settings, Save State...) opens underneath; it is
+ // covered by this screen, which offers only CONTINUE and EXIT GAME, and closed again on CONTINUE.
+ bool flyPause=false,flyConfirm=false,flyMenuOpen=false,flyExiting=false;int flyRow=0;
+ bool flyPrevX[4]{};std::vector<bool> flyPrevDi;bool flyPrevTab=false;
  Screen screen=Screen::Intro;double screenSince=0;
  ComPtr<ID2D1Bitmap> mvcFont; // Fonts\mvc_font.png: MvC's own 8x8 font (tools/extract_mvc_font.py)
  double layoutFrom=0,layoutTo=0,layoutStart=-1e9; // 0 = title layout, 1 = menu layout
@@ -401,7 +406,10 @@ void activate(MenuItem item){
   case MenuItem::Exit: DestroyWindow(g->hwnd);break;
  }
 }
+void flyPausePad(Pad p);
+void drawFlyPause();
 void onPad(Pad p){
+ if(g->flyPause){flyPausePad(p);return;}
  // Ignore input while another window (Arcade Select, Options, a game) is in front:
  // their modal loops still dispatch messages to this window.
  if(!IsWindowEnabled(g->hwnd)||g->gameRunning)return;
@@ -1565,6 +1573,7 @@ void render(){
   case Screen::Jukebox: drawJukebox(now);break;
  }
  drawNowPlaying(now);
+ if(g->flyPause||g->flyExiting)drawFlyPause();
  if(g->gameLoading)drawLoading(now);
  if(!g->overlay.empty())drawOverlay();
  if(now<g->bannerUntil){
@@ -1592,14 +1601,19 @@ void pollPad(){
  if(g->screen==Screen::ControlSetup&&g->csCapture){ // capturing: buttons go to the setup, not the menus
   if(g->csCapture==2){const std::string c=g->pads.capturePress();if(!c.empty())csAssign(c);}
   if(g->now()-g->csCaptureSince>8000)g->csCapture=0;
-  XINPUT_STATE s{};if(XInputGetState(0,&s)==ERROR_SUCCESS)g->padPrev=s.Gamepad.wButtons;
+  WORD held=0;for(DWORD i=0;i<XUSER_MAX_COUNT;++i){XINPUT_STATE s{};if(XInputGetState(i,&s)==ERROR_SUCCESS)held|=s.Gamepad.wButtons;}
+  g->padPrev=held;
   return;
  }
  pollDirectPads();
- XINPUT_STATE st{};DWORD found=ERROR_DEVICE_NOT_CONNECTED;
- for(DWORD i=0;i<XUSER_MAX_COUNT&&found!=ERROR_SUCCESS;++i){ZeroMemory(&st,sizeof st);found=XInputGetState(i,&st);}
- if(found!=ERROR_SUCCESS){g->padPrev=0;g->stickPrev=0;return;}
- const WORD b=st.Gamepad.wButtons,pressed=static_cast<WORD>(b&~g->padPrev);g->padPrev=b;
+ // Every connected Xbox-style pad drives the menus (buttons combined, strongest stick wins).
+ WORD b=0;SHORT y=0;bool any=false;
+ for(DWORD i=0;i<XUSER_MAX_COUNT;++i){
+  XINPUT_STATE st{};if(XInputGetState(i,&st)!=ERROR_SUCCESS)continue;
+  any=true;b|=st.Gamepad.wButtons;if(std::abs(st.Gamepad.sThumbLY)>std::abs(y))y=st.Gamepad.sThumbLY;
+ }
+ if(!any){g->padPrev=0;g->stickPrev=0;return;}
+ const WORD pressed=static_cast<WORD>(b&~g->padPrev);g->padPrev=b;
  if(pressed&XINPUT_GAMEPAD_DPAD_UP)onPad(Pad::Up);
  if(pressed&XINPUT_GAMEPAD_DPAD_DOWN)onPad(Pad::Down);
  if(pressed&XINPUT_GAMEPAD_DPAD_LEFT)onPad(Pad::Left);
@@ -1608,8 +1622,88 @@ void pollPad(){
  if(pressed&XINPUT_GAMEPAD_B)onPad(Pad::Circle);
  if(pressed&XINPUT_GAMEPAD_BACK)onPad(Pad::Select);
  if(pressed&XINPUT_GAMEPAD_START)onPad(Pad::Start);
- const SHORT y=st.Gamepad.sThumbLY;const int dir=y>20000?1:(y<-20000?-1:0);
+ const int dir=y>20000?1:(y<-20000?-1:0);
  if(dir!=g->stickPrev){if(dir==1)onPad(Pad::Up);else if(dir==-1)onPad(Pad::Down);g->stickPrev=dir;}
+}
+// ---------- MvC2 pause screen (Flycast) ----------
+// Back/Select newly pressed on any pad, or Tab, while Flycast's window has the focus.
+bool flyPauseTriggered(){
+ const HWND fw=g->cb.launcher?g->cb.launcher->gameWindow():nullptr;
+ const bool front=fw&&GetForegroundWindow()==fw;
+ bool hit=false;
+ for(DWORD i=0;i<XUSER_MAX_COUNT;++i){
+  XINPUT_STATE st{};const bool on=XInputGetState(i,&st)==ERROR_SUCCESS&&(st.Gamepad.wButtons&XINPUT_GAMEPAD_BACK);
+  if(on&&!g->flyPrevX[i])hit=true;
+  g->flyPrevX[i]=on;
+ }
+ const int n=g->pads.count();g->flyPrevDi.resize(static_cast<size_t>(n),false);
+ for(int i=0;i<n;++i){
+  const auto& info=g->pads.info(i);if(info.isXInput)continue;
+  mcl::PadSnapshot s;if(!g->pads.poll(i,s))continue;
+  const int k=g->controls.menuSelect>=0?g->controls.menuSelect:mcl::defaultMenuButtons(info.vid,info.pid).select;
+  const bool on=k>=0&&k<64&&(s.buttons&(std::uint64_t(1)<<k));
+  if(on&&!g->flyPrevDi[static_cast<size_t>(i)])hit=true;
+  g->flyPrevDi[static_cast<size_t>(i)]=on;
+ }
+ const bool tab=(GetAsyncKeyState(VK_TAB)&0x8000)!=0;
+ if(tab&&!g->flyPrevTab)hit=true;
+ g->flyPrevTab=tab;
+ return hit&&front;
+}
+void openFlyPause(){
+ auto* L=g->cb.launcher;const HWND fw=L->gameWindow();
+ Sleep(100);
+ g->flyMenuOpen=L->gameAdvancing()==0; // the game stopped: Flycast's own menu came up
+ // Take the focus while Flycast can still answer, then freeze it (no sound, no input).
+ const DWORD me=GetCurrentThreadId(),them=fw?GetWindowThreadProcessId(fw,nullptr):0;
+ if(them)AttachThreadInput(me,them,TRUE);
+ SetWindowPos(g->hwnd,HWND_TOPMOST,0,0,0,0,SWP_NOMOVE|SWP_NOSIZE|SWP_SHOWWINDOW);
+ SetForegroundWindow(g->hwnd);SetFocus(g->hwnd);
+ if(them)AttachThreadInput(me,them,FALSE);
+ L->freezeGame(true);
+ g->flyPause=true;g->flyConfirm=false;g->flyRow=0;
+ g->padPrev=0xFFFF;std::fill(g->diPrev.begin(),g->diPrev.end(),~std::uint64_t(0)); // ignore buttons still held
+}
+void closeFlyPause(bool exitGame){
+ auto* L=g->cb.launcher;
+ g->flyPause=false;g->flyConfirm=false;
+ L->freezeGame(false);
+ if(exitGame){g->flyExiting=true;L->requestClose();return;} // stay on top until Flycast has closed
+ if(g->flyMenuOpen){
+  // Tab closes Flycast's menu again; check the game is running and retry once if not.
+  L->tapGameKey(VK_TAB);Sleep(200);
+  if(L->gameAdvancing()==0)L->tapGameKey(VK_TAB);
+ }
+ SetWindowPos(g->hwnd,HWND_NOTOPMOST,0,0,0,0,SWP_NOMOVE|SWP_NOSIZE|SWP_NOACTIVATE);
+ L->bringToFront();
+ g->flyPrevTab=(GetAsyncKeyState(VK_TAB)&0x8000)!=0;
+}
+void flyPausePad(Pad p){
+ const bool vertical=p==Pad::Up||p==Pad::Down||(g->flyConfirm&&(p==Pad::Left||p==Pad::Right));
+ if(vertical){g->flyRow^=1;return;}
+ if(!g->flyConfirm){
+  if(p==Pad::Cross||p==Pad::Start){if(g->flyRow==0)closeFlyPause(false);else{g->flyConfirm=true;g->flyRow=1;}}
+  else if(p==Pad::Circle||p==Pad::Select)closeFlyPause(false);
+ }else{
+  if(p==Pad::Cross){if(g->flyRow==0)closeFlyPause(true);else{g->flyConfirm=false;g->flyRow=1;}}
+  else if(p==Pad::Circle||p==Pad::Select){g->flyConfirm=false;g->flyRow=1;}
+ }
+}
+void drawFlyPause(){
+ const float W=g->W(),H=g->H();
+ g->brush->SetColor(rgba(0,0,0));g->brush->SetOpacity(0.82f);g->rt->FillRectangle(D2D1::RectF(0,0,W,H),g->brush.Get());
+ const D2D1_RECT_F panel=D2D1::RectF(W*0.3f,H*0.28f,W*0.7f,H*0.74f);
+ g->brush->SetColor(rgba(0.03f,0.05f,0.13f));g->brush->SetOpacity(0.96f);g->rt->FillRectangle(panel,g->brush.Get());g->brush->SetOpacity(1);
+ g->brush->SetColor(rgba(1.f,0.45f,0.25f));g->rt->DrawRectangle(panel,g->brush.Get(),3.f);
+ if(g->flyExiting){text(L"EXITING...",g->fHead.Get(),panel,rgba(1.f,0.84f,0.25f),3);return;}
+ text(g->flyConfirm?L"EXIT GAME?":L"PAUSED",g->fHead.Get(),D2D1::RectF(panel.left,panel.top+H*0.03f,panel.right,panel.top+H*0.11f),rgba(1.f,0.84f,0.25f),3);
+ text(L"MARVEL VS. CAPCOM 2",g->fSmall.Get(),D2D1::RectF(panel.left,panel.top+H*0.11f,panel.right,panel.top+H*0.15f),rgba(0.75f,0.82f,1.f),1.5f);
+ const wchar_t* items[2]={g->flyConfirm?L"YES":L"CONTINUE",g->flyConfirm?L"NO":L"EXIT GAME"};
+ for(int i=0;i<2;++i){
+  const float top=panel.top+H*(0.19f+0.09f*i);const bool on=i==g->flyRow;
+  text(items[i],g->fMenu.Get(),D2D1::RectF(panel.left,top,panel.right,top+H*0.08f),on?rgba(1.f,0.84f,0.25f):rgba(0.8f,0.84f,0.95f),on?4.f:2.f,on?1.f:0.7f);
+ }
+ text(L"A / ENTER  SELECT     B / ESC  BACK",g->fSmall.Get(),D2D1::RectF(panel.left,panel.bottom-H*0.06f,panel.right,panel.bottom-H*0.015f),rgba(0.7f,0.75f,0.9f),1.5f);
 }
 void setFullscreen(bool on){
  g->fullscreen=on;
@@ -1643,6 +1737,18 @@ LRESULT CALLBACK proc(HWND h,UINT m,WPARAM w,LPARAM l){
    //   X = Cross, C = Circle, Backspace = Select, Space = Start: cheat-code buttons only on the
    //   title screen and main menu, so a mistyped code can never open a menu item.
    const bool repeat=(l&(1<<30))!=0;
+   if(g&&g->flyPause){ // MvC2 pause screen
+    if(repeat)return 0;
+    switch(w){
+     case VK_UP: onPad(Pad::Up);break;
+     case VK_DOWN: onPad(Pad::Down);break;
+     case VK_LEFT: onPad(Pad::Left);break;
+     case VK_RIGHT: onPad(Pad::Right);break;
+     case VK_RETURN: case 'X': case VK_SPACE: onPad(Pad::Cross);break;
+     case VK_ESCAPE: case 'C': case VK_TAB: case VK_BACK: onPad(Pad::Circle);break;
+    }
+    return 0;
+   }
    if(g&&g->screen==Screen::ControlSetup&&g->csCapture==1){ // CONTROLS SETUP: waiting for a key
     if(w==VK_ESCAPE){g->csCapture=0;return 0;}
     UINT vk=static_cast<UINT>(w);
@@ -1726,16 +1832,19 @@ int mcl_title::run(HINSTANCE inst,const fs::path& appDir,const Callbacks& cb){
     else if(app.quickExitSince<0)app.quickExitSince=app.now();
     else if(!app.quickExit&&app.now()-app.quickExitSince>=3000&&app.cb.launcher){app.quickExit=app.cb.launcher->requestClose();}
    }
+   if(app.flyPause){pollPad();render();Sleep(10);continue;} // MvC2 pause screen (Flycast frozen)
    std::wstring failure;
    if(app.cb.launcher&&app.cb.launcher->pollEnded(failure)){
     app.cb.launcher->stopCoverGuard();
+    SetWindowPos(app.hwnd,HWND_NOTOPMOST,0,0,0,0,SWP_NOMOVE|SWP_NOSIZE);
+    const bool flyExit=app.flyExiting;app.flyExiting=false;app.flyPause=false;
     if(app.gameLoading){app.gameLoading=false;SetWindowPos(app.hwnd,HWND_NOTOPMOST,0,0,0,0,SWP_NOMOVE|SWP_NOSIZE);}
     app.gameRunning=false;app.video.setPaused(false);
     // Results were just saved by the launcher; keep a dated backup and say so.
     mcl::backupUserData(app.dir/"MCL_UserData",mcl::backupStamp());app.savedAt=app.now();
     ShowWindow(app.hwnd,SW_SHOW);SetForegroundWindow(app.hwnd);
     app.selSince=app.now();app.padPrev=0xFFFF; // ignore buttons still held from the game
-    if(app.cb.launcher->takeExitSignal()){
+    if(app.cb.launcher->takeExitSignal()||flyExit){
      // EXIT GAME > YES in the pause menu: white flash + "Let's Go Crazy!" back on Arcade Select.
      app.whiteFlashStart=app.now();playVoice();
     }
@@ -1760,6 +1869,10 @@ int mcl_title::run(HINSTANCE inst,const fs::path& appDir,const Callbacks& cb){
      SetWindowPos(app.hwnd,HWND_TOPMOST,0,0,0,0,SWP_NOMOVE|SWP_NOSIZE|SWP_NOACTIVATE|SWP_SHOWWINDOW);
      render();continue;
     }
+   }else if(app.flyExiting){render();Sleep(15);continue;}
+   else if(app.cb.launcher&&app.cb.launcher->flycastGame()){
+    if(flyPauseTriggered())openFlyPause();
+    Sleep(12);continue;
    }else{Sleep(100);continue;}
   }
   if(IsIconic(app.hwnd)||!IsWindowEnabled(app.hwnd)){app.video.setPaused(true);WaitMessage();continue;}
