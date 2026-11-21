@@ -15,7 +15,7 @@ Usage (from the project folder, after Build_VS2022.bat):
   powershell -ExecutionPolicy Bypass -File tools\make_package.ps1 -Version 0.4.0 -Out "..\..\Packages"
 #>
 param(
-  [string]$Version = "0.4.0",
+  [string]$Version = "0.4.3",
   [string]$Out = "..\..\Packages",
   [switch]$NoUserData,
   [switch]$Zip
@@ -93,6 +93,10 @@ Paths are relative, so the whole folder can be moved or copied to another PC.
 Your progress, settings and controls live in MCL_UserData (auto-saved, with dated
 backups in MCL_UserData\Backups). High scores are saved by MAME in
 Emulators\MAME 0.289\hiscore.
+
+Updates: the game checks github.com/TheOmegaShirou01/Marvel-Crossover-Legacy/releases
+when it starts (and from OPTIONS > CHECK FOR UPDATES). Tag new releases like v0.4.4
+and attach the zip; your progress, settings, ROM paths and high scores are kept.
 
 Source code: Source\MCL_v${Version}_SOURCE.zip
 "@ | Out-File -Encoding utf8 (Join-Path $dest "README.txt")

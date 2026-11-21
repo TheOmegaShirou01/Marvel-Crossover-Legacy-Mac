@@ -10,6 +10,7 @@
 #include "app_settings.hpp"
 #include "autosave.hpp"
 #include "controls.hpp"
+#include "updater.hpp"
 #include "gamepads.hpp"
 #include <map>
 #include <fstream>
@@ -40,7 +41,7 @@ using MK=mcl::MainMenuModel::Kind;
 
 constexpr float kLogoW=1600.f,kLogoH=760.f;
 enum class Screen { Intro, Title, Menu, Credits, Cheats, Select, Options, Controls, Achievements, Gallery, Jukebox, ControlSetup };
-enum OptRow { OptMusic, OptVoice, OptDisplay, OptGames, OptVideo, OptCaption, OptSetup, OptControls, OptDevTools, OptBack, OptCount };
+enum OptRow { OptMusic, OptVoice, OptDisplay, OptGames, OptVideo, OptCaption, OptSetup, OptControls, OptDevTools, OptUpdate, OptBack, OptCount };
 
 // Arcade Select cards: collection id, full title, credit line.
 struct CardInfo { const char* id; const wchar_t* title; const wchar_t* sub; };
@@ -135,6 +136,9 @@ struct App {
  // covered by this screen, which offers only CONTINUE and EXIT GAME, and closed again on CONTINUE.
  bool flyPause=false,flyConfirm=false,flyMenuOpen=false,flyExiting=false;int flyRow=0;
  bool flyPrevX[4]{};std::vector<bool> flyPrevDi;bool flyPrevTab=false;
+ // Updates from the GitHub releases page: checked once at start (and from OPTIONS).
+ // updPanel: 0 none, 1 "UPDATE AVAILABLE" offer, 2 downloading / installing.
+ std::unique_ptr<mcl::Updater> updater;int updPanel=0;int updRow=0;bool updOffered=false,updManual=false;
  Screen screen=Screen::Intro;double screenSince=0;
  ComPtr<ID2D1Bitmap> mvcFont; // Fonts\mvc_font.png: MvC's own 8x8 font (tools/extract_mvc_font.py)
  double layoutFrom=0,layoutTo=0,layoutStart=-1e9; // 0 = title layout, 1 = menu layout
@@ -408,8 +412,11 @@ void activate(MenuItem item){
 }
 void flyPausePad(Pad p);
 void drawFlyPause();
+void drawUpdatePanel(double now);
+void updatePanelPad(Pad p);
 void onPad(Pad p){
  if(g->flyPause){flyPausePad(p);return;}
+ if(g->updPanel&&!g->gameRunning){updatePanelPad(p);return;}
  // Ignore input while another window (Arcade Select, Options, a game) is in front:
  // their modal loops still dispatch messages to this window.
  if(!IsWindowEnabled(g->hwnd)||g->gameRunning)return;
@@ -489,6 +496,7 @@ void startMenu(){
 // Enter: confirm on every screen; does not touch cheat-code progress on title/menu.
 void onConfirm(){
  if(!IsWindowEnabled(g->hwnd)||g->gameRunning)return;
+ if(g->updPanel){onPad(Pad::Cross);return;}
  if(g->screen==Screen::Intro){endIntro();return;}
  if(!g->overlay.empty()){g->overlay.clear();return;}
  switch(g->screen){
@@ -509,6 +517,7 @@ void onConfirm(){
 // Esc: back on every screen.
 void onBack(){
  if(!IsWindowEnabled(g->hwnd)||g->gameRunning)return;
+ if(g->updPanel){onPad(Pad::Circle);return;}
  if(g->screen==Screen::Intro){endIntro();return;}
  if(!g->overlay.empty()){g->overlay.clear();return;}
  switch(g->screen){
@@ -916,6 +925,12 @@ void changeOption(int dir){
   case OptSetup: if(!dir){g->csRow=0;g->csCol=0;g->csCapture=0;setScreen(Screen::ControlSetup);}return;
   case OptControls: if(!dir)setScreen(Screen::Controls);return;
   case OptDevTools: if(!dir){VideoPause pause;if(g->cb.options)g->cb.options(g->hwnd,g->menu.cheatExUnlocked());}return;
+  case OptUpdate:
+   if(!dir&&g->updater){
+    if(g->updater->state()==mcl::Updater::State::Available){g->updPanel=1;g->updRow=0;}
+    else{g->updManual=true;g->updater->startCheck();}
+   }
+   return;
   case OptBack: if(!dir)setScreen(Screen::Menu);return;
  }
  saveSettings();
@@ -932,6 +947,19 @@ void optionsPad(Pad p){
  }
 }
 std::wstring volumeBar(int v){std::wstring s;for(int i=0;i<10;++i)s+=i<v?L'■':L'□';return s+L"  "+std::to_wstring(v);}
+std::wstring wide(const std::string& s);
+std::wstring updateStatus(){
+ if(!g->updater)return L"▶";
+ using S=mcl::Updater::State;
+ switch(g->updater->state()){
+  case S::Checking: return L"CHECKING...";
+  case S::UpToDate: return std::wstring(L"UP TO DATE  (v")+wide(mcl::kAppVersion)+L")";
+  case S::Available: return L"UPDATE AVAILABLE ▶";
+  case S::Failed: return L"COULD NOT CHECK ▶";
+  case S::Downloading: case S::Extracting: case S::Ready: return L"DOWNLOADING...";
+  default: return std::wstring(L"v")+wide(mcl::kAppVersion)+L"  ▶";
+ }
+}
 void drawOptions(double now){
  const float W=g->W(),H=g->H();
  const auto& s=g->settings;
@@ -949,9 +977,10 @@ void drawOptions(double now){
   {L"CONTROLS SETUP",L"▶"},
   {L"CONTROLS HELP",L"▶"},
   {L"DEVELOPER TOOLS",L"▶"},
+  {L"CHECK FOR UPDATES",updateStatus()},
   {L"BACK",L""},
  };
- const float top=H*0.46f,step=H*0.047f;
+ const float top=H*0.46f,step=H*0.042f;
  const bool blink=std::fmod(now,900.0)<600.0;
  for(int i=0;i<OptCount;++i){
   const bool sel=i==g->optRow;
@@ -1574,6 +1603,7 @@ void render(){
  }
  drawNowPlaying(now);
  if(g->flyPause||g->flyExiting)drawFlyPause();
+ if(!g->gameRunning)drawUpdatePanel(now);
  if(g->gameLoading)drawLoading(now);
  if(!g->overlay.empty())drawOverlay();
  if(now<g->bannerUntil){
@@ -1705,6 +1735,79 @@ void drawFlyPause(){
  }
  text(L"A / ENTER  SELECT     B / ESC  BACK",g->fSmall.Get(),D2D1::RectF(panel.left,panel.bottom-H*0.06f,panel.right,panel.bottom-H*0.015f),rgba(0.7f,0.75f,0.9f),1.5f);
 }
+// ---------- updates (GitHub releases) ----------
+void updatePanelPad(Pad p){
+ using S=mcl::Updater::State;
+ if(g->updPanel==1){
+  if(p==Pad::Up||p==Pad::Down||p==Pad::Left||p==Pad::Right){g->updRow^=1;return;}
+  if(p==Pad::Cross||p==Pad::Start){
+   if(g->updRow==0&&g->updater&&g->updater->state()==S::Available){g->updater->startDownload();g->updPanel=2;}
+   else g->updPanel=0;
+  }else if(p==Pad::Circle)g->updPanel=0;
+ }else if(g->updPanel==2){
+  if(p==Pad::Circle&&g->updater&&g->updater->state()==S::Downloading)g->updater->cancel();
+ }
+}
+// Called every frame while no game runs.
+void updateTick(){
+ if(!g->updater)return;
+ using S=mcl::Updater::State;
+ const S st=g->updater->state();
+ const bool calm=g->screen==Screen::Title||g->screen==Screen::Menu||g->screen==Screen::Options;
+ if(g->updManual&&(st==S::UpToDate||st==S::Failed||st==S::Available)){
+  g->updManual=false;
+  if(st==S::UpToDate)showBanner(L"UP TO DATE");
+  else if(st==S::Failed)g->overlay=L"COULD NOT CHECK FOR UPDATES\n\n"+upper(g->updater->error())+L".";
+  else{g->updOffered=true;g->updPanel=1;g->updRow=0;}
+ }
+ if(st==S::Available&&!g->updOffered&&calm&&g->overlay.empty()&&!g->updPanel){g->updOffered=true;g->updPanel=1;g->updRow=0;}
+ if(g->updPanel==2){
+  if(st==S::Available){g->updPanel=0;showBanner(L"UPDATE CANCELLED");}
+  else if(st==S::Failed){g->updPanel=0;g->overlay=L"THE UPDATE DID NOT FINISH\n\n"+upper(g->updater->error())+L".\n\nYOUR GAME WAS NOT CHANGED.";}
+  else if(st==S::Ready){
+   if(g->updater->launchInstaller()){saveSettings();DestroyWindow(g->hwnd);}
+   else{g->updPanel=0;g->overlay=L"THE UPDATE COULD NOT BE INSTALLED\n\nYOUR GAME WAS NOT CHANGED.";}
+  }
+ }
+}
+void drawUpdatePanel(double now){
+ if(!g->updPanel||!g->updater)return;
+ const float W=g->W(),H=g->H();
+ using S=mcl::Updater::State;
+ g->brush->SetColor(rgba(0,0,0));g->brush->SetOpacity(0.7f);g->rt->FillRectangle(D2D1::RectF(0,0,W,H),g->brush.Get());
+ const D2D1_RECT_F panel=D2D1::RectF(W*0.2f,H*0.27f,W*0.8f,H*0.78f);
+ g->brush->SetColor(rgba(0.03f,0.05f,0.13f));g->brush->SetOpacity(0.97f);g->rt->FillRectangle(panel,g->brush.Get());g->brush->SetOpacity(1);
+ g->brush->SetColor(rgba(1.f,0.45f,0.25f));g->rt->DrawRectangle(panel,g->brush.Get(),3.f);
+ const mcl::ReleaseInfo r=g->updater->release();
+ const std::wstring name=upper(wide(r.name.empty()?r.tag:r.name));
+ wchar_t size[64];swprintf(size,64,L"DOWNLOAD: %.1f GB",static_cast<double>(r.assetSize)/(1024.0*1024.0*1024.0));
+ text(g->updPanel==1?L"UPDATE AVAILABLE!":L"UPDATING...",g->fHead.Get(),D2D1::RectF(panel.left,panel.top+H*0.03f,panel.right,panel.top+H*0.11f),rgba(1.f,0.84f,0.25f),3);
+ text(name,g->fBody.Get(),D2D1::RectF(panel.left,panel.top+H*0.115f,panel.right,panel.top+H*0.16f),rgba(0.93f,0.95f,1.f),2);
+ if(g->updPanel==1){
+  text(size,g->fSmall.Get(),D2D1::RectF(panel.left,panel.top+H*0.165f,panel.right,panel.top+H*0.2f),rgba(0.7f,0.78f,0.95f),1.5f);
+  text(L"YOUR PROGRESS, SETTINGS, CONTROLS AND HIGH SCORES ARE KEPT.",g->fSmall.Get(),D2D1::RectF(panel.left,panel.top+H*0.2f,panel.right,panel.top+H*0.235f),rgba(0.7f,0.78f,0.95f),1.5f);
+  const wchar_t* items[2]={L"UPDATE NOW",L"LATER"};
+  for(int i=0;i<2;++i){
+   const float top=panel.top+H*(0.26f+0.08f*i);const bool on=i==g->updRow;
+   text(items[i],g->fMenu.Get(),D2D1::RectF(panel.left,top,panel.right,top+H*0.075f),on?rgba(1.f,0.84f,0.25f):rgba(0.8f,0.84f,0.95f),on?4.f:2.f,on?1.f:0.7f);
+  }
+  text(L"A / ENTER  SELECT     B / ESC  LATER     (ALSO IN OPTIONS > CHECK FOR UPDATES)",g->fSmall.Get(),D2D1::RectF(panel.left,panel.bottom-H*0.06f,panel.right,panel.bottom-H*0.015f),rgba(0.7f,0.75f,0.9f),1.5f);
+  return;
+ }
+ const S st=g->updater->state();
+ const float p=static_cast<float>(g->updater->progress());
+ const D2D1_RECT_F bar=D2D1::RectF(panel.left+W*0.05f,panel.top+H*0.25f,panel.right-W*0.05f,panel.top+H*0.29f);
+ g->brush->SetColor(rgba(0.1f,0.14f,0.3f));g->rt->FillRectangle(bar,g->brush.Get());
+ const float fill=st==S::Downloading?p:1.f;
+ g->brush->SetColor(rgba(1.f,0.7f,0.2f));g->rt->FillRectangle(D2D1::RectF(bar.left,bar.top,bar.left+(bar.right-bar.left)*fill,bar.bottom),g->brush.Get());
+ g->brush->SetColor(rgba(1.f,0.84f,0.25f));g->rt->DrawRectangle(bar,g->brush.Get(),2.f);
+ std::wstring status;
+ if(st==S::Downloading){wchar_t b[96];swprintf(b,96,L"DOWNLOADING  %d%%  (%.1f / %.1f GB)",static_cast<int>(p*100),p*static_cast<double>(r.assetSize)/(1<<30),static_cast<double>(r.assetSize)/(1<<30));status=b;}
+ else if(st==S::Extracting)status=std::fmod(now,900.0)<600.0?L"UNPACKING THE UPDATE...":L"";
+ else status=L"STARTING THE INSTALLER...";
+ text(status,g->fBody.Get(),D2D1::RectF(panel.left,panel.top+H*0.31f,panel.right,panel.top+H*0.36f),rgba(0.93f,0.95f,1.f),2);
+ text(st==S::Downloading?L"B / ESC  CANCEL":L"THE GAME WILL RESTART BY ITSELF",g->fSmall.Get(),D2D1::RectF(panel.left,panel.bottom-H*0.06f,panel.right,panel.bottom-H*0.015f),rgba(0.7f,0.75f,0.9f),1.5f);
+}
 void setFullscreen(bool on){
  g->fullscreen=on;
  MONITORINFO mi{sizeof mi};GetMonitorInfoW(MonitorFromWindow(g->hwnd,MONITOR_DEFAULTTONEAREST),&mi);
@@ -1806,6 +1909,7 @@ int mcl_title::run(HINSTANCE inst,const fs::path& appDir,const Callbacks& cb){
  if(!app.hwnd){g=nullptr;if(SUCCEEDED(co))CoUninitialize();return 2;}
  app.settings.load(appDir/"MCL_UserData"/"settings.txt");
  app.controls.load(appDir/"MCL_UserData"/"controls.txt");
+ app.updater=std::make_unique<mcl::Updater>(appDir);app.updater->startCheck(); // GitHub releases, in the background
  app.pads.init(app.hwnd);
  setFullscreen(app.settings.fullscreen);
  if(app.settings.backgroundVideo)app.video.start(appDir/"earth_background.mp4",1280,720);
@@ -1878,6 +1982,7 @@ int mcl_title::run(HINSTANCE inst,const fs::path& appDir,const Callbacks& cb){
   if(IsIconic(app.hwnd)||!IsWindowEnabled(app.hwnd)){app.video.setPaused(true);WaitMessage();continue;}
   app.video.setPaused(false);
   pollPad();
+  updateTick();
   updateMusic(app.now());
   if(IsWindow(app.hwnd))render();
  }
