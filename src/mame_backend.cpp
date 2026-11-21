@@ -112,6 +112,7 @@ struct MameBackend::Private {
  fs::path activeLog;    // log of the current/last launch (MAME capture or flycast.log)
  fs::path cheatScript;  // -autoboot_script for the next MAME launch
  bool windowed=false;   // OPTIONS: games in a window
+ std::wstring ctrlr;     // -ctrlr file name (CONTROLS SETUP)
  std::string lastError;
  ULONGLONG startedAt=0;
  explicit Private(fs::path e):executable(std::move(e)){}
@@ -159,6 +160,10 @@ bool MameBackend::start(const std::string& id,const RomSearchPath& roms){
   std::error_code ce;
   // High scores: MAME's hiscore plugin saves each game's table to MAME\hiscore\<set>.hi.
   ensureHiscoreDat(spec.executable);
+  if(!p_->ctrlr.empty()){
+   spec.arguments.push_back(L"-ctrlr");spec.arguments.push_back(p_->ctrlr);
+   spec.arguments.push_back(L"-joystickprovider");spec.arguments.push_back(L"dinput");
+  }
   spec.arguments.push_back(L"-plugin");spec.arguments.push_back(L"hiscore");
   if(!p_->cheatScript.empty()&&fs::is_regular_file(p_->cheatScript,ce)){
    spec.arguments.push_back(L"-autoboot_script");
@@ -196,6 +201,7 @@ bool MameBackend::start(const std::string& id,const RomSearchPath& roms){
 void MameBackend::setLogFile(fs::path file){p_->log=std::move(file);}
 fs::path MameBackend::logFile() const {return p_->activeLog.empty()?p_->log:p_->activeLog;}
 void MameBackend::setFlycastExecutable(fs::path file){p_->flycast=std::move(file);}
+void MameBackend::setControllerFile(const std::wstring& name){p_->ctrlr=name;}
 void MameBackend::setCheatScript(fs::path file){p_->cheatScript=std::move(file);}
 void MameBackend::setWindowed(bool w){p_->windowed=w;}
 std::string MameBackend::lastStartError() const {return p_->lastError;}

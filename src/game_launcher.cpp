@@ -2,6 +2,7 @@
 #include "game_launcher.hpp"
 #include "achievement_lua.hpp"
 #include "cheats.hpp"
+#include "controls.hpp"
 #include "emulator_bridge.hpp"
 #include "external_roms.hpp"
 #include "mame_backend.hpp"
@@ -29,6 +30,15 @@ GameLauncher::Result GameLauncher::launch(const std::string& game,bool cheatsUnl
  emulator_->setFlycastExecutable(readMameExecutable(dir_/"flycast_executable.txt"));
  emulator_->setLogFile(dir_/"Logs"/"mame_last_launch.log");
  emulator_->setWindowed(gamesWindowed_);
+ // Player's controls: only when changed from the defaults, so stock setups stay untouched.
+ {ControlsConfig controls;
+  const bool custom=controls.load(dir_/"MCL_UserData"/"controls.txt")&&!controls.isDefault();
+  const fs::path mame=readMameExecutable(dir_/"mame_executable.txt");
+  if(custom&&!mame.empty()){
+   std::error_code ec;fs::create_directories(mame.parent_path()/"ctrlr",ec);
+   std::ofstream(mame.parent_path()/"ctrlr"/"mcl_controls.cfg",std::ios::trunc)<<controls.mameCtrlrXml();
+   emulator_->setControllerFile(L"mcl_controls");
+  }}
  session_=std::make_unique<EmulatorBridge>(model_,*emulator_,resolveRuntimeRomSearchPath(dir_));
  // Cheats: Marvel ones need the master code, EX ones need CHEAT EX, this session.
  std::vector<Poke> pokes;

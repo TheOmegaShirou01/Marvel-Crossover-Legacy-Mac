@@ -9,6 +9,8 @@
 #include "music_player.hpp"
 #include "app_settings.hpp"
 #include "autosave.hpp"
+#include "controls.hpp"
+#include "gamepads.hpp"
 #include <map>
 #include <fstream>
 #include <memory>
@@ -37,8 +39,8 @@ using mcl::MenuItem;
 using MK=mcl::MainMenuModel::Kind;
 
 constexpr float kLogoW=1600.f,kLogoH=760.f;
-enum class Screen { Intro, Title, Menu, Credits, Cheats, Select, Options, Controls, Achievements, Gallery, Jukebox };
-enum OptRow { OptMusic, OptVoice, OptDisplay, OptGames, OptVideo, OptCaption, OptControls, OptDevTools, OptBack, OptCount };
+enum class Screen { Intro, Title, Menu, Credits, Cheats, Select, Options, Controls, Achievements, Gallery, Jukebox, ControlSetup };
+enum OptRow { OptMusic, OptVoice, OptDisplay, OptGames, OptVideo, OptCaption, OptSetup, OptControls, OptDevTools, OptBack, OptCount };
 
 // Arcade Select cards: collection id, full title, credit line.
 struct CardInfo { const char* id; const wchar_t* title; const wchar_t* sub; };
@@ -113,6 +115,9 @@ struct App {
  std::map<std::string,ComPtr<ID2D1Bitmap>> galArt;std::vector<std::string> galArtList;
  double galleryBannerUntil=-1;
  double savedAt=-1e9; // "AUTO-SAVED" toast
+ // Controllers: XInput (Xbox) + DirectInput (PlayStation 3/4/5, Switch, generic pads)
+ mcl::Gamepads pads;std::vector<std::uint64_t> diPrev;std::vector<int> diStickPrev;
+ mcl::ControlsConfig controls;int csRow=0,csCol=0,csCapture=0;double csCaptureSince=0; // CONTROLS SETUP
  int achGroup=0,achRow=0;                 // ACHIEVEMENTS screen
  std::vector<std::string> achQueue;double achShowSince=-1;std::string achSoundFor; // "ACHIEVEMENT UNLOCKED!" popups
  mcl::AppSettings settings;int optRow=0; // OPTIONS screen (MCL_UserData\settings.txt)
@@ -301,13 +306,16 @@ float layoutT(double now);
 void setScreen(Screen s){
  g->screen=s;g->screenSince=g->now();
  // OPTIONS / CONTROLS use the small top logo like Arcade Select; the menu uses the medium one.
- if((s==Screen::Options||s==Screen::Controls||s==Screen::Achievements||s==Screen::Gallery||s==Screen::Jukebox)&&g->layoutTo!=2)goLayout(2,g->now());
+ if((s==Screen::Options||s==Screen::Controls||s==Screen::Achievements||s==Screen::Gallery||s==Screen::Jukebox||s==Screen::ControlSetup)&&g->layoutTo!=2)goLayout(2,g->now());
  else if(s==Screen::Menu&&g->layoutTo==2)goLayout(1,g->now());
 }
 void showBanner(const std::wstring& s){g->banner=s;g->bannerUntil=g->now()+2200;g->bannerFlash=1.f;g->itemBolts.clear();}
 // Master code entered: banner + "The Secret Code" achievement.
 void masterCodeEntered(){showBanner(L"CHEATS UNLOCKED!");if(g->cb.launcher)g->cb.launcher->awardMasterCode();}
 void achievementsPad(Pad p);
+void controlSetupPad(Pad p);
+void csAssign(const std::string& code);
+void drawControlSetup(double now);
 void jukeboxPad(Pad p);
 void enterJukebox();
 void leaveJukebox();
@@ -402,6 +410,7 @@ void onPad(Pad p){
  switch(g->screen){
   case Screen::Options: optionsPad(p);break;
   case Screen::Achievements: achievementsPad(p);break;
+  case Screen::ControlSetup: controlSetupPad(p);break;
   case Screen::Gallery: galleryPad(p);break;
   case Screen::Jukebox: jukeboxPad(p);break;
   case Screen::Controls: if(p==Pad::Circle||p==Pad::Cross||p==Pad::Start)setScreen(Screen::Options);break;
@@ -478,6 +487,7 @@ void onConfirm(){
   case Screen::Options: changeOption(0);break;
   case Screen::Controls: setScreen(Screen::Options);break;
   case Screen::Achievements: break;
+  case Screen::ControlSetup: controlSetupPad(Pad::Cross);break;
   case Screen::Gallery: galleryPad(Pad::Cross);break;
   case Screen::Jukebox: jukeboxPad(Pad::Cross);break;
   case Screen::Intro: endIntro();break;
@@ -502,6 +512,7 @@ void onBack(){
   case Screen::Options: setScreen(Screen::Menu);break;
   case Screen::Controls: setScreen(Screen::Options);break;
   case Screen::Achievements: setScreen(Screen::Menu);break;
+  case Screen::ControlSetup: controlSetupPad(Pad::Circle);break;
   case Screen::Gallery: galleryBack();break;
   case Screen::Jukebox: leaveJukebox();break;
  }
@@ -518,7 +529,7 @@ void onCodeKey(Pad p){
  }
  if(p==Pad::Cross||p==Pad::Start)onConfirm();
  else if(p==Pad::Circle)onBack();
- else if(p==Pad::Select&&g->screen==Screen::Jukebox)onPad(Pad::Select); // Backspace: stop the jukebox
+ else if(p==Pad::Select&&(g->screen==Screen::Jukebox||g->screen==Screen::ControlSetup))onPad(Pad::Select); // Backspace: stop / clear
  else if(p==Pad::Select&&g->screen==Screen::Select)onPad(Pad::Select);
 }
 void drawBackground(){
@@ -893,6 +904,7 @@ void changeOption(int dir){
   case OptGames: s.gamesFullscreen=!s.gamesFullscreen;break;
   case OptVideo: s.backgroundVideo=!s.backgroundVideo;applyVideoSetting();break;
   case OptCaption: s.nowPlaying=!s.nowPlaying;if(s.nowPlaying)g->nowPlayingSince=g->now();break;
+  case OptSetup: if(!dir){g->csRow=0;g->csCol=0;g->csCapture=0;setScreen(Screen::ControlSetup);}return;
   case OptControls: if(!dir)setScreen(Screen::Controls);return;
   case OptDevTools: if(!dir){VideoPause pause;if(g->cb.options)g->cb.options(g->hwnd,g->menu.cheatExUnlocked());}return;
   case OptBack: if(!dir)setScreen(Screen::Menu);return;
@@ -925,7 +937,8 @@ void drawOptions(double now){
   {L"GAMES START IN",s.gamesFullscreen?L"FULLSCREEN":L"WINDOW"},
   {L"BACKGROUND VIDEO",s.backgroundVideo?L"ON":L"OFF"},
   {L"NOW-PLAYING CAPTION",s.nowPlaying?L"ON":L"OFF"},
-  {L"CONTROLS",L"▶"},
+  {L"CONTROLS SETUP",L"▶"},
+  {L"CONTROLS HELP",L"▶"},
   {L"DEVELOPER TOOLS",L"▶"},
   {L"BACK",L""},
  };
@@ -1373,6 +1386,114 @@ void drawGalleryUnlock(double now){
  text(L"GALLERY UNLOCKED!",g->fBanner.Get(),D2D1::RectF(0,H*0.35f,W,H*0.5f),rgba(1.f,0.84f,0.25f),H*0.006f,a);
  text(L"THE LEGENDS LIVE ON!",g->fHead.Get(),D2D1::RectF(0,H*0.5f,W,H*0.58f),rgba(1.f,0.45f,0.3f),H*0.004f,a);
 }
+// ---------- Controllers: DirectInput pads in the menus ----------
+// PlayStation/Nintendo/generic pads (Xbox pads use XInput above). Menu buttons follow the
+// detected family (Sony: Cross/Circle/Share/Options, Nintendo: A/B/-/+) unless the player
+// set their own in CONTROLS SETUP.
+void pollDirectPads(){
+ const int n=g->pads.count();
+ g->diPrev.resize(static_cast<size_t>(n),0);g->diStickPrev.resize(static_cast<size_t>(n),0);
+ for(int i=0;i<n;++i){
+  const auto& info=g->pads.info(i);
+  if(info.isXInput)continue;
+  mcl::PadSnapshot s;if(!g->pads.poll(i,s))continue;
+  const auto def=mcl::defaultMenuButtons(info.vid,info.pid);
+  const auto pick=[](int mine,int dflt){return mine>=0?mine:dflt;};
+  const int bc=pick(g->controls.menuConfirm,def.confirm),bb=pick(g->controls.menuBack,def.back);
+  const int bs=pick(g->controls.menuSelect,def.select),bt=pick(g->controls.menuStart,def.start);
+  const auto bit=[&](int k){return k>=0&&k<64&&(s.buttons&(std::uint64_t(1)<<k));};
+  std::uint64_t now=0; // packed: 0 up 1 down 2 left 3 right 4 confirm 5 back 6 select 7 start
+  if(s.up)now|=1;if(s.down)now|=2;if(s.left)now|=4;if(s.right)now|=8;
+  if(bit(bc))now|=16;if(bit(bb))now|=32;if(bit(bs))now|=64;if(bit(bt))now|=128;
+  const std::uint64_t pressed=now&~g->diPrev[static_cast<size_t>(i)];g->diPrev[static_cast<size_t>(i)]=now;
+  if(pressed&1)onPad(Pad::Up);if(pressed&2)onPad(Pad::Down);if(pressed&4)onPad(Pad::Left);if(pressed&8)onPad(Pad::Right);
+  if(pressed&16)onPad(Pad::Cross);if(pressed&32)onPad(Pad::Circle);if(pressed&64)onPad(Pad::Select);if(pressed&128)onPad(Pad::Start);
+ }
+}
+// ---------- CONTROLS SETUP ----------
+// Rows: the 12 game inputs (keyboard + controller columns), then the 4 menu buttons
+// (controller only), RESET TO DEFAULTS and BACK. Enter = assign, Backspace = clear.
+const wchar_t* const kMenuRows[]={L"MENU: CONFIRM",L"MENU: BACK",L"MENU: SELECT",L"MENU: START"};
+int csGameRows(){return static_cast<int>(mcl::gameInputs().size());}
+int csRows(){return csGameRows()+4+2;}
+void csSave(){if(g->controls.save(g->dir/"MCL_UserData"/"controls.txt"))g->savedAt=g->now();}
+int& csMenuSlot(int i){return i==0?g->controls.menuConfirm:i==1?g->controls.menuBack:i==2?g->controls.menuSelect:g->controls.menuStart;}
+void csAssign(const std::string& code){
+ const int r=g->csRow;
+ if(r<csGameRows()){
+  auto& b=g->controls.binding(mcl::gameInputs()[static_cast<size_t>(r)].port);
+  if(g->csCapture==1)b.key=code;else b.pad=code;
+ }else if(r<csGameRows()+4){
+  const auto at=code.find("_BUTTON");
+  if(at==std::string::npos)return; // menu buttons must be buttons
+  try{csMenuSlot(r-csGameRows())=std::stoi(code.substr(at+7))-1;}catch(...){return;}
+ }
+ g->csCapture=0;csSave();
+}
+void controlSetupPad(Pad p){
+ if(g->csCapture)return;
+ const int n=csRows();
+ switch(p){
+  case Pad::Up: g->csRow=(g->csRow+n-1)%n;break;
+  case Pad::Down: g->csRow=(g->csRow+1)%n;break;
+  case Pad::Left: case Pad::Right: if(g->csRow<csGameRows())g->csCol=1-g->csCol;break;
+  case Pad::Cross: case Pad::Start:
+   if(g->csRow<csGameRows()){g->csCapture=g->csCol==0?1:2;}
+   else if(g->csRow<csGameRows()+4){g->csCapture=2;}
+   else if(g->csRow==csGameRows()+4){g->controls.resetDefaults();csSave();showBanner(L"CONTROLS RESET");}
+   else{setScreen(Screen::Options);}
+   if(g->csCapture){g->csCaptureSince=g->now();if(g->csCapture==2){g->pads.rescan();g->pads.resetCapture();}}
+   break;
+  case Pad::Select:
+   if(g->csRow<csGameRows()){auto& b=g->controls.binding(mcl::gameInputs()[static_cast<size_t>(g->csRow)].port);(g->csCol==0?b.key:b.pad).clear();csSave();}
+   else if(g->csRow<csGameRows()+4){csMenuSlot(g->csRow-csGameRows())=-1;csSave();}
+   break;
+  case Pad::Circle: setScreen(Screen::Options);break;
+ }
+}
+void drawControlSetup(double now){
+ const float W=g->W(),H=g->H();
+ g->brush->SetColor(rgba(0,0,0.02f));g->brush->SetOpacity(0.86f);
+ g->rt->FillRectangle(D2D1::RectF(W*0.06f,H*0.33f,W*0.94f,H*0.93f),g->brush.Get());g->brush->SetOpacity(1);
+ text(L"CONTROLS SETUP",g->fHead.Get(),D2D1::RectF(0,H*0.335f,W,H*0.385f),rgba(1.f,0.84f,0.25f),H*0.004f);
+ // connected controllers
+ std::wstring pads;
+ for(int i=0;i<g->pads.count();++i){if(!pads.empty())pads+=L"   •   ";pads+=L"PAD "+std::to_wstring(i+1)+L": "+upper(g->pads.info(i).name);}
+ if(pads.empty())pads=L"NO CONTROLLER DETECTED  (KEYBOARD ONLY)";
+ leftText(pads,g->fSmall.Get(),W*0.08f,H*0.385f,W*0.84f,H*0.03f,rgba(0.55f,0.62f,0.78f),DWRITE_TEXT_ALIGNMENT_CENTER);
+ const float top=H*0.45f,step=H*0.031f;
+ leftText(L"KEYBOARD",g->fSmall.Get(),W*0.42f,top-step,W*0.2f,step,rgba(1.f,0.84f,0.25f));
+ leftText(L"CONTROLLER",g->fSmall.Get(),W*0.66f,top-step,W*0.25f,step,rgba(1.f,0.84f,0.25f));
+ const int n=csRows(),rows=14;
+ const int first=std::clamp(g->csRow-rows/2,0,std::max(0,n-rows));
+ const bool blink=std::fmod(now,600.0)<350.0;
+ for(int r=first;r<std::min(n,first+rows);++r){
+  const float y=top+step*static_cast<float>(r-first);
+  const bool sel=r==g->csRow;
+  if(sel){g->brush->SetColor(rgba(0.12f,0.42f,1.f));g->brush->SetOpacity(0.30f);g->rt->FillRectangle(D2D1::RectF(W*0.08f,y,W*0.92f,y+step),g->brush.Get());g->brush->SetOpacity(1);}
+  std::wstring label,key,pad;
+  if(r<csGameRows()){
+   const auto& gi=mcl::gameInputs()[static_cast<size_t>(r)];const auto& b=g->controls.binding(gi.port);
+   label=wide(gi.label);key=wide(mcl::inputLabel(b.key));pad=wide(mcl::inputLabel(b.pad));
+  }else if(r<csGameRows()+4){
+   label=kMenuRows[r-csGameRows()];key=L"";const int v=csMenuSlot(r-csGameRows());pad=v<0?L"AUTO":L"BUTTON "+std::to_wstring(v+1);
+  }else if(r==csGameRows()+4){label=L"RESET TO DEFAULTS";}
+  else{label=L"BACK";}
+  leftText(label,g->fSmall.Get(),W*0.10f,y,W*0.30f,step,sel?rgba(1,1,1):rgba(0.8f,0.86f,0.98f));
+  const auto cell=[&](const std::wstring& t,int col,float x){
+   const bool on=sel&&r<csGameRows()+4&&(r>=csGameRows()?col==1:g->csCol==col);
+   std::wstring v=t;
+   if(on&&g->csCapture)v=blink?(col==0?L"PRESS A KEY...":L"PRESS A BUTTON..."):L"";
+   else if(on)v=L"▶ "+t;
+   leftText(v,g->fSmall.Get(),x,y,W*0.24f,step,on?rgba(1.f,0.84f,0.25f):rgba(0.65f,0.75f,0.95f));
+  };
+  if(r<csGameRows()+4){if(r<csGameRows())cell(key,0,W*0.42f);cell(pad,1,W*0.66f);}
+ }
+ const std::wstring hint=g->csCapture?L"PRESS THE KEY / BUTTON TO USE      ESC  CANCEL      (8 SECONDS)":
+  L"↑↓ CHOOSE      ←→ KEYBOARD / CONTROLLER      ENTER  ASSIGN      BACKSPACE  CLEAR      ESC  BACK";
+ text(hint,g->fSmall.Get(),D2D1::RectF(0,H*0.94f,W,H*0.98f),rgba(0.6f,0.66f,0.8f),2,0.85f);
+ text(L"APPLIES TO ALL MAME GAMES  •  MvC2 (FLYCAST): SET BUTTONS IN FLYCAST'S OWN MENU (TAB)",g->fSmall.Get(),D2D1::RectF(0,H*0.895f,W,H*0.925f),rgba(0.5f,0.56f,0.7f),1.5f,0.9f);
+}
 void drawControls(){
  const float W=g->W(),H=g->H();
  g->brush->SetColor(rgba(0,0,0.02f));g->brush->SetOpacity(0.82f);
@@ -1425,6 +1546,7 @@ void render(){
   case Screen::Options: drawOptions(now);break;
   case Screen::Controls: drawControls();break;
   case Screen::Achievements: drawAchievements(now);break;
+  case Screen::ControlSetup: drawControlSetup(now);break;
   case Screen::Gallery: drawGallery(now);break;
   case Screen::Jukebox: drawJukebox(now);break;
  }
@@ -1451,7 +1573,15 @@ void render(){
 }
 
 // ---------- input ----------
+void pollDirectPads();
 void pollPad(){
+ if(g->screen==Screen::ControlSetup&&g->csCapture){ // capturing: buttons go to the setup, not the menus
+  if(g->csCapture==2){const std::string c=g->pads.capturePress();if(!c.empty())csAssign(c);}
+  if(g->now()-g->csCaptureSince>8000)g->csCapture=0;
+  XINPUT_STATE s{};if(XInputGetState(0,&s)==ERROR_SUCCESS)g->padPrev=s.Gamepad.wButtons;
+  return;
+ }
+ pollDirectPads();
  XINPUT_STATE st{};DWORD found=ERROR_DEVICE_NOT_CONNECTED;
  for(DWORD i=0;i<XUSER_MAX_COUNT&&found!=ERROR_SUCCESS;++i){ZeroMemory(&st,sizeof st);found=XInputGetState(i,&st);}
  if(found!=ERROR_SUCCESS){g->padPrev=0;g->stickPrev=0;return;}
@@ -1499,7 +1629,16 @@ LRESULT CALLBACK proc(HWND h,UINT m,WPARAM w,LPARAM l){
    //   X = Cross, C = Circle, Backspace = Select, Space = Start: cheat-code buttons only on the
    //   title screen and main menu, so a mistyped code can never open a menu item.
    const bool repeat=(l&(1<<30))!=0;
-   const bool lists=g&&(g->screen==Screen::Cheats||g->screen==Screen::Options||g->screen==Screen::Achievements||g->screen==Screen::Gallery||g->screen==Screen::Jukebox); // auto-repeat only in lists
+   if(g&&g->screen==Screen::ControlSetup&&g->csCapture==1){ // CONTROLS SETUP: waiting for a key
+    if(w==VK_ESCAPE){g->csCapture=0;return 0;}
+    UINT vk=static_cast<UINT>(w);
+    if(vk==VK_SHIFT||vk==VK_CONTROL||vk==VK_MENU){const UINT sc=(l>>16)&0xFF;const bool ext=(l&(1<<24))!=0;
+     vk=vk==VK_SHIFT?MapVirtualKeyW(sc,MAPVK_VSC_TO_VK_EX):vk==VK_CONTROL?(ext?VK_RCONTROL:VK_LCONTROL):(ext?VK_RMENU:VK_LMENU);}
+    const std::string name=mcl::mameKeyName(static_cast<int>(vk));
+    if(!name.empty())csAssign(name);
+    return 0;
+   }
+   const bool lists=g&&(g->screen==Screen::Cheats||g->screen==Screen::Options||g->screen==Screen::Achievements||g->screen==Screen::Gallery||g->screen==Screen::Jukebox||g->screen==Screen::ControlSetup); // auto-repeat only in lists
    switch(w){
     case VK_UP: if(!repeat||lists)onPad(Pad::Up);return 0;
     case VK_DOWN: if(!repeat||lists)onPad(Pad::Down);return 0;
@@ -1519,6 +1658,7 @@ LRESULT CALLBACK proc(HWND h,UINT m,WPARAM w,LPARAM l){
    if(g&&g->screen==Screen::Title)onPad(Pad::Start);
    return 0;
   case WM_ERASEBKGND: return 1;
+  case WM_DEVICECHANGE: if(g)g->pads.rescan();return TRUE; // controller plugged in or out
   case WM_DESTROY: PostQuitMessage(0);return 0;
  }
  return DefWindowProcW(h,m,w,l);
@@ -1545,6 +1685,8 @@ int mcl_title::run(HINSTANCE inst,const fs::path& appDir,const Callbacks& cb){
  app.hwnd=CreateWindowExW(0,wc.lpszClassName,L"Marvel: Crossover Legacy",WS_POPUP,0,0,1280,720,nullptr,nullptr,inst,nullptr);
  if(!app.hwnd){g=nullptr;if(SUCCEEDED(co))CoUninitialize();return 2;}
  app.settings.load(appDir/"MCL_UserData"/"settings.txt");
+ app.controls.load(appDir/"MCL_UserData"/"controls.txt");
+ app.pads.init(app.hwnd);
  setFullscreen(app.settings.fullscreen);
  if(app.settings.backgroundVideo)app.video.start(appDir/"earth_background.mp4",1280,720);
  loadMusic();

@@ -76,6 +76,9 @@ public:
  void setCheatScript(std::filesystem::path file);
  // Start games in a window instead of fullscreen (OPTIONS > GAMES START IN).
  void setWindowed(bool windowed);
+ // Player's controls (OPTIONS > CONTROLS SETUP): load MAME\ctrlr\<name>.cfg with -ctrlr and
+ // read controllers through DirectInput so pad numbers match the setup screen. Empty = off.
+ void setControllerFile(const std::wstring& name);
  // Why the last start() returned false (missing files, emulator not found...).
  std::string lastStartError() const;
  std::filesystem::path logFile() const;
