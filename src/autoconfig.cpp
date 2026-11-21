@@ -50,7 +50,7 @@ std::string homeDir(){
 std::vector<fs::path> defaultRoots(const fs::path& appDir){
  std::vector<fs::path> r{appDir,appDir.parent_path(),appDir.parent_path().parent_path()};
  const std::string home=homeDir();
- if(!home.empty())for(const char* sub:{"Desktop","Downloads","Documents","OneDrive\Desktop"})r.push_back(fs::path(home)/sub);
+ if(!home.empty())for(const char* sub:{"Desktop","Downloads","Documents","OneDrive/Desktop"})r.push_back(fs::path(home)/sub);
  return r;
 }
 }
