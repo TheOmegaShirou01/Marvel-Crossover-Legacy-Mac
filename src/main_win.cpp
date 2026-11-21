@@ -121,10 +121,23 @@ void showFeatureWindow(HWND owner,bool exUnlocked){
 }
 }
 int WINAPI wWinMain(HINSTANCE inst,HINSTANCE,LPWSTR,int){
- wchar_t exe[MAX_PATH];GetModuleFileNameW(nullptr,exe,MAX_PATH);
- const std::filesystem::path appDir=std::filesystem::path(exe).parent_path();
+ // Everything (content, settings, saves) is found relative to wherever the game was
+ // extracted. Long buffer: extracted folders can be deeper than MAX_PATH.
+ std::vector<wchar_t> exe(32768);
+ const DWORD len=GetModuleFileNameW(nullptr,exe.data(),static_cast<DWORD>(exe.size()));
+ const std::filesystem::path appDir=std::filesystem::path(std::wstring(exe.data(),len)).parent_path();
+ // Started straight from inside the ZIP (Windows copies only the exe to a temp folder):
+ // say so instead of failing quietly.
+ {std::error_code ec;
+  if(!std::filesystem::is_directory(appDir/"Logos",ec)&&!std::filesystem::is_directory(appDir/"Gallery",ec)){
+   MessageBoxW(nullptr,L"Marvel: Crossover Legacy can't find its game files next to the program.\n\n"
+    L"If you opened it from inside the ZIP file, please extract the whole ZIP first "
+    L"(right-click the ZIP > Extract All), then run MarvelCrossoverLegacy_Features.exe "
+    L"from the extracted folder.",L"Marvel: Crossover Legacy",MB_ICONINFORMATION|MB_OK);
+   return 1;
+  }}
  // New PC / first run: find the player's ROMs, MAME and Flycast when the config files don't work.
- mcl::autoConfigure(appDir);
+ try{mcl::autoConfigure(appDir);}catch(...){} // never let setup stop the game from starting
  // Auto-save safety net: repair a lost/damaged save from Backups, then back up.
  mcl::restoreIfNeeded(appDir/"MCL_UserData");
  mcl::backupUserData(appDir/"MCL_UserData",mcl::backupStamp());

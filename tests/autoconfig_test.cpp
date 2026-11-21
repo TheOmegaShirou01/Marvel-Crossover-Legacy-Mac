@@ -18,6 +18,8 @@ int main(){
  touch(root/"Desktop"/"Emus"/"MAME"/"mame.exe");
  touch(root/"Desktop"/"Emus"/"Flycast"/"flycast.exe");
  touch(root/"Desktop"/"notroms"/"readme.txt");
+ // names outside the ANSI code page (emoji + katakana) must not break the search
+ touch(root/"Desktop"/fs::path(L"\U0001F3AE games \u30DE\u30FC\u30D9\u30EB")/"notes.txt");
  const std::vector<fs::path> roots{app,root/"Desktop",root/"Downloads"};
  assert(mcl::knownRomZips().size()>=17);
  const auto folders=mcl::findRomFolders(roots,4);

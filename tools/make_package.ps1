@@ -58,6 +58,18 @@ for ($i = 0; $i -lt $romDirs.Count; $i++) {
   Copy-Tree $romDirs[$i] (Join-Path $dest $name)
   $romTargets += $name
 }
+# Every ROM the games use now lives inside the package. Where an extra folder holds a
+# repaired copy of an original (e.g. mvsc2.zip, naomi.zip), the package keeps only the
+# repaired one so no emulator can pick the broken file. (The user's originals are untouched.)
+$romsRoot = Join-Path $dest "ROMs"
+foreach ($t in $romTargets | Select-Object -Skip 1) {
+  Get-ChildItem (Join-Path $dest $t) -File | ForEach-Object {
+    $orig = Join-Path $romsRoot $_.Name
+    if (Test-Path $orig) { Remove-Item $orig -Confirm:$false; Write-Host "  using repaired $($_.Name) from $t" }
+  }
+}
+# "xmcotau (1).zip" is only the source of xmcotau.key (already in extra\xmcotau); not needed by any game
+Get-ChildItem $romsRoot -File | Where-Object { $_.Name -match '\(\d+\)\.zip$' } | Remove-Item -Confirm:$false
 # 5. relative configuration
 Write-Text (Join-Path $dest "mame_executable.txt") ("Emulators\" + (Split-Path $mameDir -Leaf) + "\" + (Split-Path $mameExe -Leaf))
 if ($flyExe) { Write-Text (Join-Path $dest "flycast_executable.txt") ("Emulators\" + (Split-Path (Split-Path $flyExe -Parent) -Leaf) + "\" + (Split-Path $flyExe -Leaf)) }

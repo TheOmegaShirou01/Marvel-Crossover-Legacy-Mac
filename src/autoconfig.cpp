@@ -4,6 +4,7 @@
 #include "mame_sets.hpp"
 #include <algorithm>
 #include <cctype>
+#include <cwctype>
 #include <cstdlib>
 #include <fstream>
 #include <map>
@@ -13,11 +14,14 @@ namespace mcl {
 namespace fs=std::filesystem;
 namespace {
 std::string lower(std::string s){for(auto& c:s)c=static_cast<char>(std::tolower(static_cast<unsigned char>(c)));return s;}
+// Wide-string version for file names: names with characters outside the ANSI code page
+// (emoji, accented or Asian names) must never throw.
+std::wstring wlower(std::wstring s){for(auto& c:s)c=static_cast<wchar_t>(std::towlower(c));return s;}
 bool skipDir(const fs::path& p){
- const std::string n=lower(p.filename().string());
- static const std::set<std::string> skip={"windows","program files","program files (x86)","programdata","$recycle.bin",
-  "appdata","node_modules",".git","system volume information","music","previews","obj","bin_obj","cache","snap"};
- return skip.count(n)>0||(!n.empty()&&n[0]=='.');
+ const std::wstring n=wlower(p.filename().wstring());
+ static const std::set<std::wstring> skip={L"windows",L"program files",L"program files (x86)",L"programdata",L"$recycle.bin",
+  L"appdata",L"node_modules",L".git",L"system volume information",L"music",L"previews",L"obj",L"bin_obj",L"cache",L"snap"};
+ return skip.count(n)>0||(!n.empty()&&n[0]==L'.');
 }
 template<class F> void walk(const fs::path& root,int depth,F&& visit){
  std::error_code ec;
@@ -71,17 +75,17 @@ const std::vector<std::string>& knownRomZips(){
  return v;
 }
 std::vector<fs::path> findRomFolders(const std::vector<fs::path>& roots,int depth){
- std::map<std::string,std::pair<fs::path,int>> found; // canonical-ish key -> folder, hits
- std::set<std::string> known;for(const auto& z:knownRomZips())known.insert(lower(z));
+ std::map<std::wstring,std::pair<fs::path,int>> found; // canonical-ish key -> folder, hits
+ std::set<std::wstring> known;for(const auto& z:knownRomZips())known.insert(wlower(fs::u8path(z).wstring()));
  for(const auto& root:roots){
   walk(root,depth,[&](const fs::path& dir){
    int hits=0;std::error_code ec;
    for(fs::directory_iterator it(dir,fs::directory_options::skip_permission_denied,ec),end;!ec&&it!=end;it.increment(ec)){
     std::error_code e2;
-    if(it->is_regular_file(e2)&&known.count(lower(it->path().filename().string())))++hits;
+    if(it->is_regular_file(e2)&&known.count(wlower(it->path().filename().wstring())))++hits;
    }
    // key folders that hold ROM files plus key sub-folders (xmcotau\xmcotau.key style)
-   if(hits>0){std::error_code e3;const auto key=lower(fs::weakly_canonical(dir,e3).string());found[key]={dir,hits};}
+   if(hits>0){std::error_code e3;const auto key=wlower(fs::weakly_canonical(dir,e3).wstring());found[key]={dir,hits};}
   });
  }
  std::vector<std::pair<fs::path,int>> v;for(auto& kv:found)v.push_back(kv.second);
@@ -128,9 +132,14 @@ AutoConfigResult autoConfigure(const fs::path& appDir,const std::vector<fs::path
  const int have=gamesFound(current);
  r.games=have;
  if(have==8)return r;
- auto romRoots=roots;
- if(!mame.empty())romRoots.insert(romRoots.begin(),mame.parent_path()/"roms");
- auto found=findRomFolders(romRoots,4);
+ // ROMs shipped inside the game folder come first; when they cover every game the rest
+ // of the PC is not searched at all.
+ auto found=findRomFolders({appDir},4);
+ if(gamesFound(found)<8){
+  auto romRoots=roots;
+  if(!mame.empty())romRoots.insert(romRoots.begin(),mame.parent_path()/"roms");
+  for(const auto& f:findRomFolders(romRoots,4))found.push_back(f);
+ }
  // existing working folders first, then new ones that add something
  std::vector<fs::path> merged=current;
  for(const auto& f:found){
