@@ -100,11 +100,37 @@ and attach the zip; your progress, settings, ROM paths and high scores are kept.
 
 Source code: Source\MCL_v${Version}_SOURCE.zip
 "@ | Out-File -Encoding utf8 (Join-Path $dest "README.txt")
-$size = (Get-ChildItem $dest -Recurse -File | Measure-Object Length -Sum).Sum
+$size = (Get-ChildItem $dest -Recurse -File -Force | Measure-Object Length -Sum).Sum
+# 9. hide the content: only the game and README.txt are visible (the game hides these again
+#    on every start, in case a copy or an unzip tool drops the attribute)
+$hidden = @("ROMs", "Gallery", "Music", "Audio", "Fonts", "Logos", "Previews", "Emulators", "MCL_UserData", "Logs", "Source",
+            "earth_background.mp4", "rom_directory.txt", "mame_executable.txt", "flycast_executable.txt")
+foreach ($n in $hidden) {
+  $p = Join-Path $dest $n
+  if (Test-Path -LiteralPath $p) { $i = Get-Item -LiteralPath $p -Force; $i.Attributes = $i.Attributes -bor [IO.FileAttributes]::Hidden -bor [IO.FileAttributes]::System }
+}
 Write-Host ("Package ready: {0:N1} GB in {1}" -f ($size / 1GB), $dest)
 if ($Zip) {
+  # Written entry by entry so the hidden/system attributes travel inside the zip: Windows'
+  # own "Extract All" (and 7-Zip) restore them, so an unzipped copy shows only the game.
+  Add-Type -AssemblyName System.IO.Compression, System.IO.Compression.FileSystem
   $zipPath = $dest + ".zip"
   if (Test-Path $zipPath) { Remove-Item $zipPath }
-  Compress-Archive -Path $dest -DestinationPath $zipPath -CompressionLevel Fastest
+  $top = Split-Path $dest -Leaf
+  $fs = [IO.File]::Open($zipPath, [IO.FileMode]::Create)
+  $za = New-Object IO.Compression.ZipArchive($fs, [IO.Compression.ZipArchiveMode]::Create)
+  try {
+    $items = @(Get-Item -LiteralPath $dest -Force) + @(Get-ChildItem -LiteralPath $dest -Recurse -Force)
+    foreach ($it in $items) {
+      $rel = $top + $it.FullName.Substring($dest.Length).Replace('\', '/')
+      $dos = [int]($it.Attributes -band ([IO.FileAttributes]::Hidden -bor [IO.FileAttributes]::System -bor [IO.FileAttributes]::ReadOnly))
+      if ($it.PSIsContainer) {
+        $e = $za.CreateEntry($rel.TrimEnd('/') + "/"); $e.ExternalAttributes = 0x10 -bor $dos
+      } else {
+        $e = [IO.Compression.ZipFileExtensions]::CreateEntryFromFile($za, $it.FullName, $rel, [IO.Compression.CompressionLevel]::Fastest)
+        $e.ExternalAttributes = 0x20 -bor $dos
+      }
+    }
+  } finally { $za.Dispose(); $fs.Dispose() }
   Write-Host "Zip: $zipPath"
 }
