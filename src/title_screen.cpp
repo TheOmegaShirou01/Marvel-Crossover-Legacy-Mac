@@ -485,7 +485,8 @@ void onPad(Pad p){
      if(nr&&g->cheats){
       const auto& game=games[static_cast<size_t>(g->cheatGame)];
       const auto& c=list[static_cast<size_t>(g->cheatRow)];
-      g->cheats->set(game,c.id,!g->cheats->enabled(game,c.id));
+      if(c.isChoice())g->cheats->setChoice(game,c.id,(g->cheats->choice(game,c.id)+1)%(static_cast<int>(c.choices.size())+1)); // OFF -> 1 -> ... -> OFF
+      else g->cheats->set(game,c.id,!g->cheats->enabled(game,c.id));
       if(g->cheats->save())g->savedAt=g->now();
      }
      break;
@@ -659,23 +660,31 @@ void drawCheats(double now){
       D2D1::RectF(0,H*0.455f,W,H*0.505f),rgba(1.f,0.84f,0.25f),2);
  const auto& list=mcl::cheatsFor(game);
  const float top=H*0.525f,step=H*0.036f;
- for(size_t i=0;i<list.size();++i){
+ const int rows=10,n=static_cast<int>(list.size());
+ const int first=std::clamp(g->cheatRow-rows/2,0,std::max(0,n-rows)); // long lists scroll
+ if(first>0)text(L"▲",g->fSmall.Get(),D2D1::RectF(W*0.84f,top-step,W*0.88f,top),rgba(1.f,0.84f,0.25f),1);
+ if(first+rows<n)text(L"▼",g->fSmall.Get(),D2D1::RectF(W*0.84f,top+step*rows,W*0.88f,top+step*(rows+1)),rgba(1.f,0.84f,0.25f),1);
+ for(size_t i=static_cast<size_t>(first);i<list.size()&&static_cast<int>(i)<first+rows;++i){
   const bool sel=static_cast<int>(i)==g->cheatRow;
-  const bool on=g->cheats&&g->cheats->enabled(game,list[i].id);
-  const float y=top+step*static_cast<float>(i);
+  const int pick=g->cheats&&list[i].isChoice()?g->cheats->choice(game,list[i].id):0;
+  const bool on=g->cheats&&(list[i].isChoice()?pick>0:g->cheats->enabled(game,list[i].id));
+  const float y=top+step*static_cast<float>(static_cast<int>(i)-first);
   std::wstring label;for(const char* c=list[i].label;*c;++c)label+=static_cast<wchar_t>(*c);
-  const D2D1_RECT_F left=D2D1::RectF(W*0.18f,y,W*0.70f,y+step),right=D2D1::RectF(W*0.70f,y,W*0.82f,y+step);
+  const bool choice=list[i].isChoice();
+  const D2D1_RECT_F left=D2D1::RectF(W*0.18f,y,choice?W*0.52f:W*0.70f,y+step),right=D2D1::RectF(choice?W*0.52f:W*0.70f,y,W*0.82f,y+step);
   if(sel){g->brush->SetColor(rgba(0.12f,0.42f,1.f));g->brush->SetOpacity(0.35f);g->rt->FillRectangle(D2D1::RectF(W*0.16f,y,W*0.84f,y+step),g->brush.Get());g->brush->SetOpacity(1);}
   ComPtr<IDWriteTextLayout> l;
   g->dw->CreateTextLayout(label.c_str(),static_cast<UINT32>(label.size()),g->fBody.Get(),left.right-left.left,step,&l);
   if(l){l->SetTextAlignment(DWRITE_TEXT_ALIGNMENT_LEADING);
    g->brush->SetColor(sel?rgba(1,1,1):rgba(0.82f,0.87f,0.97f));
    g->rt->DrawTextLayout(D2D1::Point2F(left.left,left.top),l.Get(),g->brush.Get());}
-  text(on?L"ON":L"OFF",g->fBody.Get(),right,on?rgba(0.35f,1.f,0.45f):rgba(0.55f,0.6f,0.7f),2);
+  std::wstring value=on?L"ON":L"OFF";
+  if(choice&&pick>0){value.clear();for(const char* c=list[i].choices[static_cast<size_t>(pick-1)].label;*c;++c)value+=static_cast<wchar_t>(*c);value=L"◀ "+value+L" ▶";}
+  text(value,g->fBody.Get(),right,on?rgba(0.35f,1.f,0.45f):rgba(0.55f,0.6f,0.7f),2);
  }
- text(L"Applies when you launch the game.  Achievements are disabled while cheats are on.  MvC2 (Flycast): no cheats yet.",
+ text(L"Applies when you launch the game.  Achievements are disabled while cheats are on.  Secret characters: ENTER picks the next one.",
       g->fSmall.Get(),D2D1::RectF(0,H*0.895f,W,H*0.93f),rgba(0.65f,0.72f,0.85f),2);
- text(L"←→ GAME      ↑↓ CHEAT      ENTER / ✕ ON-OFF      ESC / ○ BACK",g->fSmall.Get(),D2D1::RectF(0,H*0.94f,W,H*0.98f),rgba(0.6f,0.66f,0.8f),2);
+ text(L"←→ GAME      ↑↓ CHEAT      ENTER / ✕ ON-OFF / NEXT      ESC / ○ BACK",g->fSmall.Get(),D2D1::RectF(0,H*0.94f,W,H*0.98f),rgba(0.6f,0.66f,0.8f),2);
 }
 // Draws `bmp` covering `r` (cropping the source to r's aspect), squeezed horizontally by sx.
 // zoom > 1 crops further into the centre (preview clips have built-in side bars).

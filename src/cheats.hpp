@@ -12,10 +12,14 @@ namespace mcl {
 // 2010 XML files) and were checked against the exact sets we launch on MAME 0.289
 // by sampling them during attract mode (timer counts down, full-health values match).
 struct Poke { std::uint32_t addr; std::uint8_t width; std::uint32_t value; }; // width 1/2/4 bytes
+struct CheatChoice { const char* label; std::vector<Poke> pokes; };
 struct CheatDef {
  const char* id;      // stable key for saved settings
  const char* label;   // shown in menus
  std::vector<Poke> pokes;
+ // A choice cheat (e.g. "Secret Character P1": OFF / Akuma / Juggernaut ...) instead of ON/OFF.
+ std::vector<CheatChoice> choices={};
+ bool isChoice() const {return !choices.empty();}
 };
 // Cheats for a collection game id (xmcota, msh, ...). Empty for games without cheats.
 const std::vector<CheatDef>& cheatsFor(const std::string& game);
@@ -28,6 +32,7 @@ const std::vector<std::string>& exCheatGames();
 class CheatSettings {
  std::filesystem::path file_;
  std::map<std::string,std::set<std::string>> on_;
+ std::map<std::string,std::map<std::string,int>> choice_; // game -> cheat id -> 1-based option (0 = off)
 public:
  explicit CheatSettings(std::filesystem::path file):file_(std::move(file)){}
  bool load();        // missing file = nothing enabled
@@ -35,6 +40,9 @@ public:
  bool enabled(const std::string& game,const std::string& id) const;
  void set(const std::string& game,const std::string& id,bool on);
  bool anyEnabled(const std::string& game) const;
+ // Choice cheats: 0 = OFF, 1..n = that option. Saved as "game id=n".
+ int choice(const std::string& game,const std::string& id) const;
+ void setChoice(const std::string& game,const std::string& id,int option);
  std::vector<Poke> activePokes(const std::string& game) const;
 };
 

@@ -11,7 +11,11 @@ int main(int argc,char** argv){
   const auto& list=mcl::cheatsFor(g);
   assert(list.size()>=5);
   std::set<std::string> ids;
-  for(const auto& c:list){assert(ids.insert(c.id).second);assert(!c.pokes.empty());for(const auto& p:c.pokes)assert(p.width==1&&p.addr>=0xFF0000);}
+  for(const auto& c:list){
+   assert(ids.insert(c.id).second);
+   if(c.isChoice()){for(const auto& o:c.choices){assert(!o.pokes.empty());for(const auto& p:o.pokes)assert(p.width==1&&p.addr>=0xFF0000);}}
+   else{assert(!c.pokes.empty());for(const auto& p:c.pokes)assert(p.width==1&&p.addr>=0xFF0000);}
+  }
  }
  assert(mcl::cheatsFor("mvsc2").empty()&&mcl::cheatsFor("sfex3").empty());
  // Settings round trip, unknown entries ignored.
@@ -44,6 +48,26 @@ int main(int argc,char** argv){
   std::ofstream(out/"xmcotau.lua")<<mcl::buildCheatLua("xmcota",s.activePokes("xmcota"));
   std::ofstream(out/"sfexp.lua")<<mcl::buildCheatLua("sfexp",mcl::exCheatPokes("sfexp",true,false,true));
  }
+ // Secret characters: choice cheats round trip and become pokes
+ {
+  fs::create_directories(dir);
+  mcl::CheatSettings s(dir/"choice.txt");
+  s.setChoice("xmcota","p1_secret",3);s.setChoice("mshvsf","p1_secret",1);s.set("xmcota","time",true);
+  s.setChoice("xmcota","p2_secret",9); // out of range -> off
+  assert(s.choice("xmcota","p1_secret")==3&&s.choice("xmcota","p2_secret")==0&&s.anyEnabled("mshvsf"));
+  assert(s.save());
+  mcl::CheatSettings t(dir/"choice.txt");assert(t.load());
+  assert(t.choice("xmcota","p1_secret")==3&&t.choice("mshvsf","p1_secret")==1&&t.enabled("xmcota","time"));
+  bool akuma=false,norimaro=false;
+  for(const auto& p:t.activePokes("xmcota"))akuma=akuma||(p.addr==0xFF4051&&p.value==0x18);
+  for(const auto& p:t.activePokes("mshvsf"))norimaro=norimaro||(p.addr==0xFF3853&&p.value==0x22);
+  assert(akuma&&norimaro);
+  t.setChoice("xmcota","p1_secret",0);assert(t.choice("xmcota","p1_secret")==0);
+  for(const char* g:{"xmcota","mshvsf","mvsc","sfexp","sfex2p"}){
+   bool found=false;for(const auto& c:mcl::cheatsFor(g))found=found||(std::string(c.id)=="p1_secret"&&c.isChoice());
+   assert(found);
+  }
+ }
  fs::remove_all(dir);
- std::cout<<"PASS: cheat tables, settings round trip, CHEAT EX mapping, Lua generation\n";
+ std::cout<<"PASS: cheat tables, settings round trip, CHEAT EX mapping, Lua generation, secret characters\n";
 }
