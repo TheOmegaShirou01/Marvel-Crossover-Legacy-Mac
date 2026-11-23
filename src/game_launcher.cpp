@@ -2,6 +2,7 @@
 #include "game_launcher.hpp"
 #include "achievement_lua.hpp"
 #include "accessibility_lua.hpp"
+#include "mvc2_onebutton.hpp"
 #include "app_settings.hpp"
 #include "cheats.hpp"
 #include "controls.hpp"
@@ -45,14 +46,17 @@ GameLauncher::Result GameLauncher::launch(const std::string& game,bool cheatsUnl
  // MvC2 (Flycast): the player's own MvC2 keys and controller buttons (CONTROLS SETUP > GAME:
  // MARVEL VS. CAPCOM 2), written as Flycast's mappings for arcade games. Flycast keeps one
  // mapping per controller model, so one file is written for every pad Flycast has reported
- // in its log (remembered in MCL_UserDatalycast_pads.txt) plus the common models.
+ // in its log (remembered in MCL_UserData/flycast_pads.txt) plus the common models.
  if(usesFlycast(game)){
   const fs::path fly=readMameExecutable(dir_/"flycast_executable.txt");
   if(!fly.empty()){
    ControlsConfig mvc2(ControlsConfig::Layout::Mvc2);mvc2.load(dir_/"MCL_UserData"/"controls_mvc2.txt");
+   // OPTIONS > ACCESSIBILITY: the buttons the front end takes over for 1-button moves
+   AppSettings st;st.load(dir_/"MCL_UserData"/"settings.txt");
+   const unsigned takeover=mvc2Takeover(st.specialsOn(),st.supersOn());
    const fs::path maps=fly.parent_path()/"mappings";
    std::error_code ec;fs::create_directories(maps,ec);
-   std::ofstream(maps/"SDL_Keyboard_arcade.cfg",std::ios::trunc)<<flycastKeyboardCfg(mvc2);
+   std::ofstream(maps/"SDL_Keyboard_arcade.cfg",std::ios::trunc)<<flycastKeyboardCfg(mvc2,takeover);
    std::vector<std::pair<char,std::string>> pads={{'r',"Xbox 360 Controller"},{'r',"XInput Controller"},{'r',"Xbox One Controller"},
     {'r',"Xbox Series X Controller"},{'r',"Controller (XBOX 360 For Windows)"},{'h',"PS3 Controller"},{'h',"PS4 Controller"},
     {'h',"PS5 Controller"},{'h',"Nintendo Switch Pro Controller"}};
@@ -66,7 +70,7 @@ GameLauncher::Result GameLauncher::launch(const std::string& game,bool cheatsUnl
    for(auto it=pads.rbegin();it!=pads.rend();++it){bool seen=false;for(const auto& u:unique)seen=seen||u.second==it->second;if(!seen)unique.push_back(*it);}
    {std::ofstream out(known,std::ios::trunc);for(const auto& u:unique)if(u.first)out<<u.first<<'\t'<<u.second<<"\n";}
    for(const auto& u:unique){
-    const std::string cfg=flycastPadCfg(mvc2,u.first);if(cfg.empty())continue;
+    const std::string cfg=flycastPadCfg(mvc2,u.first,takeover);if(cfg.empty())continue;
     std::string file="SDL_"+u.second+"_arcade.cfg";
     for(char& ch:file)if(std::string("/\\:?*|\"<>").find(ch)!=std::string::npos)ch='-';
     std::ofstream(maps/fs::u8path(file),std::ios::trunc)<<cfg;
@@ -131,6 +135,8 @@ HWND GameLauncher::gameWindow() const{return emulator_?emulator_->window():nullp
 bool GameLauncher::freezeGame(bool frozen){return emulator_&&emulator_->freeze(frozen);}
 int GameLauncher::gameAdvancing(){return emulator_?emulator_->naomiAdvancing():-1;}
 bool GameLauncher::tapGameKey(unsigned vk){return emulator_&&emulator_->tapKey(vk);}
+bool GameLauncher::readGameRam(std::uint32_t offset,void* out,std::size_t size){return emulator_&&emulator_->readNaomi(offset,out,size);}
+bool GameLauncher::postGameKey(unsigned vk,unsigned scancode,bool down){return emulator_&&emulator_->postKey(vk,scancode,down);}
 void GameLauncher::startCoverGuard(HWND cover){if(emulator_)emulator_->startCoverGuard(cover);}
 void GameLauncher::stopCoverGuard(){if(emulator_)emulator_->stopCoverGuard();}
 void GameLauncher::awardMasterCode(){VerifiedEvent e;e.type="master_code";model_.processVerifiedEvent(e);}

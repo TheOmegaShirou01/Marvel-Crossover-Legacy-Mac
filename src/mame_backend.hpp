@@ -7,6 +7,7 @@
 #endif
 #include "emulator_bridge.hpp"
 #include "external_roms.hpp"
+#include <cstdint>
 #include <filesystem>
 #include <string>
 #include <vector>
@@ -86,6 +87,10 @@ public:
  int naomiAdvancing();
  // Send one key press straight to the emulator window (no focus needed).
  bool tapKey(unsigned vk);
+ // MvC2 1-button moves (ACCESSIBILITY): read NAOMI RAM (offset from its start) and send one key
+ // event with an explicit scancode to the emulator window.
+ bool readNaomi(std::uint32_t offset,void* out,std::size_t size);
+ bool postKey(unsigned vk,unsigned scancode,bool down);
  // Best-effort default MAME F5 UI pause key. This does not confirm paused state.
  bool requestPauseHotkey();
  // Launches MAME, or Flycast for games mapped to it. Name kept for history.

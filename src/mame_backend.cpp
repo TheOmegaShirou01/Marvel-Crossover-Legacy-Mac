@@ -120,6 +120,7 @@ struct MameBackend::Private {
  fs::path cheatScript;  // -autoboot_script for the next MAME launch
  bool windowed=false;   // OPTIONS: games in a window
  std::wstring ctrlr;     // -ctrlr file name (CONTROLS SETUP)
+ std::uintptr_t naomiRam=0; // Flycast: NAOMI RAM inside its process (MvC2 1-button moves)
  std::string lastError;
  ULONGLONG startedAt=0;
  explicit Private(fs::path e):executable(std::move(e)){}
@@ -323,14 +324,33 @@ bool MameBackend::freeze(bool frozen){
  const auto fn=reinterpret_cast<NtProc>(reinterpret_cast<void*>(GetProcAddress(nt,frozen?"NtSuspendProcess":"NtResumeProcess")));
  return fn&&fn(p_->process)>=0;
 }
-int MameBackend::naomiAdvancing(){
- if(!running())return -1;
- // NAOMI main RAM is Flycast's one 32 MB file-mapped region; MvC2's variables sit in its first 4 MB.
- std::uintptr_t base=0;MEMORY_BASIC_INFORMATION mbi{};
- for(std::uintptr_t a=0;VirtualQueryEx(p_->process,reinterpret_cast<void*>(a),&mbi,sizeof mbi)==sizeof mbi;a=reinterpret_cast<std::uintptr_t>(mbi.BaseAddress)+mbi.RegionSize){
-  if(mbi.State==MEM_COMMIT&&mbi.Type==MEM_MAPPED&&mbi.RegionSize==0x2000000&&!(mbi.Protect&PAGE_GUARD)){base=reinterpret_cast<std::uintptr_t>(mbi.BaseAddress);break;}
+// NAOMI main RAM is Flycast's one 32 MB file-mapped region (found once per launch).
+static std::uintptr_t findNaomiRam(HANDLE process){
+ MEMORY_BASIC_INFORMATION mbi{};
+ for(std::uintptr_t a=0;VirtualQueryEx(process,reinterpret_cast<void*>(a),&mbi,sizeof mbi)==sizeof mbi;a=reinterpret_cast<std::uintptr_t>(mbi.BaseAddress)+mbi.RegionSize){
+  if(mbi.State==MEM_COMMIT&&mbi.Type==MEM_MAPPED&&mbi.RegionSize==0x2000000&&!(mbi.Protect&PAGE_GUARD))return reinterpret_cast<std::uintptr_t>(mbi.BaseAddress);
   if(mbi.RegionSize==0)break;
  }
+ return 0;
+}
+bool MameBackend::readNaomi(std::uint32_t offset,void* out,std::size_t size){
+ if(!running()||offset+size>0x2000000)return false;
+ if(!p_->naomiRam)p_->naomiRam=findNaomiRam(p_->process);
+ if(!p_->naomiRam)return false;
+ SIZE_T got=0;
+ if(ReadProcessMemory(p_->process,reinterpret_cast<void*>(p_->naomiRam+offset),out,size,&got)&&got==size)return true;
+ p_->naomiRam=0; // look again next time (RAM remapped)
+ return false;
+}
+bool MameBackend::postKey(unsigned vk,unsigned scancode,bool down){
+ const HWND h=window();if(!h)return false;
+ const LPARAM lp=static_cast<LPARAM>(1u|(scancode<<16)|(down?0u:(3u<<30)));
+ return PostMessageW(h,down?WM_KEYDOWN:WM_KEYUP,vk,lp)!=0;
+}
+int MameBackend::naomiAdvancing(){
+ if(!running())return -1;
+ // MvC2's variables sit in the first 4 MB of NAOMI RAM.
+ const std::uintptr_t base=findNaomiRam(p_->process);
  if(!base)return -1;
  const size_t size=0x400000;std::vector<char> a(size),b(size);SIZE_T got=0;
  if(!ReadProcessMemory(p_->process,reinterpret_cast<void*>(base),a.data(),size,&got)||got!=size)return -1;

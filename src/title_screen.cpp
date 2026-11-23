@@ -11,6 +11,7 @@
 #include "autosave.hpp"
 #include "controls.hpp"
 #include "updater.hpp"
+#include "mvc2_onebutton.hpp"
 #include "gamepads.hpp"
 #include <map>
 #include <fstream>
@@ -141,6 +142,7 @@ struct App {
  // covered by this screen, which offers only CONTINUE and EXIT GAME, and closed again on CONTINUE.
  bool flyPause=false,flyConfirm=false,flyMenuOpen=false,flyExiting=false;int flyRow=0;
  bool flyPrevX[4]{};std::vector<bool> flyPrevDi;bool flyPrevTab=false;
+ mcl::Mvc2OneButton mvc2One; // ACCESSIBILITY 1-button moves in MvC2 (the front end types them)
  // Updates from the GitHub releases page: checked once at start (and from OPTIONS).
  // updPanel: 0 none, 1 "UPDATE AVAILABLE" offer, 2 downloading / installing.
  std::unique_ptr<mcl::Updater> updater;int updPanel=0;int updRow=0;bool updOffered=false,updManual=false;
@@ -380,6 +382,8 @@ void launchSelected(){
  g->preview.stop();g->previewId.clear();g->previewReady.clear();
  g->cb.launcher->setGamesWindowed(!g->settings.gamesFullscreen);
  const auto r=g->cb.launcher->launch(selected().id,g->menu.cheatsUnlocked(),g->menu.cheatExUnlocked()||g->exMode);
+ if(selected().id=="mvsc2")g->mvc2One.configure(g->settings.specialsOn(),g->settings.supersOn());
+ else g->mvc2One.configure(false,false);
  if(!r.ok){g->overlay=L"COULD NOT START THE GAME\n\n"+r.message;return;}
  g->gameRunning=true;g->music.stop();g->track=nullptr;g->fadeStart=-1;
  // Stay on top with our own loading screen until MAME has finished loading its ROMs,
@@ -1839,6 +1843,73 @@ void pollPad(){
 }
 // ---------- MvC2 pause screen (Flycast) ----------
 // Back/Select newly pressed on any pad, or Tab, while Flycast's window has the focus.
+// ---------- MvC2 1-button moves (ACCESSIBILITY) ----------
+// Windows key for a MAME key name from CONTROLS SETUP ("KEYCODE_LCONTROL" -> VK_LCONTROL).
+int vkFromMameKey(const std::string& name){
+ static std::map<std::string,int> m;
+ if(m.empty()){
+  for(int vk=1;vk<255;++vk){const std::string n=mcl::mameKeyName(vk);if(!n.empty()&&!m.count(n))m[n]=vk;}
+  for(int vk:{VK_LSHIFT,VK_RSHIFT,VK_LCONTROL,VK_RCONTROL,VK_LMENU,VK_RMENU})m[mcl::mameKeyName(vk)]=vk; // left/right exactly
+ }
+ const auto it=m.find(name);return it==m.end()?0:it->second;
+}
+bool keyHeld(const std::string& seq){
+ for(size_t at=0;;){
+  const size_t end=seq.find(" OR ",at);
+  const int vk=vkFromMameKey(seq.substr(at,end==std::string::npos?std::string::npos:end-at));
+  if(vk&&(GetAsyncKeyState(vk)&0x8000))return true;
+  if(end==std::string::npos)return false;at=end+4;
+ }
+}
+// Named controller buttons held on the player's pad (pads in order: Xbox-style first, then others).
+bool padHeld(int player,const std::string& name){
+ if(name.empty())return false;
+ int k=0;
+ for(DWORD i=0;i<XUSER_MAX_COUNT;++i){
+  XINPUT_STATE st{};if(XInputGetState(i,&st)!=ERROR_SUCCESS)continue;
+  if(k++!=player)continue;
+  const WORD b=st.Gamepad.wButtons;
+  if(name=="PAD_A")return b&XINPUT_GAMEPAD_A;if(name=="PAD_B")return b&XINPUT_GAMEPAD_B;
+  if(name=="PAD_X")return b&XINPUT_GAMEPAD_X;if(name=="PAD_Y")return b&XINPUT_GAMEPAD_Y;
+  if(name=="PAD_LB")return b&XINPUT_GAMEPAD_LEFT_SHOULDER;if(name=="PAD_RB")return b&XINPUT_GAMEPAD_RIGHT_SHOULDER;
+  if(name=="PAD_LS")return b&XINPUT_GAMEPAD_LEFT_THUMB;if(name=="PAD_RS")return b&XINPUT_GAMEPAD_RIGHT_THUMB;
+  if(name=="PAD_START")return b&XINPUT_GAMEPAD_START;
+  if(name=="PAD_LT")return st.Gamepad.bLeftTrigger>150;if(name=="PAD_RT")return st.Gamepad.bRightTrigger>150;
+  return false;
+ }
+ static const char* const sony[]={"PAD_X","PAD_A","PAD_B","PAD_Y","PAD_LB","PAD_RB","PAD_LT","PAD_RT","","PAD_START","PAD_LS","PAD_RS"};
+ static const char* const nintendo[]={"PAD_B","PAD_A","PAD_Y","PAD_X","PAD_LB","PAD_RB","PAD_LT","PAD_RT","","PAD_START","PAD_LS","PAD_RS"};
+ static const char* const xbox[]={"PAD_A","PAD_B","PAD_X","PAD_Y","PAD_LB","PAD_RB","","PAD_START","PAD_LS","PAD_RS"};
+ for(int i=0;i<g->pads.count();++i){
+  const auto& info=g->pads.info(i);if(info.isXInput)continue;
+  if(k++!=player)continue;
+  mcl::PadSnapshot snap;if(!g->pads.poll(i,snap))return false;
+  const char* const* t=info.vid==0x054C?sony:info.vid==0x057E?nintendo:xbox;
+  const int n=info.vid==0x054C||info.vid==0x057E?12:10;
+  for(int b=0;b<n;++b)if(name==t[b])return (snap.buttons>>b)&1;
+  return false;
+ }
+ return false;
+}
+// The player's real LP/HP/LK/HK (keyboard keys + controller buttons set for MvC2).
+unsigned mvc2Held(int player){
+ static const std::pair<const char*,unsigned> btn[]={{"_BUTTON1",mcl::kLP},{"_BUTTON2",mcl::kHP},{"_BUTTON4",mcl::kLK},{"_BUTTON5",mcl::kHK}};
+ unsigned h=0;
+ for(const auto& b:btn){
+  const std::string port=std::string("P")+(player?"2":"1")+b.first;
+  // Player 2's controller uses the same buttons as player 1's (the MvC2 page shows it so).
+  if(keyHeld(g->mvc2Controls.binding(port).key)||padHeld(player,g->mvc2Controls.binding(std::string("P1")+b.first).pad))h|=b.second;
+ }
+ return h;
+}
+void mvc2OneButtonTick(){
+ auto* L=g->cb.launcher;
+ const auto post=[L](const mcl::InjectKey& k,bool down){L->postGameKey(k.vk,k.scancode,down);};
+ const HWND fw=L->gameWindow();
+ if(!fw||GetForegroundWindow()!=fw){g->mvc2One.releaseAll(post);return;} // only while MvC2 has the focus
+ const unsigned held[2]={mvc2Held(0),mvc2Held(1)};
+ g->mvc2One.tick(g->now(),held,[L](std::uint32_t off,void* out,std::size_t n){return L->readGameRam(off,out,n);},post);
+}
 bool flyPauseTriggered(){
  const HWND fw=g->cb.launcher?g->cb.launcher->gameWindow():nullptr;
  const bool front=fw&&GetForegroundWindow()==fw;
@@ -1864,6 +1935,7 @@ bool flyPauseTriggered(){
 }
 void openFlyPause(){
  auto* L=g->cb.launcher;const HWND fw=L->gameWindow();
+ g->mvc2One.releaseAll([L](const mcl::InjectKey& k,bool down){L->postGameKey(k.vk,k.scancode,down);});
  Sleep(100);
  g->flyMenuOpen=L->gameAdvancing()==0; // the game stopped: Flycast's own menu came up
  // Take the focus while Flycast can still answer, then freeze it (no sound, no input).
@@ -2211,7 +2283,8 @@ int mcl_title::run(HINSTANCE inst,const fs::path& appDir,const Callbacks& cb){
    }else if(app.flyExiting){render();Sleep(15);continue;}
    else if(app.cb.launcher&&app.cb.launcher->flycastGame()){
     if(flyPauseTriggered())openFlyPause();
-    Sleep(12);continue;
+    else if(app.mvc2One.takeover())mvc2OneButtonTick();
+    Sleep(8);continue;
    }else{Sleep(100);continue;}
   }
   if(IsIconic(app.hwnd)||!IsWindowEnabled(app.hwnd)){app.video.setPaused(true);WaitMessage();continue;}

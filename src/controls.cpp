@@ -1,4 +1,5 @@
 #include "controls.hpp"
+#include "mvc2_onebutton.hpp"
 #include <cctype>
 #include <fstream>
 #include <sstream>
@@ -158,7 +159,12 @@ int sdlScancode(const std::string& code){
   {"LCONTROL",224},{"LSHIFT",225},{"LALT",226},{"RCONTROL",228},{"RSHIFT",229},{"RALT",230}};
  const auto it=named.find(k);return it==named.end()?-1:it->second;
 }
-std::string flycastKeyboardCfg(const ControlsConfig& c){
+// Buttons the front end takes over for ACCESSIBILITY (mvc2_onebutton: LP 1, HP 2, LK 4, HK 8),
+// by game input: BUTTON1 = LP, BUTTON2 = HP, BUTTON4 = LK, BUTTON5 = HK.
+static bool takenOver(const std::string& what,unsigned takeover){
+ return (what=="BUTTON1"&&(takeover&1))||(what=="BUTTON2"&&(takeover&2))||(what=="BUTTON4"&&(takeover&4))||(what=="BUTTON5"&&(takeover&8));
+}
+std::string flycastKeyboardCfg(const ControlsConfig& c,unsigned takeover){
  // The keyboard runs in Flycast's "all players" mode (launched with input:maple_sdl_keyboard=4):
  // unsuffixed names drive player 1, names ending in 1 drive player 2.
  static const std::pair<const char*,const char*> map[]={
@@ -170,6 +176,7 @@ std::string flycastKeyboardCfg(const ControlsConfig& c){
  for(int player=0;player<2;++player){
   for(const auto& m:map){
    const std::string what=m.first;
+   if(takenOver(what,takeover))continue; // the front end presses these (spare keys below)
    const std::string port=what=="START"||what=="COIN"?what+std::to_string(player+1):"P"+std::to_string(player+1)+"_"+what;
    std::string seq=c.binding(port).key;
    for(size_t at=0;;){
@@ -179,6 +186,8 @@ std::string flycastKeyboardCfg(const ControlsConfig& c){
     if(end==std::string::npos)break;at=end+4;
    }
   }
+  // ACCESSIBILITY: spare keys the front end types moves with (directions + the 4 attacks)
+  if(takeover)for(int f=0;f<8;++f)binds[player][mvc2InjectKey(player,f).sdl]=std::string(mvc2InjectOption(f))+(player?"1":"");
  }
  std::ostringstream o;
  o<<"[digital]\n";int n=0;
@@ -191,7 +200,7 @@ std::string flycastKeyboardCfg(const ControlsConfig& c){
 //       triggers = axes 4,5 (Raw Input) or 2,5 (XInput).
 //  h:   HIDAPI pads use SDL's controller order: A0 B1 X2 Y3 BACK4 GUIDE5 START6 LS7 RS8 LB9 RB10,
 //       D-pad = buttons 11-14, triggers = axes 4,5.
-std::string flycastPadCfg(const ControlsConfig& c,char backend){
+std::string flycastPadCfg(const ControlsConfig& c,char backend,unsigned takeover){
  if(backend!='r'&&backend!='x'&&backend!='h')return {};
  const bool hid=backend=='h';
  const std::map<std::string,int> btn=hid?std::map<std::string,int>{{"PAD_A",0},{"PAD_B",1},{"PAD_X",2},{"PAD_Y",3},{"PAD_BACK",4},{"PAD_START",6},{"PAD_LS",7},{"PAD_RS",8},{"PAD_LB",9},{"PAD_RB",10}}
@@ -205,6 +214,8 @@ std::string flycastPadCfg(const ControlsConfig& c,char backend){
  else{digital[256]="btn_dpad1_up";digital[257]="btn_dpad1_down";digital[258]="btn_dpad1_left";digital[259]="btn_dpad1_right";}
  analog["0-"]="btn_dpad1_left";analog["0+"]="btn_dpad1_right";analog["1-"]="btn_dpad1_up";analog["1+"]="btn_dpad1_down";
  for(const auto& a:act){
+  const std::string port=a.first;
+  if(port.rfind("P1_",0)==0&&takenOver(port.substr(3),takeover))continue; // the front end presses these
   const std::string pad=c.binding(a.first).pad;
   if(pad=="PAD_LT")analog[std::to_string(lt)+"+"]=a.second;
   else if(pad=="PAD_RT")analog[std::to_string(rt)+"+"]=a.second;

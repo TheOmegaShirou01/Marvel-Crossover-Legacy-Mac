@@ -45,7 +45,7 @@ const char* mvc2Label(const std::string& port);
 int sdlScancode(const std::string& mameKey);
 // Flycast keyboard mapping for arcade games (mappings\SDL_Keyboard_arcade.cfg): the player's
 // MvC2 keys, plus Tab for the pause screen.
-std::string flycastKeyboardCfg(const ControlsConfig& c);
+std::string flycastKeyboardCfg(const ControlsConfig& c,unsigned takeover=0); // takeover: ACCESSIBILITY buttons (mvc2_onebutton)
 // MvC2 default controller button for a game input ("PAD_X"...); directions are always D-pad + left stick.
 const char* mvc2PadDefault(const std::string& port);
 // Named controller buttons the MvC2 page can assign, in order.
@@ -53,7 +53,7 @@ const std::vector<std::string>& mvc2PadButtons();
 // Flycast controller mapping for arcade games (mappings\SDL_<name>_arcade.cfg) for one pad,
 // from how SDL exposes it: backend 'r' (Raw Input) or 'x' (XInput) for Xbox-style pads,
 // 'h' (HIDAPI) for PlayStation / Switch pads. "" for an unknown backend.
-std::string flycastPadCfg(const ControlsConfig& c,char backend);
+std::string flycastPadCfg(const ControlsConfig& c,char backend,unsigned takeover=0);
 // Pads Flycast opened, read from its flycast.log: (backend, SDL joystick name).
 std::vector<std::pair<char,std::string>> flycastPadsFromLog(const std::string& log);
 // MAME keycode for a Windows virtual-key (VK_*) value, "" if unsupported.

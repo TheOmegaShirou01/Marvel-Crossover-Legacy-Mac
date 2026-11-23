@@ -7,6 +7,7 @@
 #endif
 #ifdef _WIN32
 #include "core.hpp"
+#include <cstdint>
 #include <filesystem>
 #include <memory>
 #include <string>
@@ -45,6 +46,9 @@ public:
  bool freezeGame(bool frozen);
  int gameAdvancing();
  bool tapGameKey(unsigned vk);
+ // MvC2 1-button moves (ACCESSIBILITY): NAOMI RAM reads and spare-key events.
+ bool readGameRam(std::uint32_t offset,void* out,std::size_t size);
+ bool postGameKey(unsigned vk,unsigned scancode,bool down);
  void startCoverGuard(HWND cover);
  void stopCoverGuard();
  // The master cheat code was entered in the front end (The Secret Code achievement).
