@@ -8,6 +8,7 @@
 #include <atomic>
 #include <cstdint>
 #include <filesystem>
+#include <functional>
 #include <mutex>
 #include <string>
 #include <thread>
@@ -22,11 +23,14 @@ inline constexpr const wchar_t* kUpdatePath=L"/repos/TheOmegaShirou01/Marvel-Cro
 struct ReleaseInfo {
  long long id=0;
  std::string tag,name,publishedAt,assetName,assetUrl;
+ std::string body; // release notes (Markdown)
  unsigned long long assetSize=0;
 };
-// GitHub "latest release" JSON -> release + the zip to download (an asset whose name has
-// "update" in it is preferred, otherwise the largest .zip). False if no usable zip.
+// GitHub "latest release" JSON -> release + the archive to download (.zip, .rar or .7z; one whose
+// name has "update" in it is preferred, otherwise the largest). False if there is none.
 bool parseLatestRelease(const std::string& json,ReleaseInfo& out);
+// Release notes as plain text for the update pop-up (Markdown/HTML removed, at most maxLines).
+std::string releaseNotesText(const std::string& markdown,size_t maxLines=14);
 // Numbers in a tag/version ("v0.4.3" -> 0,4,3). False when the text has no digits.
 bool versionNumbers(const std::string& text,int out[4]);
 // -1 / 0 / 1 like strcmp, on the numbers of both versions.
@@ -35,26 +39,42 @@ int compareVersions(const std::string& a,const std::string& b);
 long long parseIsoUtc(const std::string& iso);
 // Is this release an update for us?
 bool releaseIsNewer(const ReleaseInfo& r,const std::string& appVersion,long long buildUtc,long long installedId);
-// Batch file that waits for the game to close, copies the new files over the install
-// (keeping the player's progress, settings, ROM paths and emulator saves/high scores),
-// records the installed release, cleans up and starts the game again.
-std::string installerScript(const std::filesystem::path& source,const std::filesystem::path& app,
- unsigned long pid,long long releaseId,const std::filesystem::path& cleanup);
+// Files an update leaves alone (path relative to the game folder): the player's progress,
+// settings, controls and backups (MCL_UserData), logs, ROM/emulator path files, MAME's
+// per-game settings, saves and high scores, Flycast's settings, saves and mappings.
+bool keptOnUpdate(const std::filesystem::path& relative);
 
 #ifdef _WIN32
+// Installs an unpacked update (`source` = the folder holding the new exe) into the game folder
+// `app`, from inside the running game. Each file that will be replaced is first moved to
+// app/Update/backup (a running exe can be renamed, just not overwritten), then the new file is
+// moved in. Any failure puts every file back as it was. On success it records the release
+// (MCL_UserData/installed_release.txt) and leaves "ok" in MCL_UserData/update_result.txt so the
+// restarted game can say so. `progress` gets 0..1.
+bool installUpdate(const std::filesystem::path& source,const std::filesystem::path& app,long long releaseId,
+ const std::string& version,std::wstring& error,const std::function<void(double)>& progress={});
+// After the restart: the result installUpdate left (true once), and removal of app/Update.
+struct UpdateResult { bool ok=false; std::string version; };
+bool takeUpdateResult(const std::filesystem::path& app,UpdateResult& out);
+void cleanupUpdateFolder(const std::filesystem::path& app); // retries for a while: the old exe may still be closing
+// Only the game and README.txt stay visible: everything else at the top of the game folder
+// (including folders a future update adds) gets Hidden + System. Run at every start and after an update.
+void hideGameFolder(const std::filesystem::path& app);
+
 class Updater {
 public:
- enum class State { Idle, Checking, UpToDate, Available, Failed, Downloading, Extracting, Ready };
+ enum class State { Idle, Checking, UpToDate, Available, Failed, Downloading, Extracting, Ready, Installing, Installed };
  explicit Updater(std::filesystem::path appDir):dir_(std::move(appDir)){}
  ~Updater();
  Updater(const Updater&)=delete;
  Updater& operator=(const Updater&)=delete;
  void startCheck();                 // background; see state()
- void startDownload();              // after Available: download + unzip in the background
+ void startDownload();              // after Available: download + unpack in the background
  void cancel();                     // stop a download
- bool launchInstaller();            // after Ready: start the installer; the caller then quits
+ void startInstall();               // after Ready (menu music/videos stopped): install in the background
+ bool restartGame();                // after Installed: start the new exe; the caller then quits
  State state() const {return state_;}
- double progress() const {return progress_;}           // 0..1 while downloading
+ double progress() const {return progress_;}           // 0..1 while downloading / installing
  ReleaseInfo release() const {std::lock_guard<std::mutex> l(m_);return rel_;}
  std::wstring error() const {std::lock_guard<std::mutex> l(m_);return error_;}
  long long buildTimeUtc() const;    // from this exe's PE header

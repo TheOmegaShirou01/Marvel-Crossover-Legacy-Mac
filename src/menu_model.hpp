@@ -60,6 +60,10 @@ public:
  bool cheatsUnlocked() const {return cheats_;}
  bool cheatExUnlocked() const {return cheatEx_;}
  void resetCodes(){master_.reset();ex_.reset();}
+ // ACCESSIBILITY shortcuts (X / C): unlock without the code, keeping the cursor on its item.
+ void unlockCheats(){const MenuItem c=selected();cheats_=true;keepCursor(c);}
+ void unlockCheatEx(){const MenuItem c=selected();cheatEx_=true;keepCursor(c);}
+ void keepCursor(MenuItem it){const auto v=items();for(std::size_t i=0;i<v.size();++i)if(v[i]==it)cursor_=static_cast<int>(i);}
  // Feeds one input to both codes. `unlocked` is set when a code completes for the
  // first time; `swallowed` when the input belongs to a code already under way and
  // must not also trigger a screen action.

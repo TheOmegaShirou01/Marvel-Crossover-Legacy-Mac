@@ -28,6 +28,11 @@ bool AppSettings::load(const std::filesystem::path& file){
   else if(k=="games_fullscreen")parseBool(v,gamesFullscreen);
   else if(k=="background_video")parseBool(v,backgroundVideo);
   else if(k=="now_playing")parseBool(v,nowPlaying);
+  else if(k=="accessibility")parseBool(v,accessibility);
+  else if(k=="one_button_specials")parseBool(v,oneButtonSpecials);
+  else if(k=="one_button_supers")parseBool(v,oneButtonSupers);
+  else if(k=="cheat_menu_key")parseBool(v,cheatMenuKey);
+  else if(k=="cheat_ex_menu_key")parseBool(v,cheatExMenuKey);
  }
  return true;
 }
@@ -36,7 +41,10 @@ bool AppSettings::save(const std::filesystem::path& file) const{
  std::ofstream out(file,std::ios::trunc);if(!out)return false;
  out<<"music_volume="<<musicVolume<<"\nvoice_volume="<<voiceVolume
     <<"\nfullscreen="<<(fullscreen?1:0)<<"\ngames_fullscreen="<<(gamesFullscreen?1:0)
-    <<"\nbackground_video="<<(backgroundVideo?1:0)<<"\nnow_playing="<<(nowPlaying?1:0)<<"\n";
+    <<"\nbackground_video="<<(backgroundVideo?1:0)<<"\nnow_playing="<<(nowPlaying?1:0)
+    <<"\naccessibility="<<(accessibility?1:0)<<"\none_button_specials="<<(oneButtonSpecials?1:0)
+    <<"\none_button_supers="<<(oneButtonSupers?1:0)<<"\ncheat_menu_key="<<(cheatMenuKey?1:0)
+    <<"\ncheat_ex_menu_key="<<(cheatExMenuKey?1:0)<<"\n";
  return static_cast<bool>(out);
 }
 }

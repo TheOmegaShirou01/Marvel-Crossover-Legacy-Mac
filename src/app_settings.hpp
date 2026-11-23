@@ -10,6 +10,14 @@ struct AppSettings {
  bool gamesFullscreen=true;  // MAME / Flycast window mode
  bool backgroundVideo=true;  // spinning Earth video behind the menus
  bool nowPlaying=true;       // "now playing" caption when a song starts
+ // OPTIONS > ACCESSIBILITY. Nothing below works unless `accessibility` is on.
+ bool accessibility=false;
+ bool oneButtonSpecials=true; // LP / LK / MP / MK perform a special move
+ bool oneButtonSupers=true;   // HP / HK perform a super (when the meter allows it)
+ bool cheatMenuKey=true;      // X opens the CHEATS menu (no code needed)
+ bool cheatExMenuKey=true;    // C opens the CHEAT EX menu (no code needed)
+ bool specialsOn() const {return accessibility&&oneButtonSpecials;}
+ bool supersOn() const {return accessibility&&oneButtonSupers;}
  bool load(const std::filesystem::path& file);  // false if missing (defaults kept)
  bool save(const std::filesystem::path& file) const;
 };

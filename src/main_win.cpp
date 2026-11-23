@@ -1,6 +1,7 @@
 #define WIN32_LEAN_AND_MEAN
 #include "autosave.hpp"
 #include "autoconfig.hpp"
+#include "updater.hpp"
 #include <windows.h>
 #include <shellapi.h>
 #include <commctrl.h>
@@ -143,14 +144,7 @@ int WINAPI wWinMain(HINSTANCE inst,HINSTANCE,LPWSTR,int){
  // "show hidden files" on). The game opens them by path, so gameplay is unaffected.
  // Done at every start because ZIP extraction drops these attributes.
  {std::error_code ec;std::filesystem::create_directories(appDir/"MCL_UserData",ec);}
- for(const wchar_t* name:{L"ROMs",L"Gallery",L"Music",L"Audio",L"Fonts",L"Logos",L"Previews",L"Emulators",
-                          L"MCL_UserData",L"Logs",L"Source",L"earth_background.mp4",
-                          L"rom_directory.txt",L"mame_executable.txt",L"flycast_executable.txt"}){
-  const std::filesystem::path p=appDir/name;
-  const DWORD a=GetFileAttributesW(p.c_str());
-  if(a!=INVALID_FILE_ATTRIBUTES&&(a&(FILE_ATTRIBUTE_HIDDEN|FILE_ATTRIBUTE_SYSTEM))!=(FILE_ATTRIBUTE_HIDDEN|FILE_ATTRIBUTE_SYSTEM))
-   SetFileAttributesW(p.c_str(),a|FILE_ATTRIBUTE_HIDDEN|FILE_ATTRIBUTE_SYSTEM);
- }
+ mcl::hideGameFolder(appDir); // also covers folders a future update adds
  // Auto-save safety net: repair a lost/damaged save from Backups, then back up.
  mcl::restoreIfNeeded(appDir/"MCL_UserData");
  mcl::backupUserData(appDir/"MCL_UserData",mcl::backupStamp());
