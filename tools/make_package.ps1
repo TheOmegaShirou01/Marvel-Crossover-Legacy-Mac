@@ -15,7 +15,7 @@ Usage (from the project folder, after Build_VS2022.bat):
   powershell -ExecutionPolicy Bypass -File tools\make_package.ps1 -Version 0.4.0 -Out "..\..\Packages"
 #>
 param(
-  [string]$Version = "0.4.3",
+  [string]$Version = "0.4.4",
   [string]$Out = "..\..\Packages",
   [switch]$NoUserData,
   [switch]$Zip
