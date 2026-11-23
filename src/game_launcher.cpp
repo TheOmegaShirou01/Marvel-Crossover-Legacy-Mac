@@ -1,6 +1,8 @@
 #ifdef _WIN32
 #include "game_launcher.hpp"
 #include "achievement_lua.hpp"
+#include "accessibility_lua.hpp"
+#include "app_settings.hpp"
 #include "cheats.hpp"
 #include "controls.hpp"
 #include "emulator_bridge.hpp"
@@ -91,6 +93,10 @@ GameLauncher::Result GameLauncher::launch(const std::string& game,bool cheatsUnl
   std::string lua=buildPauseMenuLua(signal.u8string(),ready.u8string());
   if(!pokes.empty())lua+="\n"+buildCheatLua(game,pokes);
   lua+="\n"+buildAchievementLua(game,events.u8string()); // read-only result detector
+  // OPTIONS > ACCESSIBILITY: 1-button specials / supers
+  {AppSettings st;st.load(dir_/"MCL_UserData"/"settings.txt");
+   const std::string one=buildOneButtonLua(game,st.specialsOn(),st.supersOn());
+   if(!one.empty())lua+="\n"+one;}
   std::ofstream out(script,std::ios::trunc);out<<lua;
   emulator_->setCheatScript(out?script:fs::path{});
  }else emulator_->setCheatScript({});
