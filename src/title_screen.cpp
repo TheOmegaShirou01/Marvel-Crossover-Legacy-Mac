@@ -648,6 +648,7 @@ const wchar_t* cheatGameTitle(const std::string& id){
  if(id=="xmvsf")return L"X-MEN VS. STREET FIGHTER";
  if(id=="mshvsf")return L"MARVEL SUPER HEROES VS. STREET FIGHTER";
  if(id=="mvsc")return L"MARVEL VS. CAPCOM";
+ if(id=="mvsc2")return L"MARVEL VS. CAPCOM 2";
  if(id=="sfexp")return L"STREET FIGHTER EX PLUS";
  if(id=="sfex2p")return L"STREET FIGHTER EX2 PLUS";
  return L"";
