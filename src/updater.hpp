@@ -16,7 +16,7 @@ namespace mcl {
 // The version of this build. Publish GitHub releases with tags like "v0.4.3" so the
 // updater can compare them; a release with a non-numeric tag (e.g. "BETA") counts as new
 // only when it was published after this exe was built and has not been installed yet.
-inline constexpr const char* kAppVersion="0.4.4";
+inline constexpr const char* kAppVersion="0.4.5";
 inline constexpr const wchar_t* kUpdateHost=L"api.github.com";
 inline constexpr const wchar_t* kUpdatePath=L"/repos/TheOmegaShirou01/Marvel-Crossover-Legacy/releases/latest";
 

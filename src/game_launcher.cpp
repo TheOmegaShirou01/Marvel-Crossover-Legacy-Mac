@@ -94,7 +94,9 @@ GameLauncher::Result GameLauncher::launch(const std::string& game,bool cheatsUnl
   CheatSettings s(dir_/"MCL_UserData"/"marvel_cheats.txt");s.load();
   pokes=s.activePokes(game);
  }
- if(usesFlycast(game))pokes.clear(); // Flycast has no Lua hook (no cheats, no custom pause menu)
+ // Flycast has no Lua hook: MvC2's cheats are written into NAOMI RAM by the front end.
+ flyPokes_.clear();
+ if(usesFlycast(game))flyPokes_=pokes;
  // MAME games always get the in-game pause menu script, plus cheats when enabled.
  const fs::path script=dir_/"MCL_UserData"/"game_script.lua";
  const fs::path signal=dir_/"MCL_UserData"/"game_signal.txt";
@@ -150,6 +152,16 @@ int GameLauncher::gameAdvancing(){return emulator_?emulator_->naomiAdvancing():-
 bool GameLauncher::tapGameKey(unsigned vk){return emulator_&&emulator_->tapKey(vk);}
 bool GameLauncher::readGameRam(std::uint32_t offset,void* out,std::size_t size){return emulator_&&emulator_->readNaomi(offset,out,size);}
 bool GameLauncher::postGameKey(unsigned vk,unsigned scancode,bool down){return emulator_&&emulator_->postKey(vk,scancode,down);}
+void GameLauncher::applyFlycastCheats(){
+ if(flyPokes_.empty()||!emulator_)return;
+ for(const auto& p:flyPokes_){
+  std::uint8_t v=0;
+  if(p.ifAddr&&(!emulator_->readNaomi(p.ifAddr,&v,1)||v!=p.ifValue))continue;
+  if(p.ifNonZero&&(!emulator_->readNaomi(p.ifNonZero,&v,1)||v==0))continue;
+  const std::uint32_t val=p.value; // little-endian, like the SH-4
+  emulator_->writeNaomi(p.addr,&val,p.width==4?4:p.width==2?2:1);
+ }
+}
 void GameLauncher::startCoverGuard(HWND cover){if(emulator_)emulator_->startCoverGuard(cover);}
 void GameLauncher::stopCoverGuard(){if(emulator_)emulator_->stopCoverGuard();}
 void GameLauncher::awardMasterCode(){VerifiedEvent e;e.type="master_code";model_.processVerifiedEvent(e);}

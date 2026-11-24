@@ -91,6 +91,8 @@ public:
  // event with an explicit scancode to the emulator window.
  bool readNaomi(std::uint32_t offset,void* out,std::size_t size);
  bool postKey(unsigned vk,unsigned scancode,bool down);
+ // MvC2 cheats: write NAOMI RAM (offset from its start).
+ bool writeNaomi(std::uint32_t offset,const void* data,std::size_t size);
  // Best-effort default MAME F5 UI pause key. This does not confirm paused state.
  bool requestPauseHotkey();
  // Launches MAME, or Flycast for games mapped to it. Name kept for history.

@@ -75,6 +75,16 @@ const std::map<std::string,std::vector<CheatDef>>& table(){
    {"p2_secret","Secret Character P2",V{},{{"Roll",V{b(0xFF3453,0x10)}},{"Red Venom",V{b(0xFF3453,0x24)}},{"Orange Hulk",V{b(0xFF3453,0x26)}},{"Gold War Machine",V{b(0xFF3453,0x28)}},{"Shadow Lady",V{b(0xFF3453,0x2A)}},{"Lilith",V{b(0xFF3453,0x2C)}}}},
    {"p2_secret2","Secret Partner P2",V{},{{"Roll",V{b(0xFF3C53,0x10)}},{"Red Venom",V{b(0xFF3C53,0x24)}},{"Orange Hulk",V{b(0xFF3C53,0x26)}},{"Gold War Machine",V{b(0xFF3C53,0x28)}},{"Shadow Lady",V{b(0xFF3C53,0x2A)}},{"Lilith",V{b(0xFF3C53,0x2C)}}}},
   }},
+  // MvC2 (Flycast, NAOMI): offsets in NAOMI main RAM, written by the front end every frame.
+  // Fighter slots at 0x2D7088 + n*0x5A4 (P1-1, P2-1, P1-2, P2-2, P1-3, P2-3), health at +0x420
+  // (max 0x90). Round timer 0x2F8378 (seconds). Hyper level 0x2F8392 (P1) / 0x2F8393 (P2), 5 = MAX.
+  {"mvsc2",{
+   {"time","Infinite Time",V{b(0x2F8378,0x63)}},
+   {"p1_energy","Infinite Health P1 (all 3)",V{b(0x2D74A8,0x90),b(0x2D7FF0,0x90),b(0x2D8B38,0x90)}},
+   {"p2_energy","Infinite Health P2 (all 3)",V{b(0x2D7A4C,0x90),b(0x2D8594,0x90),b(0x2D90DC,0x90)}},
+   {"p1_power","Max + Infinite Hyper Gauge P1",V{b(0x2F8392,0x05)}},
+   {"p2_power","Max + Infinite Hyper Gauge P2",V{b(0x2F8393,0x05)}},
+  }},
   // CHEAT EX games (ZN-1 / ZN-2, PlayStation-based RAM addresses).
   {"sfexp",{ // set sfexp (USA 970407)
    {"time","Infinite Time",V{b(0x31D5CC,0x63)}},
@@ -105,7 +115,7 @@ const std::vector<CheatDef>& cheatsFor(const std::string& game){
  const auto& t=table();auto it=t.find(game);return it==t.end()?kNone:it->second;
 }
 const std::vector<std::string>& marvelCheatGames(){
- static const std::vector<std::string> g{"xmcota","msh","xmvsf","mshvsf","mvsc"};return g;
+ static const std::vector<std::string> g{"xmcota","msh","xmvsf","mshvsf","mvsc","mvsc2"};return g;
 }
 const std::vector<std::string>& exCheatGames(){
  static const std::vector<std::string> g{"sfexp","sfex2p"};return g;

@@ -7,6 +7,7 @@
 #endif
 #ifdef _WIN32
 #include "core.hpp"
+#include "cheats.hpp"
 #include <cstdint>
 #include <filesystem>
 #include <memory>
@@ -49,6 +50,8 @@ public:
  // MvC2 1-button moves (ACCESSIBILITY): NAOMI RAM reads and spare-key events.
  bool readGameRam(std::uint32_t offset,void* out,std::size_t size);
  bool postGameKey(unsigned vk,unsigned scancode,bool down);
+ // MvC2 cheats (Flycast has no Lua hook): the front end writes them into NAOMI RAM; call often.
+ void applyFlycastCheats();
  void startCoverGuard(HWND cover);
  void stopCoverGuard();
  // The master cheat code was entered in the front end (The Secret Code achievement).
@@ -67,6 +70,7 @@ private:
  std::unique_ptr<EmulatorBridge> session_;
  bool gamesWindowed_=false;
  bool needsReadySignal_=false;
+ std::vector<Poke> flyPokes_; // MvC2 cheats for this launch (offsets in NAOMI RAM)
  std::string game_;
  void ingestDetectedEvents();
 };

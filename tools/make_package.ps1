@@ -15,7 +15,7 @@ Usage (from the project folder, after Build_VS2022.bat):
   powershell -ExecutionPolicy Bypass -File tools\make_package.ps1 -Version 0.4.0 -Out "..\..\Packages"
 #>
 param(
-  [string]$Version = "0.4.4",
+  [string]$Version = "0.4.5",
   [string]$Out = "..\..\Packages",
   [switch]$NoUserData,
   [switch]$Zip
@@ -95,7 +95,7 @@ backups in MCL_UserData\Backups). High scores are saved by MAME in
 Emulators\MAME 0.289\hiscore.
 
 Updates: the game checks github.com/TheOmegaShirou01/Marvel-Crossover-Legacy/releases
-when it starts (and from OPTIONS > CHECK FOR UPDATES). Tag new releases like v0.4.4
+when it starts (and from OPTIONS > CHECK FOR UPDATES). Tag new releases like v0.4.5
 and attach the zip; your progress, settings, ROM paths and high scores are kept.
 
 Source code: Source\MCL_v${Version}_SOURCE.zip

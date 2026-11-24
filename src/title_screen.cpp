@@ -2270,7 +2270,10 @@ int mcl_title::run(HINSTANCE inst,const fs::path& appDir,const Callbacks& cb){
    }else if(app.flyExiting){render();Sleep(15);continue;}
    else if(app.cb.launcher&&app.cb.launcher->flycastGame()){
     if(flyPauseTriggered())openFlyPause();
-    else if(app.mvc2One.takeover())mvc2OneButtonTick();
+    else{
+     if(app.mvc2One.takeover())mvc2OneButtonTick();
+     app.cb.launcher->applyFlycastCheats(); // MvC2 cheats (written into NAOMI RAM)
+    }
     Sleep(8);continue;
    }else{Sleep(100);continue;}
   }

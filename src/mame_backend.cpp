@@ -342,6 +342,15 @@ bool MameBackend::readNaomi(std::uint32_t offset,void* out,std::size_t size){
  p_->naomiRam=0; // look again next time (RAM remapped)
  return false;
 }
+bool MameBackend::writeNaomi(std::uint32_t offset,const void* data,std::size_t size){
+ if(!running()||offset+size>0x2000000)return false;
+ if(!p_->naomiRam)p_->naomiRam=findNaomiRam(p_->process);
+ if(!p_->naomiRam)return false;
+ SIZE_T put=0;
+ if(WriteProcessMemory(p_->process,reinterpret_cast<void*>(p_->naomiRam+offset),data,size,&put)&&put==size)return true;
+ p_->naomiRam=0;
+ return false;
+}
 bool MameBackend::postKey(unsigned vk,unsigned scancode,bool down){
  const HWND h=window();if(!h)return false;
  const LPARAM lp=static_cast<LPARAM>(1u|(scancode<<16)|(down?0u:(3u<<30)));
