@@ -6,6 +6,7 @@ namespace mcl {
 namespace {
 using V=std::vector<Poke>;
 Poke b(std::uint32_t a,std::uint32_t v){return {a,1,v};}
+Poke bIf(std::uint32_t a,std::uint32_t v,std::uint32_t ifAddr,std::uint8_t ifValue,std::uint32_t ifNonZero=0){return {a,1,v,ifAddr,ifValue,ifNonZero};}
 const std::map<std::string,std::vector<CheatDef>>& table(){
  static const std::map<std::string,std::vector<CheatDef>> t={
   {"xmcota",{ // set xmcotau
@@ -27,6 +28,12 @@ const std::map<std::string,std::vector<CheatDef>>& table(){
    {"p2_energy","Infinite Health P2",V{b(0xFF4591,0x90)}},
    {"p1_power","Max Power P1",V{b(0xFF4198,0x03),b(0xFF4195,0x90)}},
    {"p2_power","Max Power P2",V{b(0xFF4598,0x03),b(0xFF4595,0x90)}},
+   // Secret characters (verified in matches on mshud). The byte is held only while that player
+   // is really playing (FF4003 / FF4403 = 1): the attract demo crashes on Thanos otherwise.
+   // Anita (unfinished test character) has no select-screen portrait, so her byte is only held
+   // once the selection is confirmed (FF4920 != 0); from there she loads with her own graphics.
+   {"p1_secret","Secret Character P1",V{},{{"Dr. Doom",V{bIf(0xFF4051,0x14,0xFF4003,1)}},{"Thanos",V{bIf(0xFF4051,0x16,0xFF4003,1)}},{"Anita",V{bIf(0xFF4051,0x18,0xFF4003,1,0xFF4920)}}}},
+   {"p2_secret","Secret Character P2",V{},{{"Dr. Doom",V{bIf(0xFF4451,0x14,0xFF4403,1)}},{"Thanos",V{bIf(0xFF4451,0x16,0xFF4403,1)}},{"Anita",V{bIf(0xFF4451,0x18,0xFF4403,1,0xFF4920)}}}},
   }},
   {"xmvsf",{ // set xmvsfur2
    {"time","Infinite Time",V{b(0xFF5008,0x99)}},
@@ -177,12 +184,13 @@ std::string buildCheatLua(const std::string& title,const std::vector<Poke>& poke
  s<<"if not cpu then return end\n";
  s<<"local mem = cpu.spaces['program']\n";
  s<<"local pokes = {\n";
- char buf[64];
- for(const auto& p:pokes){std::snprintf(buf,sizeof buf," {0x%06X, %u, 0x%X},\n",p.addr,static_cast<unsigned>(p.width),p.value);s<<buf;}
+ char buf[128];
+ for(const auto& p:pokes){std::snprintf(buf,sizeof buf," {0x%06X, %u, 0x%X, 0x%06X, 0x%X, 0x%06X},\n",p.addr,static_cast<unsigned>(p.width),p.value,p.ifAddr,static_cast<unsigned>(p.ifValue),p.ifNonZero);s<<buf;}
  s<<"}\n";
  s<<"mcl_cheat_subscription = emu.add_machine_frame_notifier(function()\n";
  s<<"  for _, p in ipairs(pokes) do\n";
- s<<"    if p[2] == 1 then mem:write_u8(p[1], p[3])\n";
+ s<<"    if (p[4] ~= 0 and mem:read_u8(p[4]) ~= p[5]) or (p[6] ~= 0 and mem:read_u8(p[6]) == 0) then -- guarded poke: not now\n";
+ s<<"    elseif p[2] == 1 then mem:write_u8(p[1], p[3])\n";
  s<<"    elseif p[2] == 2 then mem:write_u16(p[1], p[3])\n";
  s<<"    else mem:write_u32(p[1], p[3]) end\n";
  s<<"  end\n";

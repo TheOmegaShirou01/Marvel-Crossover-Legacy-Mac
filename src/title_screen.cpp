@@ -141,7 +141,7 @@ struct App {
  // own menu buttons, so Flycast's menu (Cheats, Settings, Save State...) opens underneath; it is
  // covered by this screen, which offers only CONTINUE and EXIT GAME, and closed again on CONTINUE.
  bool flyPause=false,flyConfirm=false,flyMenuOpen=false,flyExiting=false;int flyRow=0;
- bool flyPrevX[4]{};std::vector<bool> flyPrevDi;bool flyPrevTab=false;
+ bool flyPrevTab=false;
  mcl::Mvc2OneButton mvc2One; // ACCESSIBILITY 1-button moves in MvC2 (the front end types them)
  // Updates from the GitHub releases page: checked once at start (and from OPTIONS).
  // updPanel: 0 none, 1 "UPDATE AVAILABLE" offer, 2 downloading / installing.
@@ -686,7 +686,7 @@ void drawCheats(double now){
   if(choice&&pick>0){value.clear();for(const char* c=list[i].choices[static_cast<size_t>(pick-1)].label;*c;++c)value+=static_cast<wchar_t>(*c);value=L"◀ "+value+L" ▶";}
   text(value,g->fBody.Get(),right,on?rgba(0.35f,1.f,0.45f):rgba(0.55f,0.6f,0.7f),2);
  }
- text(L"Applies when you launch the game.  Achievements are disabled while cheats are on.  Secret characters: ENTER picks the next one.",
+ text(L"Applies when you launch the game.  Achievements still unlock with cheats on.  Secret characters: ENTER picks the next one.",
       g->fSmall.Get(),D2D1::RectF(0,H*0.895f,W,H*0.93f),rgba(0.65f,0.72f,0.85f),2);
  text(L"←→ GAME      ↑↓ CHEAT      ENTER / ✕ ON-OFF / NEXT      ESC / ○ BACK",g->fSmall.Get(),D2D1::RectF(0,H*0.94f,W,H*0.98f),rgba(0.6f,0.66f,0.8f),2);
 }
@@ -1913,21 +1913,8 @@ void mvc2OneButtonTick(){
 bool flyPauseTriggered(){
  const HWND fw=g->cb.launcher?g->cb.launcher->gameWindow():nullptr;
  const bool front=fw&&GetForegroundWindow()==fw;
+ // Keyboard only (Tab): on controllers Back/Select stays out of the way.
  bool hit=false;
- for(DWORD i=0;i<XUSER_MAX_COUNT;++i){
-  XINPUT_STATE st{};const bool on=XInputGetState(i,&st)==ERROR_SUCCESS&&(st.Gamepad.wButtons&XINPUT_GAMEPAD_BACK);
-  if(on&&!g->flyPrevX[i])hit=true;
-  g->flyPrevX[i]=on;
- }
- const int n=g->pads.count();g->flyPrevDi.resize(static_cast<size_t>(n),false);
- for(int i=0;i<n;++i){
-  const auto& info=g->pads.info(i);if(info.isXInput)continue;
-  mcl::PadSnapshot s;if(!g->pads.poll(i,s))continue;
-  const int k=g->controls.menuSelect>=0?g->controls.menuSelect:mcl::defaultMenuButtons(info.vid,info.pid).select;
-  const bool on=k>=0&&k<64&&(s.buttons&(std::uint64_t(1)<<k));
-  if(on&&!g->flyPrevDi[static_cast<size_t>(i)])hit=true;
-  g->flyPrevDi[static_cast<size_t>(i)]=on;
- }
  const bool tab=(GetAsyncKeyState(VK_TAB)&0x8000)!=0;
  if(tab&&!g->flyPrevTab)hit=true;
  g->flyPrevTab=tab;

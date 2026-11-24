@@ -42,6 +42,15 @@ GameLauncher::Result GameLauncher::launch(const std::string& game,bool cheatsUnl
    std::error_code ec;fs::create_directories(mame.parent_path()/"ctrlr",ec);
    std::ofstream(mame.parent_path()/"ctrlr"/"mcl_controls.cfg",std::ios::trunc)<<controls.mameCtrlrXml();
    emulator_->setControllerFile(L"mcl_controls");
+  }
+  // A remap saved by MAME's own menu (cfg/<set>.cfg) would beat CONTROLS SETUP for that
+  // game (e.g. punches moved to A/S/D only), so it is cleared before every launch.
+  const auto* set=findMameSet(game);
+  if(set&&set->emulator==Emulator::Mame&&!mame.empty()){
+   const fs::path cfg=mame.parent_path()/"cfg"/(std::string(set->set)+".cfg");
+   std::string xml;{std::ifstream in(cfg,std::ios::binary);xml.assign(std::istreambuf_iterator<char>(in),std::istreambuf_iterator<char>());}
+   const std::string clean=xml.empty()?xml:stripMameInputRemaps(xml);
+   if(clean!=xml)std::ofstream(cfg,std::ios::binary|std::ios::trunc)<<clean;
   }}
  // MvC2 (Flycast): the player's own MvC2 keys and controller buttons (CONTROLS SETUP > GAME:
  // MARVEL VS. CAPCOM 2), written as Flycast's mappings for arcade games. Flycast keeps one
@@ -95,6 +104,10 @@ GameLauncher::Result GameLauncher::launch(const std::string& game,bool cheatsUnl
  needsReadySignal_=!usesFlycast(game);
  if(!usesFlycast(game)){
   std::string lua=buildPauseMenuLua(signal.u8string(),ready.u8string());
+  // The EX boards show colour bars first: NOW LOADING stays up until they are gone
+  // (bars end around frame 30 in EX Plus and frame 180 in EX2 Plus).
+  if(game=="sfexp")lua="MCL_READY_FRAME = 60\n"+lua;
+  else if(game=="sfex2p")lua="MCL_READY_FRAME = 210\n"+lua;
   if(!pokes.empty())lua+="\n"+buildCheatLua(game,pokes);
   lua+="\n"+buildAchievementLua(game,events.u8string()); // read-only result detector
   // OPTIONS > ACCESSIBILITY: 1-button specials / supers

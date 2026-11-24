@@ -43,11 +43,11 @@ int main(int argc,char** argv){
   // Xbox pad through Raw Input: X(2)=LP, Back(6)=pause, hat = D-pad, RT axis 5
   m.binding("P1_BUTTON6").pad="PAD_RT";
   const std::string r=mcl::flycastPadCfg(m,'r');
-  assert(r.find("2:btn_a")!=std::string::npos&&r.find("6:btn_menu")!=std::string::npos&&r.find("256:btn_dpad1_up")!=std::string::npos);
+  assert(r.find("2:btn_a")!=std::string::npos&&r.find("btn_menu")==std::string::npos&&r.find("256:btn_dpad1_up")!=std::string::npos);
   assert(r.find("5+:btn_z")!=std::string::npos&&r.find("triggers = 4,5")!=std::string::npos&&r.find("0-:btn_dpad1_left")!=std::string::npos);
   // PlayStation through HIDAPI: LB = button 9, Back = 4, D-pad buttons 11-14
   const std::string h=mcl::flycastPadCfg(m,'h');
-  assert(h.find("9:btn_c")!=std::string::npos&&h.find("4:btn_menu")!=std::string::npos&&h.find("11:btn_dpad1_up")!=std::string::npos);
+  assert(h.find("9:btn_c")!=std::string::npos&&h.find("btn_menu")==std::string::npos&&h.find("11:btn_dpad1_up")!=std::string::npos);
   assert(mcl::flycastPadCfg(m,'?').empty());
   const auto pads=mcl::flycastPadsFromLog(
    "00:00:00:346 sdl/dreamlink.cpp:52 N[INPUT]: GUID: 0300b9695e0400008e02000000007200 VID:045e PID:028e\n"
@@ -56,5 +56,17 @@ int main(int argc,char** argv){
    "00:00:01:001 x N[INPUT]: SDL: Opened joystick 1 on port 1: 'PS5 Controller' unique_id=sdl_joystick_1\n");
   assert(pads.size()==2&&pads[0].first=='r'&&pads[0].second=="Xbox 360 Controller"&&pads[1].first=='h'&&pads[1].second=="PS5 Controller");
  }
- std::cout<<"PASS: controls config, MAME controller file, key names, labels, MvC2 Flycast mappings\n";
+ {// MAME's own per-game remaps are cleared; DIP switches, counters and the rest stay
+  const std::string cfg=std::string("<mameconfig version=\"10\">\r\n    <system name=\"mvscu\">\r\n        <counters>\r\n            <coins index=\"0\" number=\"216\" />\r\n        </counters>\r\n        <input>\r\n")+
+   "            <port tag=\":IN0\" type=\"P1_BUTTON1\" mask=\"16\" defvalue=\"16\">\r\n                <newseq type=\"standard\">\r\n                    KEYCODE_A\r\n                </newseq>\r\n            </port>\r\n"+
+   "            <port tag=\":DSW\" type=\"DIPSWITCH\" mask=\"1\" defvalue=\"1\" value=\"0\" />\r\n"+
+   "            <port tag=\":IN0\" type=\"P1_BUTTON2\" mask=\"32\" defvalue=\"32\">\r\n                <newseq type=\"standard\">\r\n                    KEYCODE_S\r\n                </newseq>\r\n            </port>\r\n"+
+   "        </input>\r\n    </system>\r\n</mameconfig>\r\n";
+  const std::string out=mcl::stripMameInputRemaps(cfg);
+  assert(out.find("KEYCODE")==std::string::npos&&out.find("P1_BUTTON")==std::string::npos);
+  assert(out.find("DIPSWITCH")!=std::string::npos&&out.find("number=\"216\"")!=std::string::npos&&out.find("</mameconfig>")!=std::string::npos);
+  assert(out.find("<input>\r\n            <port tag=\":DSW\"")!=std::string::npos); // whole lines removed
+  assert(mcl::stripMameInputRemaps(out)==out);
+ }
+ std::cout<<"PASS: controls config, MAME controller file, key names, labels, MvC2 Flycast mappings, MAME remaps cleared\n";
 }

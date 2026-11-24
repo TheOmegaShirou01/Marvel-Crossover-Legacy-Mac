@@ -209,7 +209,7 @@ std::string flycastPadCfg(const ControlsConfig& c,char backend,unsigned takeover
  static const std::pair<const char*,const char*> act[]={
   {"P1_BUTTON1","btn_a"},{"P1_BUTTON2","btn_b"},{"P1_BUTTON3","btn_c"},{"P1_BUTTON4","btn_x"},{"P1_BUTTON5","btn_y"},{"P1_BUTTON6","btn_z"},{"START1","btn_start"}};
  std::map<int,std::string> digital;std::map<std::string,std::string> analog; // "4+" -> action
- digital[btn.at("PAD_BACK")]="btn_menu"; // Back/Select: the front end's MvC2 pause screen
+ // Back/Select is left unbound: the pause screen opens from the keyboard (Tab) only.
  if(hid){digital[11]="btn_dpad1_up";digital[12]="btn_dpad1_down";digital[13]="btn_dpad1_left";digital[14]="btn_dpad1_right";}
  else{digital[256]="btn_dpad1_up";digital[257]="btn_dpad1_down";digital[258]="btn_dpad1_left";digital[259]="btn_dpad1_right";}
  analog["0-"]="btn_dpad1_left";analog["0+"]="btn_dpad1_right";analog["1-"]="btn_dpad1_up";analog["1+"]="btn_dpad1_down";
@@ -274,5 +274,24 @@ std::string inputLabel(const std::string& code){
   return "PAD "+pad+" "+name;
  }
  return first;
+}
+std::string stripMameInputRemaps(const std::string& xml){
+ std::string out;std::size_t at=0;
+ for(;;){
+  const std::size_t start=xml.find("<port ",at);
+  if(start==std::string::npos){out+=xml.substr(at);break;}
+  const std::size_t tagEnd=xml.find('>',start);
+  if(tagEnd==std::string::npos){out+=xml.substr(at);break;}
+  if(xml[tagEnd-1]=='/'){out+=xml.substr(at,tagEnd+1-at);at=tagEnd+1;continue;} // <port .../> (DIP switches)
+  const std::size_t close=xml.find("</port>",tagEnd);
+  if(close==std::string::npos){out+=xml.substr(at);break;}
+  const std::size_t end=close+7;
+  if(xml.substr(tagEnd,close-tagEnd).find("<newseq")!=std::string::npos){
+   std::size_t lineStart=start;while(lineStart>at&&(xml[lineStart-1]==' '||xml[lineStart-1]=='\t'))--lineStart;
+   std::size_t lineEnd=end;if(lineEnd<xml.size()&&xml[lineEnd]=='\r')++lineEnd;if(lineEnd<xml.size()&&xml[lineEnd]=='\n')++lineEnd;
+   out+=xml.substr(at,lineStart-at);at=lineEnd;
+  }else{out+=xml.substr(at,end-at);at=end;}
+ }
+ return out;
 }
 }

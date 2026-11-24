@@ -115,7 +115,7 @@ bool Collection::processVerifiedEvent(const VerifiedEvent& e){
     e.type!="arcade_clear"&&e.type!="two_player_match"&&!mastery)return false;
  if((e.type=="match_win"||e.type=="match_loss"||e.type=="arcade_clear"||mastery)&&
     (!e.arcadeMode||!e.humanControlled))return false; // reject attract-mode/demo results
- if(mastery&&e.cheatsEnabled)return false; // no mastery trophies with cheats on
+ // Trophies unlock with cheats on too (the player's choice).
  if(mastery){
   const auto give=[&](const char* id){if(unlockAchievement(id))achievementNotices_.push_back(id);};
   if(e.type=="perfect_round"){if(e.game=="xmcota")give("xmcota_04");if(e.game=="sfexp")give("sfexp_05");if(e.game=="sfex2p")give("sfex2p_07");}
@@ -157,8 +157,8 @@ bool Collection::processVerifiedEvent(const VerifiedEvent& e){
   if(total>=500)award("collection_08");
  }
  if(e.type=="two_player_match")award("collection_04");
- // Character trophies (never with cheats: the cheat list can pick any fighter).
- if((e.type=="match_win"||e.type=="arcade_clear")&&!e.cheatsEnabled&&!e.characters.empty()){
+ // Character trophies (cheats allowed, incl. secret characters picked in the cheat menu).
+ if((e.type=="match_win"||e.type=="arcade_clear")&&!e.characters.empty()){
   const auto has=[&](const char* n){return std::find(e.characters.begin(),e.characters.end(),n)!=e.characters.end();};
   const auto all=[&](std::initializer_list<const char*> set){
    for(const auto& c:e.characters)if(std::none_of(set.begin(),set.end(),[&](const char* s){return c==s;}))return false;return true;};
@@ -198,8 +198,7 @@ bool Collection::processVerifiedEvent(const VerifiedEvent& e){
   if(all)award("collection_02");
  }
  if(e.type=="arcade_clear"){
-  // A no-continue clear is never awarded if a cheat was active.
-  if(!e.cheatsEnabled&&!e.continued){
+  if(!e.continued){
    noContinueClears_[e.game]=1;setFlag("nocontinue_"+e.game);
    if(e.game=="xmcota"||e.game=="msh"||e.game=="xmvsf"||e.game=="mvsc"||e.game=="mvsc2"||e.game=="sfexp"||e.game=="sfex2p")award(e.game+"_12");
   }

@@ -11,7 +11,10 @@ namespace mcl {
 // Addresses come from the MAME cheat database (cheat.zip found on the user's PC,
 // 2010 XML files) and were checked against the exact sets we launch on MAME 0.289
 // by sampling them during attract mode (timer counts down, full-health values match).
-struct Poke { std::uint32_t addr; std::uint8_t width; std::uint32_t value; }; // width 1/2/4 bytes
+// width 1/2/4 bytes; with ifAddr set the poke is only written while that byte equals ifValue
+// (e.g. only while a human is playing, so the attract-mode demo never sees it), and with
+// ifNonZero set only while that byte is not 0 (e.g. once the select screen has been confirmed).
+struct Poke { std::uint32_t addr; std::uint8_t width; std::uint32_t value; std::uint32_t ifAddr=0; std::uint8_t ifValue=0; std::uint32_t ifNonZero=0; };
 struct CheatChoice { const char* label; std::vector<Poke> pokes; };
 struct CheatDef {
  const char* id;      // stable key for saved settings

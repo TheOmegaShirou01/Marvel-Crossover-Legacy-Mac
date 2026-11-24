@@ -39,7 +39,7 @@ int main(int argc,char** argv){
  assert(mcl::exCheatPokes("sfexp",false,false,false).empty()&&mcl::exCheatPokes("xmcota",true,true,true).empty());
  // Lua output.
  const std::string lua=mcl::buildCheatLua("xmcota\nevil",{{0xFF4808,1,0x99},{0xFF4191,1,0x8F}});
- assert(lua.find("{0xFF4808, 1, 0x99}")!=std::string::npos&&lua.find("{0xFF4191, 1, 0x8F}")!=std::string::npos);
+ assert(lua.find("{0xFF4808, 1, 0x99, ")!=std::string::npos&&lua.find("{0xFF4191, 1, 0x8F, ")!=std::string::npos);
  assert(lua.find("add_machine_frame_notifier")!=std::string::npos&&lua.find("\nevil")==std::string::npos);
  // Optional: dump real scripts for an in-MAME check (tests run without arguments too).
  if(argc>1&&argv[1][0]!='\0'){
@@ -69,5 +69,15 @@ int main(int argc,char** argv){
   }
  }
  fs::remove_all(dir);
- std::cout<<"PASS: cheat tables, settings round trip, CHEAT EX mapping, Lua generation, secret characters\n";
+ {// MSH Dr. Doom / Thanos: written only while that player is playing (guarded pokes)
+  const mcl::CheatDef* p1=nullptr;for(const auto& c:mcl::cheatsFor("msh"))if(std::string(c.id)=="p1_secret")p1=&c;
+  assert(p1&&p1->isChoice()&&p1->choices.size()==3&&std::string(p1->choices[0].label)=="Dr. Doom"&&std::string(p1->choices[1].label)=="Thanos"&&std::string(p1->choices[2].label)=="Anita");
+  assert(p1->choices[2].pokes[0].ifNonZero==0xFF4920&&p1->choices[1].pokes[0].ifNonZero==0);
+  const auto& pk=p1->choices[1].pokes[0];assert(pk.addr==0xFF4051&&pk.value==0x16&&pk.ifAddr==0xFF4003&&pk.ifValue==1);
+  const std::string lua=mcl::buildCheatLua("msh",p1->choices[1].pokes);
+  assert(lua.find("{0xFF4051, 1, 0x16, 0xFF4003, 0x1, 0x000000}")!=std::string::npos&&lua.find("mem:read_u8(p[6]) == 0")!=std::string::npos);
+  const std::string plain=mcl::buildCheatLua("x",{{0xFF4808,1,0x99}});
+  assert(plain.find("{0xFF4808, 1, 0x99, 0x000000, 0x0, 0x000000}")!=std::string::npos); // unguarded
+ }
+ std::cout<<"PASS: cheat tables, settings round trip, CHEAT EX mapping, Lua generation, secret characters, guarded pokes\n";
 }

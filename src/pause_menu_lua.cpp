@@ -22,6 +22,40 @@ local function pressed(tok)
   if MCL_TEST_PRESSED then return MCL_TEST_PRESSED(tok, frame) end
   return ioport:type_pressed(types[tok], 0)
 end
+-- START + SELECT opens the menu from the KEYBOARD only (the keys set for START1 / COIN1);
+-- on controllers that combination stays with the game.
+local input = machine.input
+local keyCodes = {}
+local function keyboardCodes(tok)
+  if keyCodes[tok] then return keyCodes[tok] end
+  local list = {}
+  pcall(function()
+    local t, who = ioport:token_to_input_type(tok)
+    for _, port in pairs(ioport.ports) do
+      for _, fld in pairs(port.fields) do
+        if fld.type == t and fld.player == who then
+          local words = input:seq_to_tokens(fld:input_seq("standard"))
+          for w in words:gmatch("[%w_]+") do
+            if w:match("^KEYCODE_") then list[#list + 1] = input:code_from_token(w) end
+          end
+        end
+      end
+    end
+  end)
+  if #list == 0 then
+    pcall(function() list = { input:code_from_token(tok == "START1" and "KEYCODE_1" or "KEYCODE_5") } end)
+  end
+  keyCodes[tok] = list
+  return list
+end
+local function keyHeld(tok)
+  if MCL_TEST_PRESSED then return MCL_TEST_PRESSED(tok, frame) end
+  for _, c in ipairs(keyboardCodes(tok)) do
+    local ok, on = pcall(function() return input:code_pressed(c) end)
+    if ok and on then return true end
+  end
+  return false
+end
 local state, cursor, combo, armed, flash = "play", 1, 0, false, 0
 local held = {}
 local function edge(tok)
@@ -46,7 +80,7 @@ end
 
 emu.register_frame_done(function()
   frame = frame + 1
-  if frame == 1 and MCL_READY_FILE ~= "" then
+  if frame == (MCL_READY_FRAME or 1) and MCL_READY_FILE ~= "" then
     local rf = io.open(MCL_READY_FILE, "w")
     if rf then rf:write("ready\n"); rf:close() end
   end
@@ -57,7 +91,7 @@ emu.register_frame_done(function()
   local ok = edge("P1_BUTTON1")
   local back = edge("P1_BUTTON2")
   local start = edge("START1")
-  local startHeld, coinHeld = pressed("START1"), pressed("COIN1")
+  local startHeld, coinHeld = keyHeld("START1"), keyHeld("COIN1") -- keyboard only
 
   if state == "play" then
     if startHeld and coinHeld then combo = combo + 1 else combo = 0 end

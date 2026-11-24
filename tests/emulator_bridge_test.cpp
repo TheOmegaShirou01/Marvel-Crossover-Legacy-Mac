@@ -35,13 +35,13 @@ int main(){
  assert(!session.onVerifiedGameplayEvent({"sfexp","guard_break",true,true}));
  assert(session.resume().ok);
  session.onCheatApplicationStatus(true);
- assert(!session.onVerifiedGameplayEvent({"sfexp","perfect_round",true,true}));
- assert(!core.progress("sfexp_05").unlocked); // cheat guard
+ assert(session.onVerifiedGameplayEvent({"sfexp","perfect_round",true,true}));
+ assert(core.progress("sfexp_05").unlocked); // trophies unlock with cheats on
  session.onContinueUsed();
  assert(session.onVerifiedGameplayEvent({"sfexp","arcade_clear",true,true}));
  assert(!core.progress("sfexp_12").unlocked); // continue guard
  backend.failStop=true;assert(!session.stop().ok);backend.failStop=false;
  assert(session.stop().ok);assert(!session.onVerifiedGameplayEvent({"sfexp","match_win",true,true}));
  fs::remove_all(dir);
- std::cout<<"PASS: backend availability, ROM dependencies, session lifecycle, cheat/continue safeguards, EX3 rejection\n";
+ std::cout<<"PASS: backend availability, ROM dependencies, session lifecycle, trophies with cheats, continue safeguard, EX3 rejection\n";
 }

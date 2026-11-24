@@ -143,7 +143,7 @@ class Selection {
   }
   if(!pokes.empty()&&!mcl::usesFlycast(id)){
    session_->onCheatApplicationStatus(true); // cheats on: mastery achievements stay locked for this run
-   SetWindowTextW(info_,L"Game started WITH CHEATS ON. Achievements that forbid cheats are disabled for this run.");
+   SetWindowTextW(info_,L"Game started WITH CHEATS ON. Achievements still unlock.");
   }else SetWindowTextW(info_,L"Game started. Press Esc in MAME to quit back to this screen.");
   updateLaunch();
  }
