@@ -58,6 +58,8 @@ std::string flycastPadCfg(const ControlsConfig& c,char backend,unsigned takeover
 std::vector<std::pair<char,std::string>> flycastPadsFromLog(const std::string& log);
 // MAME keycode for a Windows virtual-key (VK_*) value, "" if unsupported.
 std::string mameKeyName(int vk);
+// MAME key name for an SDL scancode (the SDL front end's CONTROLS SETUP); "" if MAME has none.
+std::string mameKeyFromSdlScancode(int scancode);
 // MAME's own per-game file (cfg/<set>.cfg) with every key/button remap removed (ports that
 // carry a <newseq>), so CONTROLS SETUP always decides the controls. Everything else is kept.
 std::string stripMameInputRemaps(const std::string& xml);

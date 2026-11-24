@@ -159,6 +159,15 @@ int sdlScancode(const std::string& code){
   {"LCONTROL",224},{"LSHIFT",225},{"LALT",226},{"RCONTROL",228},{"RSHIFT",229},{"RALT",230}};
  const auto it=named.find(k);return it==named.end()?-1:it->second;
 }
+std::string mameKeyFromSdlScancode(int sc){
+ // Inverse of sdlScancode over every name mameKeyName knows (left/right modifiers included).
+ static std::map<int,std::string> m;
+ if(m.empty()){
+  for(int vk=1;vk<255;++vk){const std::string n=mameKeyName(vk);if(n.empty())continue;const int s=sdlScancode(n);if(s>=0&&!m.count(s))m[s]=n;}
+  m[88]="KEYCODE_ENTER_PAD";m[41]="KEYCODE_ESC";
+ }
+ const auto it=m.find(sc);return it==m.end()?std::string():it->second;
+}
 // Buttons the front end takes over for ACCESSIBILITY (mvc2_onebutton: LP 1, HP 2, LK 4, HK 8),
 // by game input: BUTTON1 = LP, BUTTON2 = HP, BUTTON4 = LK, BUTTON5 = HK.
 static bool takenOver(const std::string& what,unsigned takeover){
