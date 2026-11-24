@@ -13,17 +13,19 @@ int main(int argc,char** argv){
   std::set<std::string> ids;
   for(const auto& c:list){
    assert(ids.insert(c.id).second);
-   if(c.isChoice()){for(const auto& o:c.choices){assert(!o.pokes.empty());for(const auto& p:o.pokes)assert(p.width==1&&(g=="mvsc2"?p.addr<0x2000000:p.addr>=0xFF0000));}}
-   else{assert(!c.pokes.empty());for(const auto& p:c.pokes)assert(p.width==1&&(g=="mvsc2"?p.addr<0x2000000:p.addr>=0xFF0000));}
+   if(c.isChoice()){for(const auto& o:c.choices){assert(!o.pokes.empty());for(const auto& p:o.pokes)assert(g=="mvsc2"?(p.addr<0x2000000&&(p.width==1||p.width==4)):(p.width==1&&p.addr>=0xFF0000));}}
+   else{assert(!c.pokes.empty());for(const auto& p:c.pokes)assert(g=="mvsc2"?(p.addr<0x2000000&&(p.width==1||p.width==4)):(p.width==1&&p.addr>=0xFF0000));}
   }
  }
  assert(!mcl::cheatsFor("mvsc2").empty()&&mcl::cheatsFor("sfex3").empty());
  {// MvC2: time 99, all three fighters' health for each side, hyper level 5 (MAX)
   std::set<std::string> ids;for(const auto& c:mcl::cheatsFor("mvsc2"))ids.insert(c.id);
-  for(const char* want:{"time","p1_energy","p2_energy","p1_power","p2_power"})assert(ids.count(want));
+  for(const char* want:{"time","p1_energy","p2_energy","p1_power","p2_power","all_chars"})assert(ids.count(want));
   for(const auto& c:mcl::cheatsFor("mvsc2")){if(std::string(c.id)=="p1_energy")assert(c.pokes.size()==3&&c.pokes[0].addr==0x2D7088+0x420&&c.pokes[1].addr==0x2D7088+2*0x5A4+0x420&&c.pokes[2].addr==0x2D7088+4*0x5A4+0x420);
    if(std::string(c.id)=="p2_energy")assert(c.pokes[0].addr==0x2D7088+0x5A4+0x420&&c.pokes[2].addr==0x2D7088+5*0x5A4+0x420);
-   if(std::string(c.id)=="p1_power")assert(c.pokes[0].addr==0x2F8392&&c.pokes[0].value==5);}
+   if(std::string(c.id)=="p1_power")assert(c.pokes[0].addr==0x2F8392&&c.pokes[0].value==5);
+   // all 56 characters: settings block 0x2D6F88 +48/+52 (characters) and +56/+60 (extra colours)
+   if(std::string(c.id)=="all_chars")assert(c.pokes.size()==4&&c.pokes[0].addr==0x2D6F88+48&&c.pokes[0].width==4&&c.pokes[0].value==0xF8FFFFFF&&c.pokes[1].value==0x07FFFFFF);}
  }
  // Settings round trip, unknown entries ignored.
  const auto dir=fs::temp_directory_path()/"mcl_cheats_test";fs::remove_all(dir);

@@ -84,6 +84,12 @@ const std::map<std::string,std::vector<CheatDef>>& table(){
    {"p2_energy","Infinite Health P2 (all 3)",V{b(0x2D7A4C,0x90),b(0x2D8594,0x90),b(0x2D90DC,0x90)}},
    {"p1_power","Max + Infinite Hyper Gauge P1",V{b(0x2F8392,0x05)}},
    {"p2_power","Max + Infinite Hyper Gauge P2",V{b(0x2F8393,0x05)}},
+   // The arcade releases characters (and extra colours) over cabinet play time. The game's
+   // settings block (pointer at 0x2D6F84 -> 0x2D6F88) holds the masks: +48/+52 = characters
+   // (bit = character id; base roster C0FCFAFF/01803300, 28 hidden in 7 groups at 0x2391D8),
+   // +56/+60 = the extra-colour tier. Full masks = all 56 characters (verified: M. Bison and Roll
+   // selectable and fighting).
+   {"all_chars","Unlock All Characters + Costumes",V{{0x2D6FB8,4,0xF8FFFFFF},{0x2D6FBC,4,0x07FFFFFF},{0x2D6FC0,4,0xF8FFFFFF},{0x2D6FC4,4,0x07FFFFFF}}},
   }},
   // CHEAT EX games (ZN-1 / ZN-2, PlayStation-based RAM addresses).
   {"sfexp",{ // set sfexp (USA 970407)
