@@ -28,10 +28,12 @@
 #include <cwctype>
 #include <string>
 #include <vector>
-#ifdef _WIN32
 #include "game_launcher.hpp"
 #include "mvc2_onebutton.hpp"
 #include "gamepads.hpp"
+#ifndef _WIN32
+using WORD=std::uint16_t;
+#else
 #include <objbase.h>
 #include <Xinput.h>
 #pragma comment(lib,"xinput.lib")
@@ -361,8 +363,12 @@ void launchSelected(){
  // Stay on top with our own loading screen until MAME has finished loading its ROMs,
  // so its plain "Loading Machine (xx%)" box is never seen.
  g->gameLoading=true;g->loadingSince=g->now();
+#ifdef _WIN32
  SetWindowPos(g->hwnd,HWND_TOPMOST,0,0,0,0,SWP_NOMOVE|SWP_NOSIZE);
  g->cb.launcher->startCoverGuard(g->hwnd); // keeps the emulator's own loading box under the cover
+#else
+ g->gameLoading=false; // macOS: no window can stay above the emulator's fullscreen Space
+#endif
 }
 void moveCard(Pad p){
  int n=0;selCards(n);
@@ -1479,6 +1485,7 @@ void drawGalleryUnlock(double now){
 // PlayStation/Nintendo/generic pads (Xbox pads use XInput above). Menu buttons follow the
 // detected family (Sony: Cross/Circle/Share/Options, Nintendo: A/B/-/+) unless the player
 // set their own in CONTROLS SETUP.
+#ifdef _WIN32
 void pollDirectPads(){
  const int n=g->pads.count();
  g->diPrev.resize(static_cast<size_t>(n),0);g->diStickPrev.resize(static_cast<size_t>(n),0);
@@ -1499,6 +1506,40 @@ void pollDirectPads(){
   if(pressed&16)onPad(Pad::Cross);if(pressed&32)onPad(Pad::Circle);if(pressed&64)onPad(Pad::Select);if(pressed&128)onPad(Pad::Start);
  }
 }
+#else
+void pollDirectPads(){}
+// macOS / Linux: every SDL gamepad drives the menus, buttons by position (SDL's mapping).
+std::map<SDL_JoystickID,SDL_Gamepad*> g_gamepads;
+std::vector<SDL_Gamepad*> sdlGamepads(){
+ int n=0;SDL_JoystickID* ids=SDL_GetGamepads(&n);
+ std::vector<SDL_Gamepad*> out;
+ for(int i=0;i<n&&ids;++i){
+  auto it=g_gamepads.find(ids[i]);
+  if(it==g_gamepads.end())it=g_gamepads.emplace(ids[i],SDL_OpenGamepad(ids[i])).first;
+  if(it->second)out.push_back(it->second);
+ }
+ SDL_free(ids);
+ return out;
+}
+// Packed state: 1 up 2 down 4 left 8 right 16 confirm 32 back 64 select 128 start 256 X 512 Y,
+// 1024 / 2048 stick up / down. Nintendo pads (A on the right) keep A as confirm.
+WORD gamepadBits(){
+ WORD b=0;
+ for(SDL_Gamepad* gp:sdlGamepads()){
+  auto btn=[&](SDL_GamepadButton k){return SDL_GetGamepadButton(gp,k);};
+  const bool nintendo=SDL_GetGamepadButtonLabel(gp,SDL_GAMEPAD_BUTTON_SOUTH)==SDL_GAMEPAD_BUTTON_LABEL_B;
+  if(btn(SDL_GAMEPAD_BUTTON_DPAD_UP))b|=1;if(btn(SDL_GAMEPAD_BUTTON_DPAD_DOWN))b|=2;
+  if(btn(SDL_GAMEPAD_BUTTON_DPAD_LEFT))b|=4;if(btn(SDL_GAMEPAD_BUTTON_DPAD_RIGHT))b|=8;
+  if(btn(nintendo?SDL_GAMEPAD_BUTTON_EAST:SDL_GAMEPAD_BUTTON_SOUTH))b|=16;
+  if(btn(nintendo?SDL_GAMEPAD_BUTTON_SOUTH:SDL_GAMEPAD_BUTTON_EAST))b|=32;
+  if(btn(SDL_GAMEPAD_BUTTON_BACK))b|=64;if(btn(SDL_GAMEPAD_BUTTON_START))b|=128;
+  if(btn(SDL_GAMEPAD_BUTTON_WEST))b|=256;if(btn(SDL_GAMEPAD_BUTTON_NORTH))b|=512;
+  const Sint16 y=SDL_GetGamepadAxis(gp,SDL_GAMEPAD_AXIS_LEFTY);
+  if(y<-20000)b|=1024;else if(y>20000)b|=2048;
+ }
+ return b;
+}
+#endif
 // ---------- CONTROLS SETUP ----------
 // Row 0 picks the game set: MAME GAMES (keyboard + controller columns, then the 4 menu
 // buttons) or MARVEL VS. CAPCOM 2 (Flycast: its own keyboard layout; controllers use
@@ -1530,6 +1571,7 @@ bool csPadFixed(int input){
 }
 // MvC2: the next controller button pressed, by name (PAD_A...), "" if none. XInput pads are read
 // by name; DirectInput pads by their family's numbering (PlayStation, Switch, otherwise Xbox order).
+#ifdef _WIN32
 std::string namedPadPress(bool begin){
  std::string hit;
  static const std::pair<WORD,const char*> xb[]={{XINPUT_GAMEPAD_A,"PAD_A"},{XINPUT_GAMEPAD_B,"PAD_B"},{XINPUT_GAMEPAD_X,"PAD_X"},{XINPUT_GAMEPAD_Y,"PAD_Y"},
@@ -1563,6 +1605,29 @@ std::string namedPadPress(bool begin){
  }
  return hit;
 }
+#else
+// MvC2 controller capture on macOS: SDL gamepad buttons by Xbox-style name (Flycast uses SDL too).
+std::map<SDL_Gamepad*,std::uint32_t> g_capGp;
+std::string namedPadPress(bool begin){
+ static const std::pair<SDL_GamepadButton,const char*> names[]={{SDL_GAMEPAD_BUTTON_SOUTH,"PAD_A"},{SDL_GAMEPAD_BUTTON_EAST,"PAD_B"},
+  {SDL_GAMEPAD_BUTTON_WEST,"PAD_X"},{SDL_GAMEPAD_BUTTON_NORTH,"PAD_Y"},{SDL_GAMEPAD_BUTTON_LEFT_SHOULDER,"PAD_LB"},
+  {SDL_GAMEPAD_BUTTON_RIGHT_SHOULDER,"PAD_RB"},{SDL_GAMEPAD_BUTTON_START,"PAD_START"},{SDL_GAMEPAD_BUTTON_LEFT_STICK,"PAD_LS"},
+  {SDL_GAMEPAD_BUTTON_RIGHT_STICK,"PAD_RS"}};
+ std::string hit;
+ for(SDL_Gamepad* gp:sdlGamepads()){
+  std::uint32_t now=0;
+  for(size_t k=0;k<sizeof(names)/sizeof(names[0]);++k)if(SDL_GetGamepadButton(gp,names[k].first))now|=1u<<k;
+  if(SDL_GetGamepadAxis(gp,SDL_GAMEPAD_AXIS_LEFT_TRIGGER)>20000)now|=1u<<20;
+  if(SDL_GetGamepadAxis(gp,SDL_GAMEPAD_AXIS_RIGHT_TRIGGER)>20000)now|=1u<<21;
+  const std::uint32_t pressed=now&~g_capGp[gp];g_capGp[gp]=now;
+  if(begin||!hit.empty())continue;
+  for(size_t k=0;k<sizeof(names)/sizeof(names[0]);++k)if(pressed&(1u<<k)){hit=names[k].second;break;}
+  if(hit.empty()&&(pressed&(1u<<20)))hit="PAD_LT";
+  if(hit.empty()&&(pressed&(1u<<21)))hit="PAD_RT";
+ }
+ return hit;
+}
+#endif
 void csSave(){
  const bool ok=csMvc2()?g->mvc2Controls.save(g->dir/"MCL_UserData"/"controls_mvc2.txt"):g->controls.save(g->dir/"MCL_UserData"/"controls.txt");
  if(ok)g->savedAt=g->now();
@@ -1755,6 +1820,7 @@ void render(){
 
 // ---------- input ----------
 void pollDirectPads();
+#ifdef _WIN32
 void pollPad(){
  if(g->screen==Screen::ControlSetup&&g->csCapture){ // capturing: buttons go to the setup, not the menus
   if(g->csCapture==2){const std::string c=csMvc2()?namedPadPress(false):g->pads.capturePress();if(!c.empty())csAssign(c);}
@@ -1785,6 +1851,30 @@ void pollPad(){
  const int dir=y>20000?1:(y<-20000?-1:0);
  if(dir!=g->stickPrev){if(dir==1)onPad(Pad::Up);else if(dir==-1)onPad(Pad::Down);g->stickPrev=dir;}
 }
+#else
+void pollPad(){
+ if(g->screen==Screen::ControlSetup&&g->csCapture){ // capturing: buttons go to the setup, not the menus
+  if(g->csCapture==2){const std::string c=csMvc2()?namedPadPress(false):g->pads.capturePress();if(!c.empty())csAssign(c);}
+  if(g->now()-g->csCaptureSince>8000)g->csCapture=0;
+  g->padPrev=gamepadBits();
+  return;
+ }
+ const WORD b=gamepadBits();
+ const WORD pressed=static_cast<WORD>(b&~g->padPrev);g->padPrev=b;
+ const bool idle=!g->gameRunning&&g->overlay.empty()&&!g->updPanel;
+ if(pressed&(1|1024))onPad(Pad::Up);
+ if(pressed&(2|2048))onPad(Pad::Down);
+ if(pressed&4)onPad(Pad::Left);
+ if(pressed&8)onPad(Pad::Right);
+ if((pressed&256)&&idle)cheatShortcut(false);
+ if((pressed&512)&&idle)cheatShortcut(true);
+ if(pressed&16)onPad(Pad::Cross);
+ if(pressed&32)onPad(Pad::Circle);
+ if(pressed&64)onPad(Pad::Select);
+ if(pressed&128)onPad(Pad::Start);
+}
+#endif
+#ifdef _WIN32
 // ---------- MvC2 pause screen (Flycast) ----------
 // Back/Select newly pressed on any pad, or Tab, while Flycast's window has the focus.
 // ---------- MvC2 1-button moves (ACCESSIBILITY) ----------
@@ -1893,6 +1983,13 @@ void closeFlyPause(bool exitGame){
  L->bringToFront();
  g->flyPrevTab=(GetAsyncKeyState(VK_TAB)&0x8000)!=0;
 }
+#else
+// macOS: no Flycast pause screen or 1-button moves yet (they need its memory and key injection).
+bool flyPauseTriggered(){return false;}
+void openFlyPause(){}
+void closeFlyPause(bool exitGame){g->flyPause=false;g->flyConfirm=false;if(exitGame&&g->cb.launcher){g->flyExiting=true;g->cb.launcher->requestClose();}}
+void mvc2OneButtonTick(){}
+#endif
 void flyPausePad(Pad p){
  const bool vertical=p==Pad::Up||p==Pad::Down||(g->flyConfirm&&(p==Pad::Left||p==Pad::Right));
  if(vertical){g->flyRow^=1;return;}
@@ -1944,8 +2041,17 @@ std::wstring updateFailure(const std::wstring& what,bool changedNothing){
 }
 std::wstring utf8Wide(const std::string& s){
  if(s.empty())return {};
- const int n=MultiByteToWideChar(CP_UTF8,0,s.data(),static_cast<int>(s.size()),nullptr,0);
- std::wstring w(static_cast<size_t>(n),L'\0');MultiByteToWideChar(CP_UTF8,0,s.data(),static_cast<int>(s.size()),w.data(),n);return w;
+ std::wstring w; // UTF-8 -> wide (UTF-16 surrogates on Windows, UTF-32 elsewhere)
+ for(size_t i=0;i<s.size();){
+  const unsigned char c=static_cast<unsigned char>(s[i]);
+  std::uint32_t cp=0;int more=0;
+  if(c<0x80)cp=c;else if((c>>5)==6){cp=c&0x1F;more=1;}else if((c>>4)==14){cp=c&0x0F;more=2;}else if((c>>3)==30){cp=c&0x07;more=3;}else{++i;continue;}
+  ++i;
+  for(int k=0;k<more&&i<s.size();++k,++i)cp=(cp<<6)|(static_cast<unsigned char>(s[i])&0x3F);
+  if(sizeof(wchar_t)==2&&cp>=0x10000){cp-=0x10000;w+=static_cast<wchar_t>(0xD800+(cp>>10));w+=static_cast<wchar_t>(0xDC00+(cp&0x3FF));}
+  else w+=static_cast<wchar_t>(cp);
+ }
+ return w;
 }
 void updateTick(){
  if(!g->updater)return;
@@ -2123,10 +2229,8 @@ void runTestSteps(){
   if(st.done||g->now()<st.at)continue;
   st.done=true;
   if(st.what=="quit"){g->quitRequested=true;continue;}
-#ifdef _WIN32
   if(st.what=="close"){if(g->cb.launcher)g->cb.launcher->requestClose();continue;}       // ends the running game
   if(st.what=="state"){std::ofstream f(g->dir/"Logs"/"test_state.txt",std::ios::app);f<<static_cast<long long>(g->now())<<" ms: gameRunning="<<g->gameRunning<<" gameLoading="<<g->gameLoading<<" screen="<<static_cast<int>(g->screen)<<" overlay="<<gfx::utf8(g->overlay)<<"\n";continue;}
-#endif
   if(st.what.rfind("shot=",0)==0){g_shotPending=true;g_shotFile=st.what.substr(5);continue;}
   SDL_Event e{};e.type=SDL_EVENT_KEY_DOWN;e.key.key=SDL_GetKeyFromName(st.what.c_str());e.key.scancode=SDL_GetScancodeFromKey(e.key.key,nullptr);e.key.down=true;
   onKey(e.key);
@@ -2180,9 +2284,7 @@ int mcl_title::run(HINSTANCE inst,const fs::path& appDir,const Callbacks& cb){
                      :L"UPDATE UNSUCCESSFUL\n\nTHE UPDATE COULD NOT BE FINISHED. YOUR GAME WAS NOT CHANGED.";
   }
   mcl::cleanupUpdateFolder(appDir);}
-#ifdef _WIN32
  app.pads.init(app.hwnd);
-#endif
  setFullscreen(app.settings.fullscreen&&!SDL_getenv("MCL_WINDOWED"));
  loadTestScript();
  SDL_ShowWindow(win);SDL_RaiseWindow(win);
@@ -2196,6 +2298,9 @@ int mcl_title::run(HINSTANCE inst,const fs::path& appDir,const Callbacks& cb){
     case SDL_EVENT_QUIT: case SDL_EVENT_WINDOW_CLOSE_REQUESTED: quit=true;break;
     case SDL_EVENT_KEY_DOWN: onKey(e.key);break;
     case SDL_EVENT_MOUSE_BUTTON_DOWN: if(e.button.button==SDL_BUTTON_LEFT)onMouseDown();break;
+#ifndef _WIN32
+    case SDL_EVENT_JOYSTICK_ADDED: case SDL_EVENT_JOYSTICK_REMOVED: app.pads.rescan();break; // controller plugged in or out
+#endif
     default: break;
    }
   }
@@ -2264,6 +2369,19 @@ int mcl_title::run(HINSTANCE inst,const fs::path& appDir,const Callbacks& cb){
     }
     SDL_Delay(8);continue;
    }else{SDL_Delay(100);continue;}
+  }
+#else
+  if(app.gameRunning){
+   std::wstring failure;
+   if(app.cb.launcher&&app.cb.launcher->pollEnded(failure)){
+    app.flyExiting=false;app.flyPause=false;app.gameLoading=false;
+    app.gameRunning=false;app.video.setPaused(false);
+    mcl::backupUserData(app.dir/"MCL_UserData",mcl::backupStamp());app.savedAt=app.now();
+    SDL_ShowWindow(win);SDL_RaiseWindow(win);
+    app.selSince=app.now();app.padPrev=0xFFFF; // ignore buttons still held from the game
+    if(app.cb.launcher->takeExitSignal()){app.whiteFlashStart=app.now();playVoice();}
+    if(!failure.empty())app.overlay=L"THE GAME COULD NOT START\n\n"+failure;
+   }else{SDL_Delay(50);continue;}
   }
 #endif
   if((SDL_GetWindowFlags(win)&SDL_WINDOW_MINIMIZED)||!windowEnabled()){app.video.setPaused(true);SDL_WaitEventTimeout(nullptr,100);continue;}

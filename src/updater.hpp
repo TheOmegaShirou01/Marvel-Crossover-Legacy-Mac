@@ -89,5 +89,27 @@ private:
  void join();
  void fail(const std::wstring& why);
 };
+#else
+// macOS / Linux test builds: no self-update yet (the check reports "up to date").
+struct UpdateResult { bool ok=false; std::string version; };
+inline bool takeUpdateResult(const std::filesystem::path&,UpdateResult&){return false;}
+inline void cleanupUpdateFolder(const std::filesystem::path&){}
+inline void hideGameFolder(const std::filesystem::path&){}
+class Updater {
+public:
+ enum class State { Idle, Checking, UpToDate, Available, Failed, Downloading, Extracting, Ready, Installing, Installed };
+ explicit Updater(std::filesystem::path){}
+ void startCheck(){state_=State::UpToDate;}
+ void startDownload(){}
+ void cancel(){}
+ void startInstall(){}
+ bool restartGame(){return false;}
+ State state() const {return state_;}
+ double progress() const {return 0;}
+ ReleaseInfo release() const {return {};}
+ std::wstring error() const {return {};}
+private:
+ State state_=State::Idle;
+};
 #endif
 }

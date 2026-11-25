@@ -55,7 +55,8 @@ struct Gamepads::Impl {
 };
 Gamepads::Gamepads():p_(new Impl){}
 Gamepads::~Gamepads()=default;
-bool Gamepads::init(HWND window){
+bool Gamepads::init(void* windowHandle){
+ HWND window=static_cast<HWND>(windowHandle);
  p_->window=window;
  if(FAILED(DirectInput8Create(GetModuleHandleW(nullptr),DIRECTINPUT_VERSION,IID_IDirectInput8W,reinterpret_cast<void**>(p_->di.GetAddressOf()),nullptr)))return false;
  p_->enumerate();

@@ -1,5 +1,4 @@
 #pragma once
-#ifdef _WIN32
 #include <atomic>
 #include <cstdint>
 #include <filesystem>
@@ -35,4 +34,3 @@ private:
  std::uint64_t serial_=0;
 };
 }
-#endif

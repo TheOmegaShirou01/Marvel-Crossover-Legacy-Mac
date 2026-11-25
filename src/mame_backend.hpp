@@ -12,6 +12,12 @@
 #include <string>
 #include <vector>
 namespace mcl {
+// The emulator's top-level window (Windows HWND; unused elsewhere).
+#ifdef _WIN32
+using NativeWindow=HWND;
+#else
+using NativeWindow=void*;
+#endif
 struct MameLaunchSpec {
  std::filesystem::path executable;
  RomSearchPath roms;
@@ -52,7 +58,6 @@ std::vector<std::string> summarizeMameLog(const std::string& log,std::size_t max
 // True when an emulator log says the game could not run. Flycast exits with code 0
 // even when it refuses to start a game, so the log is the reliable signal.
 bool logShowsFailedStart(const std::string& log);
-#ifdef _WIN32
 class MameBackend final : public EmulatorBackend {
  struct Private;
  Private* p_;
@@ -74,12 +79,12 @@ public:
  // its fullscreen window, and again partway through loading) and keeps the cover above
  // it without taking focus. stopCoverGuard() ends it; bringToFront() then gives the
  // emulator window its top position back.
- void startCoverGuard(HWND cover);
+ void startCoverGuard(NativeWindow cover);
  void stopCoverGuard();
  bool pause(bool paused) override;
  bool running()const;
  // The emulator's main window (nullptr if none yet).
- HWND window() const;
+ NativeWindow window() const;
  // Freeze / unfreeze every thread of the emulator process (front-end pause screen).
  bool freeze(bool frozen);
  // Flycast: is the NAOMI program still running? Compares its work RAM 150 ms apart.
@@ -114,5 +119,4 @@ public:
  // After the process has ended (and before stop()), its exit code and run time.
  bool lastExit(unsigned long& exitCode,double& secondsRan) const;
 };
-#endif
 }

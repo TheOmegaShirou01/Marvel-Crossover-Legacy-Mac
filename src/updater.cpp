@@ -1,4 +1,6 @@
 #include "updater.hpp"
+#include <cstdio>
+#include <cwctype>
 #include <algorithm>
 #include <cctype>
 #include <cstdio>
@@ -169,7 +171,7 @@ int compareVersions(const std::string& a,const std::string& b){
 }
 long long parseIsoUtc(const std::string& iso){
  int Y=0,M=0,D=0,h=0,m=0,s=0;
- if(sscanf_s(iso.c_str(),"%d-%d-%dT%d:%d:%d",&Y,&M,&D,&h,&m,&s)<3||Y<1970||M<1||M>12||D<1||D>31)return 0;
+ if(std::sscanf(iso.c_str(),"%d-%d-%dT%d:%d:%d",&Y,&M,&D,&h,&m,&s)<3||Y<1970||M<1||M>12||D<1||D>31)return 0;
  // days from civil (Howard Hinnant)
  const int y=Y-(M<=2);const int era=(y>=0?y:y-399)/400;const unsigned yoe=static_cast<unsigned>(y-era*400);
  const unsigned doy=static_cast<unsigned>((153*(M+(M>2?-3:9))+2)/5+D-1);const unsigned doe=yoe*365+yoe/4-yoe/100+doy;
@@ -187,7 +189,10 @@ bool keptOnUpdate(const fs::path& relative){
  std::vector<std::wstring> parts;
  for(const auto& p:relative)parts.push_back(p.wstring());
  if(parts.empty())return true;
- const auto is=[](const std::wstring& a,const wchar_t* b){return _wcsicmp(a.c_str(),b)==0;};
+ const auto is=[](const std::wstring& a,const wchar_t* b){ // case-insensitive (ASCII names)
+  const std::wstring c(b);if(a.size()!=c.size())return false;
+  for(size_t i=0;i<a.size();++i)if(std::towlower(a[i])!=std::towlower(c[i]))return false;
+  return true;};
  if(is(parts[0],L"MCL_UserData")||is(parts[0],L"Logs")||is(parts[0],L"Update"))return true;
  if(parts.size()==1)
   return is(parts[0],L"rom_directory.txt")||is(parts[0],L"mame_executable.txt")||is(parts[0],L"flycast_executable.txt");

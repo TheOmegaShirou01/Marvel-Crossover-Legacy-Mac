@@ -45,7 +45,7 @@ template<class F> void walk(const fs::path& root,int depth,F&& visit){
 std::string storePath(const fs::path& appDir,const fs::path& p){
  std::error_code ec;
  const auto rel=fs::relative(p,appDir,ec);
- if(!ec&&!rel.empty()&&rel.native().rfind(L"..",0)!=0)return rel.u8string();
+ if(!ec&&!rel.empty()&&rel.u8string().rfind("..",0)!=0)return rel.u8string();
  return p.u8string();
 }
 std::string homeDir(){

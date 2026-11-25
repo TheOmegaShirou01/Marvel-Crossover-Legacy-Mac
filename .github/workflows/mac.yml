@@ -1,0 +1,36 @@
+name: macOS build
+# Builds the Apple Silicon app (front end + MAME + Flycast, no game content) on GitHub's Macs.
+# The artifact is a .tar.gz so file permissions survive; tools/make_mac_package.py on Windows
+# adds the content and makes the zip for testers.
+on:
+  push:
+    branches: [sdl-port]
+  workflow_dispatch:
+jobs:
+  build:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install libraries and emulators
+        run: |
+          brew install sdl3 sdl3_ttf sdl3_image sdl3_mixer dylibbundler mame
+          brew install --cask flycast
+      - name: Build
+        run: |
+          cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
+          cmake --build build -j 4
+      - name: Bundle
+        run: |
+          chmod +x mac/bundle.sh
+          mac/bundle.sh "build/Marvel Crossover Legacy.app"
+      - name: Check the app starts its libraries
+        run: |
+          otool -L "build/Marvel Crossover Legacy.app/Contents/MacOS/Marvel Crossover Legacy"
+          "build/Marvel Crossover Legacy.app/Contents/Resources/MAME/mame" -version
+      - name: Pack
+        run: tar -czf MCL-mac-arm64.tar.gz -C build "Marvel Crossover Legacy.app"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: MCL-mac-arm64
+          path: MCL-mac-arm64.tar.gz
+          retention-days: 30

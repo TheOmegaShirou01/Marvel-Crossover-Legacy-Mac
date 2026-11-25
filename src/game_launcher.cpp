@@ -1,4 +1,3 @@
-#ifdef _WIN32
 #include "game_launcher.hpp"
 #include "achievement_lua.hpp"
 #include "accessibility_lua.hpp"
@@ -146,7 +145,7 @@ bool GameLauncher::gameReady() const{
 }
 void GameLauncher::bringToFront(){if(emulator_)emulator_->bringToFront();}
 bool GameLauncher::flycastGame() const{return running()&&usesFlycast(game_);}
-HWND GameLauncher::gameWindow() const{return emulator_?emulator_->window():nullptr;}
+NativeWindow GameLauncher::gameWindow() const{return emulator_?emulator_->window():nullptr;}
 bool GameLauncher::freezeGame(bool frozen){return emulator_&&emulator_->freeze(frozen);}
 int GameLauncher::gameAdvancing(){return emulator_?emulator_->naomiAdvancing():-1;}
 bool GameLauncher::tapGameKey(unsigned vk){return emulator_&&emulator_->tapKey(vk);}
@@ -162,7 +161,7 @@ void GameLauncher::applyFlycastCheats(){
   emulator_->writeNaomi(p.addr,&val,p.width==4?4:p.width==2?2:1);
  }
 }
-void GameLauncher::startCoverGuard(HWND cover){if(emulator_)emulator_->startCoverGuard(cover);}
+void GameLauncher::startCoverGuard(NativeWindow cover){if(emulator_)emulator_->startCoverGuard(cover);}
 void GameLauncher::stopCoverGuard(){if(emulator_)emulator_->stopCoverGuard();}
 void GameLauncher::awardMasterCode(){VerifiedEvent e;e.type="master_code";model_.processVerifiedEvent(e);}
 std::vector<std::string> GameLauncher::takeAchievementNotices(){return model_.consumeAchievementNotices();}
@@ -205,4 +204,3 @@ bool GameLauncher::pollEnded(std::wstring& failure){
  return true;
 }
 }
-#endif

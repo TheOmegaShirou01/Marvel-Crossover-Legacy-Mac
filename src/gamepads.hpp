@@ -1,6 +1,7 @@
 #pragma once
 #ifdef _WIN32
 #include <windows.h>
+#endif
 #include <cstdint>
 #include <memory>
 #include <string>
@@ -16,7 +17,7 @@ struct PadSnapshot {
  bool up=false,down=false,left=false,right=false; // D-pad or left stick
  std::uint64_t buttons=0;                           // bit k = DirectInput button k
  long lx=0,ly=0,lz=0,lrz=0;                         // axes, -1000..1000
- DWORD pov=0xFFFFFFFF;
+ unsigned long pov=0xFFFFFFFF;
 };
 struct PadInfo { std::wstring name; unsigned vid=0,pid=0; bool isXInput=false; };
 class Gamepads {
@@ -25,7 +26,7 @@ public:
  ~Gamepads();
  Gamepads(const Gamepads&)=delete;
  Gamepads& operator=(const Gamepads&)=delete;
- bool init(HWND window);
+ bool init(void* window); // Windows: the HWND DirectInput attaches to
  void rescan();                         // pick up controllers plugged in later
  int count() const;
  const PadInfo& info(int i) const;
@@ -42,4 +43,3 @@ private:
 struct MenuButtons { int confirm,back,select,start; };
 MenuButtons defaultMenuButtons(unsigned vid,unsigned pid);
 }
-#endif

@@ -10,8 +10,15 @@
 #include <fstream>
 #include <system_error>
 #include <utility>
+#include <chrono>
 #ifdef _WIN32
 #include <windows.h>
+#else
+#include <csignal>
+#include <fcntl.h>
+#include <sys/types.h>
+#include <sys/wait.h>
+#include <unistd.h>
 #endif
 namespace mcl {
 namespace fs=std::filesystem;
@@ -254,7 +261,7 @@ static BOOL CALLBACK findPauseWindow(HWND h,LPARAM arg){
  }
  return TRUE;
 }
-void MameBackend::startCoverGuard(HWND cover){
+void MameBackend::startCoverGuard(NativeWindow cover){
  stopCoverGuard();
  if(!running())return;
  p_->guardOn=true;p_->wasTopmost=false;
@@ -310,7 +317,7 @@ bool MameBackend::requestPauseHotkey(){
  return SendInput(2,key,sizeof(INPUT))==2;
 }
 bool MameBackend::pause(bool){return false; /* No verified pause state/acknowledgement protocol yet. */}
-HWND MameBackend::window() const{
+NativeWindow MameBackend::window() const{
  if(!running())return nullptr;
  PauseWindowLookup lookup{p_->pid,nullptr};
  EnumWindows(findPauseWindow,reinterpret_cast<LPARAM>(&lookup));
@@ -375,5 +382,154 @@ bool MameBackend::tapKey(unsigned vk){
  PostMessageW(h,WM_KEYUP,vk,static_cast<LPARAM>(1|(sc<<16)|(3u<<30)));
  return true;
 }
+#else
+// ---------- macOS / Linux: MAME and Flycast as ordinary child processes ----------
+// The Windows-only extras (topmost loading cover, MvC2 memory access and key injection) are
+// not available here: macOS blocks reading another app's memory without special
+// entitlements. Freezing uses SIGSTOP/SIGCONT, closing uses SIGTERM.
+static std::string narrow(const std::wstring& w){
+ std::string out;
+ for(wchar_t ch:w){
+  const auto c=static_cast<std::uint32_t>(ch);
+  if(c<0x80)out+=static_cast<char>(c);
+  else if(c<0x800){out+=static_cast<char>(0xC0|(c>>6));out+=static_cast<char>(0x80|(c&0x3F));}
+  else if(c<0x10000){out+=static_cast<char>(0xE0|(c>>12));out+=static_cast<char>(0x80|((c>>6)&0x3F));out+=static_cast<char>(0x80|(c&0x3F));}
+  else{out+=static_cast<char>(0xF0|(c>>18));out+=static_cast<char>(0x80|((c>>12)&0x3F));out+=static_cast<char>(0x80|((c>>6)&0x3F));out+=static_cast<char>(0x80|(c&0x3F));}
+ }
+ return out;
+}
+struct MameBackend::Private {
+ fs::path executable,log,flycast,activeLog,cheatScript;
+ bool windowed=false;
+ std::wstring ctrlr;
+ pid_t pid=0;
+ bool exited=false;int status=0;
+ std::string lastError;
+ std::chrono::steady_clock::time_point startedAt{};
+ double ranFor=0;
+ explicit Private(fs::path e):executable(std::move(e)){}
+ // Reaps the child once it has ended (keeps its exit status).
+ bool alive(){
+  if(pid<=0||exited)return false;
+  int st=0;const pid_t r=waitpid(pid,&st,WNOHANG);
+  if(r==0)return true;
+  exited=true;status=st;
+  ranFor=std::chrono::duration<double>(std::chrono::steady_clock::now()-startedAt).count();
+  return false;
+ }
+};
+// A program inside a macOS .app bundle: Foo.app -> Foo.app/Contents/MacOS/<executable>.
+static fs::path bundleBinary(const fs::path& p){
+ std::error_code ec;
+ if(p.extension()!=".app"||!fs::is_directory(p,ec))return p;
+ const fs::path macos=p/"Contents"/"MacOS";
+ const fs::path same=macos/p.stem();
+ if(fs::is_regular_file(same,ec))return same;
+ for(const auto& e:fs::directory_iterator(macos,ec))if(e.is_regular_file(ec))return e.path();
+ return p;
+}
+MameBackend::MameBackend(fs::path e):p_(new Private(bundleBinary(std::move(e)))){}
+MameBackend::~MameBackend(){delete p_;}
+bool MameBackend::available(const std::string& game)const{
+ std::error_code ec;
+ if(!findMameSet(game)||running())return false;
+ return fs::is_regular_file(usesFlycast(game)?p_->flycast:p_->executable,ec);
+}
+bool MameBackend::running()const{return p_->alive();}
+bool MameBackend::start(const std::string& id,const RomSearchPath& roms){
+ if(running())return false;
+ p_->pid=0;p_->exited=false;p_->status=0;
+ MameLaunchSpec spec;std::string reason;
+ const bool flycast=usesFlycast(id);
+ const bool built=flycast?createFlycastLaunchSpec(p_->flycast,roms,id,spec,reason)
+                         :createLaunchSpec(p_->executable,roms,id,spec,reason);
+ p_->lastError=reason;
+ if(!built)return false;
+ if(p_->windowed){
+  if(flycast){for(auto& a:spec.arguments)if(a==L"window:fullscreen=yes")a=L"window:fullscreen=no";}
+  else spec.arguments.push_back(L"-window");
+ }
+ // Inside an .app the emulator's own folders (cfg, ctrlr, plugins, hiscore) sit next to the bundle.
+ fs::path workDir=spec.executable.parent_path();
+ for(fs::path up=spec.executable;up.has_parent_path()&&up!=up.parent_path();up=up.parent_path())
+  if(up.extension()==".app"){workDir=up.parent_path();break;}
+ if(flycast){
+  p_->activeLog=workDir/"flycast.log";
+  std::error_code rm;fs::remove(p_->activeLog,rm);
+ }else{
+  p_->activeLog=p_->log;
+  std::error_code ce;
+  ensureHiscoreDat(spec.executable);
+  if(!p_->ctrlr.empty()){spec.arguments.push_back(L"-ctrlr");spec.arguments.push_back(p_->ctrlr);}
+  spec.arguments.push_back(L"-plugin");spec.arguments.push_back(L"hiscore");
+  if(!p_->cheatScript.empty()&&fs::is_regular_file(p_->cheatScript,ce)){
+   spec.arguments.push_back(L"-autoboot_script");
+   spec.arguments.push_back(fs::absolute(p_->cheatScript).wstring());
+  }
+ }
+ // Everything the child needs is prepared before fork (only async-signal-safe calls after it).
+ std::vector<std::string> args;args.push_back(spec.executable.u8string());
+ for(const auto& a:spec.arguments)args.push_back(narrow(a));
+ std::vector<char*> argv;for(auto& a:args)argv.push_back(a.data());argv.push_back(nullptr);
+ const std::string exe=spec.executable.u8string(),wd=workDir.u8string();
+ std::string logPath;
+ if(!flycast&&!p_->log.empty()){std::error_code ec;fs::create_directories(p_->log.parent_path(),ec);logPath=p_->log.u8string();}
+ const pid_t pid=fork();
+ if(pid<0){p_->lastError=flycast?"Could not start Flycast":"Could not start MAME";return false;}
+ if(pid==0){
+  if(!logPath.empty()){
+   const int fd=open(logPath.c_str(),O_WRONLY|O_CREAT|O_TRUNC,0644);
+   if(fd>=0){dup2(fd,1);dup2(fd,2);close(fd);}
+  }
+  const int nul=open("/dev/null",O_RDONLY);if(nul>=0){dup2(nul,0);close(nul);}
+  if(chdir(wd.c_str())!=0){}
+  execv(exe.c_str(),argv.data());
+  _exit(127);
+ }
+ p_->pid=pid;p_->startedAt=std::chrono::steady_clock::now();
+ return true;
+}
+void MameBackend::setLogFile(fs::path file){p_->log=std::move(file);}
+fs::path MameBackend::logFile() const {return p_->activeLog.empty()?p_->log:p_->activeLog;}
+void MameBackend::setFlycastExecutable(fs::path file){p_->flycast=bundleBinary(std::move(file));}
+void MameBackend::setControllerFile(const std::wstring& name){p_->ctrlr=name;}
+void MameBackend::setCheatScript(fs::path file){p_->cheatScript=std::move(file);}
+void MameBackend::setWindowed(bool w){p_->windowed=w;}
+std::string MameBackend::lastStartError() const {return p_->lastError;}
+bool MameBackend::lastExit(unsigned long& code,double& seconds) const{
+ if(p_->pid<=0||p_->alive()||!p_->exited)return false;
+ const int st=p_->status;
+ code=WIFEXITED(st)?static_cast<unsigned long>(WEXITSTATUS(st)):0; // closed by a signal (our SIGTERM) = normal end
+ if(WIFEXITED(st)&&WEXITSTATUS(st)==127&&p_->ranFor<2){code=127;}   // exec failed
+ seconds=p_->ranFor;
+ return true;
+}
+bool MameBackend::requestClose(){
+ if(!running())return false;
+ kill(p_->pid,SIGCONT); // in case it was frozen
+ return kill(p_->pid,SIGTERM)==0;
+}
+bool MameBackend::stop(){
+ if(p_->pid<=0)return false;
+ if(running()){
+  kill(p_->pid,SIGCONT);kill(p_->pid,SIGTERM);
+  for(int i=0;i<50&&running();++i)std::this_thread::sleep_for(std::chrono::milliseconds(100));
+  if(running()){kill(p_->pid,SIGKILL);for(int i=0;i<20&&running();++i)std::this_thread::sleep_for(std::chrono::milliseconds(50));}
+ }
+ p_->pid=0;
+ return true;
+}
+void MameBackend::startCoverGuard(NativeWindow){}
+void MameBackend::stopCoverGuard(){}
+bool MameBackend::bringToFront(){return running();} // the emulator activates itself when its window opens
+bool MameBackend::requestPauseHotkey(){return false;}
+bool MameBackend::pause(bool){return false;}
+NativeWindow MameBackend::window() const{return nullptr;}
+bool MameBackend::freeze(bool frozen){return running()&&kill(p_->pid,frozen?SIGSTOP:SIGCONT)==0;}
+bool MameBackend::readNaomi(std::uint32_t,void*,std::size_t){return false;}
+bool MameBackend::writeNaomi(std::uint32_t,const void*,std::size_t){return false;}
+bool MameBackend::postKey(unsigned,unsigned,bool){return false;}
+int MameBackend::naomiAdvancing(){return -1;}
+bool MameBackend::tapKey(unsigned){return false;}
 #endif
 }

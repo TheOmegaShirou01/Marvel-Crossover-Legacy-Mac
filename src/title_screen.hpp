@@ -7,6 +7,10 @@
 #define NOMINMAX
 #endif
 #include <windows.h>
+#else
+using HINSTANCE=void*;
+using HWND=void*;
+#endif
 #include <filesystem>
 #include <functional>
 namespace mcl { class GameLauncher; }
@@ -26,4 +30,3 @@ struct Callbacks {
 //   Audio\title_voice.mp3/.wav played when START is pressed on the title screen
 int run(HINSTANCE inst,const std::filesystem::path& appDir,const Callbacks& callbacks);
 }
-#endif

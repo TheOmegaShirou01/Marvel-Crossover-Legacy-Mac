@@ -5,7 +5,6 @@
 #endif
 #include <windows.h>
 #endif
-#ifdef _WIN32
 #include "core.hpp"
 #include "cheats.hpp"
 #include <cstdint>
@@ -13,6 +12,7 @@
 #include <memory>
 #include <string>
 #include <vector>
+#include "mame_backend.hpp"
 namespace mcl {
 class MameBackend;
 class EmulatorBridge;
@@ -43,7 +43,7 @@ public:
  // MvC2 (Flycast) pause screen support: the running game, its window, freeze/unfreeze,
  // whether the NAOMI program is advancing (0 = Flycast's own menu is open) and key taps.
  bool flycastGame() const;
- HWND gameWindow() const;
+ NativeWindow gameWindow() const;
  bool freezeGame(bool frozen);
  int gameAdvancing();
  bool tapGameKey(unsigned vk);
@@ -52,7 +52,7 @@ public:
  bool postGameKey(unsigned vk,unsigned scancode,bool down);
  // MvC2 cheats (Flycast has no Lua hook): the front end writes them into NAOMI RAM; call often.
  void applyFlycastCheats();
- void startCoverGuard(HWND cover);
+ void startCoverGuard(NativeWindow cover);
  void stopCoverGuard();
  // The master cheat code was entered in the front end (The Secret Code achievement).
  void awardMasterCode();
@@ -75,4 +75,3 @@ private:
  void ingestDetectedEvents();
 };
 }
-#endif
