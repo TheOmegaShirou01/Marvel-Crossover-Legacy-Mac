@@ -2,7 +2,7 @@
 # Makes the built "Marvel Crossover Legacy.app" self-contained (run on macOS after cmake --build):
 #   - SDL3 libraries copied into Contents/Frameworks
 #   - MAME (Homebrew build) with its plugins and shaders in Contents/Resources/MAME
-#   - Flycast.app (official release, Homebrew cask) in Contents/Resources/Flycast
+#   - Flycast.app (official v2.7 release, $FLYCAST_APP) in Contents/Resources/Flycast
 #   - app icon, emulator path files, ad-hoc signature
 # Game content (logos, music, videos, gallery, ROMs) is added later on Windows by
 # tools/make_mac_package.py; it never goes to GitHub.
@@ -41,7 +41,8 @@ printf 'skip_warnings             1\n' > "$RES/MAME/ui.ini"
 
 # Flycast (MvC2)
 mkdir -p "$RES/Flycast"
-cp -R "/Applications/Flycast.app" "$RES/Flycast/"
+cp -R "${FLYCAST_APP:-/Applications/Flycast.app}" "$RES/Flycast/Flycast.app"
+codesign --force --deep --sign - "$RES/Flycast/Flycast.app"   # ad-hoc (the release is not notarized)
 
 # where the front end finds them (relative to its folder)
 printf 'MAME/mame\n' > "$RES/mame_executable.txt"
