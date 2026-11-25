@@ -18,7 +18,12 @@ namespace mcl {
 // only when it was published after this exe was built and has not been installed yet.
 inline constexpr const char* kAppVersion="0.4.5";
 inline constexpr const wchar_t* kUpdateHost=L"api.github.com";
+#ifdef _WIN32
 inline constexpr const wchar_t* kUpdatePath=L"/repos/TheOmegaShirou01/Marvel-Crossover-Legacy/releases/latest";
+#else
+// Mac version: its own repository (never the Windows one).
+inline constexpr const wchar_t* kUpdatePath=L"/repos/TheOmegaShirou01/Marvel-Crossover-Legacy-Mac/releases/latest";
+#endif
 
 struct ReleaseInfo {
  long long id=0;
